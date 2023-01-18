@@ -1,0 +1,215 @@
+import pyro
+import torch
+import torch.nn as nn
+from pyro.nn import PyroSample, PyroModule
+from pyro.infer import MCMC, SVI, Predictive, Trace_ELBO
+from pyro.infer.mcmc.util import select_samples
+import pyro.distributions as dist
+import os
+import time
+import dill
+from datetime import timedelta
+from abc import ABC, abstractmethod
+
+class BayesianInferenceModel(ABC):
+    def __init__(self, model, device="cpu"):
+        self.model = model
+        self.device = device
+    
+    @abstractmethod
+    def fit(self, dataloader):
+        """Fits training data to inference model"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def predict(self, X, num_predictions=1):
+        """Returns predictions for X"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_error(self, X, y, num_predictions=1):
+        """Returns error for X and y (RMSE)"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def save(self, path):
+        """Saves model to path"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def load(self, path):
+        """Loads model from path"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def to(self, device):
+        self.model.to(device)
+        self.device = device
+
+class MCMCInferenceModel(BayesianInferenceModel):
+    def __init__(self, model, kernel, num_samples=1000, num_chains=1, num_warmup=1000, device="cpu"):
+        super().__init__(model, device)
+        self.kernel = kernel
+        self.num_samples = num_samples
+        self.num_chains = num_chains
+        self.num_warmup = num_warmup
+
+        self.mcmc = None
+        self.samples = None
+
+    def fit(self, dataloader):
+        train_stats =  {
+            "rmse": [],
+            "val_rmse": [],
+            "time": 0,
+        }
+
+        pyro.clear_param_store()
+        start = time.time()
+
+        X, y = dataloader.dataset.tensors[0], dataloader.dataset.tensors[1].flatten()
+        self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
+        self.mcmc.run(X, y)
+        self.samples = self.mcmc.get_samples()
+
+        train_rmse = self.get_error(X, y)
+
+        td = timedelta(seconds=round(time.time() - start))
+        print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 2)}")
+
+        train_stats["rmse"].append(train_rmse)
+
+        end = time.time()
+        train_stats["time"] = end - start
+
+        return train_stats
+
+    def predict(self, X, num_predictions=1):
+        if self.mcmc is None:
+            raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
+
+        weight_samples = self.mcmc.get_samples(num_samples=num_predictions)
+
+        predictive = Predictive(self.model, weight_samples, return_sites=("obs", ))
+        predictions = predictive(X)
+
+        #Rotate prediction matrix to [x_samples, num_dist_samples]
+        y_pred = torch.transpose(predictions["obs"], 0, 1)
+
+        return y_pred
+
+    def get_error(self, X, y, num_predictions=1):
+        predictions = self.predict(X, num_predictions=num_predictions)
+        rmse = torch.sqrt(torch.mean((predictions - y)**2))
+
+        return rmse.item()
+
+    def save(self, path):
+        if self.mcmc is None:
+            raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
+
+        self.mcmc.kernel.potential_fn = None
+        torch.save({ "model": self.model.state_dict(), "mcmc": self.mcmc}, f"{path}/checkpoint.pt")
+        print(f"Saved model and samples to {path}")
+
+    def load(self, path):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File {path} does not exist.")
+
+        checkpoint = torch.load(f"{path}/checkpoint.pt")
+        self.model.load_state_dict(checkpoint["model"])
+        self.mcmc = checkpoint["mcmc"]
+
+        print(f"Loaded model and samples from {path}")
+
+    def to(self, device):
+        super().to(device)
+        self.kernel.to(device)
+
+class SVIInferenceModel(BayesianInferenceModel):
+    def __init__(self, model, guide, optim, epochs=100, num_steps=1000, loss=None, num_particles=1, device="cpu"):
+        super(BayesianInferenceModel, self).__init__(model, device)
+        self.guide = guide
+        self.optim = optim
+        self.loss = loss if loss else Trace_ELBO(num_particles=num_particles)
+        self.epochs = epochs
+        self.num_steps = num_steps
+
+        self.svi = None
+
+    def fit(self, dataloader, callback=None, closed_form_kl=True):
+        train_stats =  {
+            "elbo": [],
+            "rmse": [],
+            "val_rmse": [],
+            "time": 0,
+        }
+
+        pyro.clear_param_store()
+        start = time.time()
+        
+        self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
+
+        for epoch in range(1, self.epochs + 1):
+            elbo = 0
+            rmse = 0
+            for X, y in dataloader:
+                elbo += self.svi.step(X, y)
+                rmse += self.get_error(X, y, num_predictions=1)
+            
+            elbo /= len(dataloader)
+            rmse /= len(dataloader)
+
+            if epoch % 10 == 0 or epoch == 1:
+                td = timedelta(seconds=round(time.time() - start))
+                print(f"[{td}][epoch {epoch}] elbo: {elbo:.2f} rmse: {round(rmse, 2)}")
+
+            if callback is not None and callback(elbo, epoch):
+                break
+
+            train_stats["elbo"].append(elbo)
+
+        end = time.time()
+        train_stats["time"] = end - start
+
+        return train_stats
+
+    def predict(self, X, num_predictions=1):
+        if self.svi is None:
+            raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
+
+        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ))
+        predictions = predictive(X)
+
+        #Rotate prediction matrix to [x_samples, num_dist_samples]
+        y_pred = torch.transpose(predictions["obs"], 0, 1)
+
+        return y_pred
+
+    def get_error(self, X, y, num_predictions=1):
+        predictions = self.predict(X, num_predictions=num_predictions)
+        rmse = torch.sqrt(torch.mean((predictions - y)**2))
+
+        return rmse.item()
+
+    def save(self, path):
+        if self.svi is None:
+            raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
+
+        torch.save({"model": self.model.state_dict(), "guide": self.guide}, f"{path}/checkpoint.pt")
+        pyro.get_param_store().save(f"{path}/params.pt")
+        print(f"Saved model and parameters to {path}")
+
+    def load(self, path):
+        checkpoint = torch.load(f"{path}/checkpoint.pt")
+        self.model.load_state_dict(checkpoint["model"])
+        self.guide = checkpoint["guide"]
+        pyro.get_param_store().load(f"{path}/params.pt")
+
+        self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
+        print(f"Loaded model and parameters from {path}")
+
+    def to(self, device):
+        super().to(device)
+        self.guide.to(device)
+        
