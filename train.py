@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 import pyro
 from pyro.infer.autoguide import AutoDiagonalNormal
-from pyro.infer import SVI, MCMC, NUTS, Trace_ELBO, Predictive
+from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive
 from datetime import timedelta
 import time
 import json
@@ -51,6 +51,9 @@ def main():
     # Check if GPU is available
     if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
         raise ValueError("GPU not available")
+    elif DEVICE[:4] == "cuda" and torch.cuda.is_available():
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        print("Cuda enabled !")
 
     # Reproducibility
     pyro.set_rng_seed(SEED)
@@ -68,27 +71,31 @@ def main():
         os.mkdir(f"{MODEL_PATH}/{NAME}")
     
     # Create datasets and dataloaders
-    train_dataset = TensorDataset(x_train, y_train).to(DEVICE)
-    val_dataset = TensorDataset(x_val, y_val).to(DEVICE)
+    train_dataset = TensorDataset(x_train, y_train)
+    val_dataset = TensorDataset(x_val, y_val)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE,
+    generator=torch.Generator(device=DEVICE))
+    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE,
+    generator=torch.Generator(device=DEVICE))
 
     # Create model
     try:
         BNN = model_types[MODEL_TYPE]
     except KeyError:
         raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
-    model = BNN(X_DIM, Y_DIM, hidden_features=HIDDEN_FEATURES)
+    model = BNN(X_DIM, Y_DIM, hidden_features=HIDDEN_FEATURES, device=DEVICE)
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
         guide = AutoDiagonalNormal(model)
         optim = pyro.optim.Adam({"lr": 1e-3})
-        inference_model = SVIInferenceModel(model, guide, optim, EPOCHS)
+        inference_model = SVIInferenceModel(model, guide, optim, EPOCHS, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
-        mcmc_kernel = NUTS(model, adapt_step_size=True)
-        inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS)
+        mcmc_kernel = NUTS(model, adapt_step_size=True, max_tree_depth=10)
+        #mcmc_kernel = HMC(model, adapt_step_size=True)
+        inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, 
+        num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
     else:
         raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
 
@@ -101,7 +108,7 @@ def main():
         + 'Train set size: {}, Validation set size: {} \n'.format(x_train.shape[0], x_val.shape[0])
         + 'Training for {} epochs with batch size {} \n'.format(EPOCHS, TRAIN_BATCH_SIZE)
     )
-    inference_model.to(DEVICE)
+    print('====== Training on device: {} ======\n'.format(DEVICE))
     train_stats = inference_model.fit(train_dataloader)
     if SAVE_MODEL:
         inference_model.save(f"{MODEL_PATH}/{NAME}")

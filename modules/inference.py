@@ -12,9 +12,8 @@ from datetime import timedelta
 from abc import ABC, abstractmethod
 
 class BayesianInferenceModel(ABC):
-    def __init__(self, model, device="cpu"):
+    def __init__(self, model):
         self.model = model
-        self.device = device
     
     @abstractmethod
     def fit(self, dataloader):
@@ -41,18 +40,14 @@ class BayesianInferenceModel(ABC):
         """Loads model from path"""
         raise NotImplementedError
 
-    @abstractmethod
-    def to(self, device):
-        self.model.to(device)
-        self.device = device
-
 class MCMCInferenceModel(BayesianInferenceModel):
     def __init__(self, model, kernel, num_samples=1000, num_chains=1, num_warmup=1000, device="cpu"):
-        super().__init__(model, device)
+        super().__init__(model)
         self.kernel = kernel
         self.num_samples = num_samples
         self.num_chains = num_chains
         self.num_warmup = num_warmup
+        self.device = device
 
         self.mcmc = None
         self.samples = None
@@ -67,7 +62,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         pyro.clear_param_store()
         start = time.time()
 
-        X, y = dataloader.dataset.tensors[0], dataloader.dataset.tensors[1].flatten()
+        X, y = dataloader.dataset.tensors[0].to(self.device), dataloader.dataset.tensors[1].flatten().to(self.device)
         self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
@@ -116,24 +111,22 @@ class MCMCInferenceModel(BayesianInferenceModel):
         if not os.path.exists(path):
             raise FileNotFoundError(f"File {path} does not exist.")
 
-        checkpoint = torch.load(f"{path}/checkpoint.pt")
+        checkpoint = torch.load(f"{path}/checkpoint.pt", map_location=self.device)
         self.model.load_state_dict(checkpoint["model"])
         self.mcmc = checkpoint["mcmc"]
 
         print(f"Loaded model and samples from {path}")
 
-    def to(self, device):
-        super().to(device)
-        self.kernel.to(device)
-
 class SVIInferenceModel(BayesianInferenceModel):
     def __init__(self, model, guide, optim, epochs=100, num_steps=1000, loss=None, num_particles=1, device="cpu"):
-        super(BayesianInferenceModel, self).__init__(model, device)
+        super().__init__(model)
         self.guide = guide
         self.optim = optim
         self.loss = loss if loss else Trace_ELBO(num_particles=num_particles)
         self.epochs = epochs
         self.num_steps = num_steps
+        self.num_particles = num_particles
+        self.device = device
 
         self.svi = None
 
@@ -154,6 +147,7 @@ class SVIInferenceModel(BayesianInferenceModel):
             elbo = 0
             rmse = 0
             for X, y in dataloader:
+                X, y = X.to(self.device), y.to(self.device)
                 elbo += self.svi.step(X, y)
                 rmse += self.get_error(X, y, num_predictions=1)
             
@@ -178,6 +172,8 @@ class SVIInferenceModel(BayesianInferenceModel):
         if self.svi is None:
             raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
 
+        X = X.to(self.device)
+
         predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ))
         predictions = predictive(X)
 
@@ -187,6 +183,8 @@ class SVIInferenceModel(BayesianInferenceModel):
         return y_pred
 
     def get_error(self, X, y, num_predictions=1):
+        X, y = X.to(self.device), y.to(self.device)
+
         predictions = self.predict(X, num_predictions=num_predictions)
         rmse = torch.sqrt(torch.mean((predictions - y)**2))
 
@@ -201,7 +199,7 @@ class SVIInferenceModel(BayesianInferenceModel):
         print(f"Saved model and parameters to {path}")
 
     def load(self, path):
-        checkpoint = torch.load(f"{path}/checkpoint.pt")
+        checkpoint = torch.load(f"{path}/checkpoint.pt", map_location=self.device)
         self.model.load_state_dict(checkpoint["model"])
         self.guide = checkpoint["guide"]
         pyro.get_param_store().load(f"{path}/params.pt")
