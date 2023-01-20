@@ -158,11 +158,22 @@ def main():
     print(f"KL divergence (knn): {kl_div_knn}")
     """
     #plot_comparison(pred_samp[:, 0], data_samp[:, 0], f"{RESULT_PATH}/{name}/comparison.png")
+    norm_samp = normal_samples.cpu().detach().numpy()
     data_samp = data_samp.cpu().detach().numpy()
     pred_samp = pred_samp.cpu().detach().numpy()
-    plot_comparison_grid(data_samp, pred_samp, grid_size=2, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
+    plot_comparison_grid(data_samp, pred_samp, grid_size=3, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
 
+    # KL divergence
+    kl_div_baseline = KLdivergence(normal_samples, data_samp)
+    print(f"KL divergence baseline: {kl_div_baseline}")
+    kl_div_pred = KLdivergence(pred_samp, data_samp)
+    print(f"KL divergence predictive dist: {kl_div_pred}")
 
+    # Save results
+    with open(f"{RESULTS_PATH}/{NAME}/results.txt", "w") as f:
+        f.write(f"Test RMSE: {test_rmse}\n")
+        f.write(f"KL divergence baseline: {kl_div_baseline}\n")
+        f.write(f"KL divergence predictive dist: {kl_div_pred}\n")
 
 if __name__ == "__main__":
     main()
