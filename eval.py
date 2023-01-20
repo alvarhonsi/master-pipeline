@@ -16,6 +16,20 @@ from pyro.distributions import Normal
 import os
 import argparse
 
+def draw_data_samples(dataloader, num_samples=10):
+    x, y = [], []
+    for x, y in dataloader:
+        x.append(x)
+        y.append(y)
+
+    x = torch.cat(x, dim=0)
+    y = torch.cat(y, dim=0)
+
+    idx = np.random.choice(range(len(x)), num_samples)
+    sample_x = x[idx]
+    sample_y = y[idx]
+    return sample_x, sample_y
+
 def main():
     parser = argparse.ArgumentParser(
                     prog = 'Generate datasets',
@@ -30,6 +44,7 @@ def main():
 
     NAME = config["NAME"]
     SEED = config.getint("SEED")
+    DEVICE = config["DEVICE"]
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")
 
@@ -53,6 +68,13 @@ def main():
     NUM_X_SAMPLES = config.getint("NUM_X_SAMPLES")
     NUM_DIST_SAMPLES = config.getint("NUM_DIST_SAMPLES")
     EVAL_BATCH_SIZE = config.getint("EVAL_BATCH_SIZE")
+
+    # Check if GPU is available
+    if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
+        raise ValueError("GPU not available")
+    elif DEVICE[:4] == "cuda" and torch.cuda.is_available():
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        print("Cuda enabled !")
     
 
     # Reproducibility
@@ -71,9 +93,12 @@ def main():
     test_dataset = TensorDataset(x_test, y_test)
     print(f"Test dataset size: {len(test_dataset)}")
 
-    train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(val_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=4)
-    test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE,
+    generator=torch.Generator(device=DEVICE))
+    val_dataloader = DataLoader(val_dataset, batch_size=EVAL_BATCH_SIZE,
+    generator=torch.Generator(device=DEVICE))
+    test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE,
+    generator=torch.Generator(device=DEVICE))
 
     # Ready results directory
     if not os.path.exists(RESULTS_PATH):
@@ -85,38 +110,39 @@ def main():
 
     # Load model
     BNN = model_types[MODEL_TYPE]
-    model = BNN(X_DIM, Y_DIM, HIDDEN_FEATURES)
+    model = BNN(X_DIM, Y_DIM, HIDDEN_FEATURES, device=DEVICE)
 
     if INFERENCE_TYPE == "svi":
         guide = AutoDiagonalNormal(model)
         optim = pyro.optim.Adam({"lr": 1e-3})
-        inference_model = SVIInferenceModel(model, guide, optim)
+        inference_model = SVIInferenceModel(model, guide, optim, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         mcmc_kernel = NUTS(model)
-        inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS)
+        inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
     else:
         raise ValueError(f"Invalid inference type: {INFERENCE_TYPE}")
 
     inference_model.load(f"{MODEL_PATH}/{NAME}")
 
-    # TODO: change to use full data loader
-    x, y = next(iter(val_dataloader))
+    # Model RMSE
+    train_rmse = inference_model.evaluate(train_dataloader)
+    val_rmse = inference_model.evaluate(val_dataloader)
+    test_rmse = inference_model.evaluate(test_dataloader)
 
-    idx = np.random.choice(range(len(x)), NUM_X_SAMPLES)
-    sample_x = x[idx]
-    print("sample x:", sample_x.shape)
+    # Draw data samples
+    samp_x, samp_y = draw_data_samples(test_dataloader, NUM_X_SAMPLES)
 
     #Baseline normal distribution
-    base_dist = NormalPosterior(0, 1, sample_x)
+    base_dist = NormalPosterior(0, 1, samp_x)
     normal_samples = base_dist.sample(NUM_DIST_SAMPLES)
 
     #Sample true distribution from data
     func = data_functions[DATA_FUNC]
-    data_dist = DataDistribution(func, MU, SIGMA, sample_x)
+    data_dist = DataDistribution(func, MU, SIGMA, samp_x)
     data_samp = data_dist.sample(NUM_DIST_SAMPLES)
 
     #Sample posterior distribution from model
-    pred_samp = inference_model.predict(sample_x, NUM_DIST_SAMPLES)
+    pred_samp = inference_model.predict(samp_x, NUM_DIST_SAMPLES)
 
     """
     # Baseline kl divergence (normal)

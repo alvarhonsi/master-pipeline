@@ -190,6 +190,15 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         return rmse.item()
 
+    def evaluate(self, dataloader, num_predictions=1):
+        rmse = 0
+        for X, y in dataloader:
+            rmse += self.get_error(X, y, num_predictions=num_predictions)
+
+        rmse /= len(dataloader)
+
+        return rmse
+
     def save(self, path):
         if self.svi is None:
             raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
