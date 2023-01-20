@@ -164,7 +164,7 @@ def main():
     plot_comparison_grid(data_samp, pred_samp, grid_size=3, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
 
     # KL divergence
-    kl_div_baseline = KLdivergence(normal_samples, data_samp)
+    kl_div_baseline = KLdivergence(norm_samp, data_samp)
     print(f"KL divergence baseline: {kl_div_baseline}")
     kl_div_pred = KLdivergence(pred_samp, data_samp)
     print(f"KL divergence predictive dist: {kl_div_pred}")
