@@ -17,13 +17,13 @@ import os
 import argparse
 
 def draw_data_samples(dataloader, num_samples=10):
-    x, y = [], []
+    xs, ys = [], []
     for x, y in dataloader:
-        x.append(x)
-        y.append(y)
+        xs.append(x)
+        ys.append(y)
 
-    x = torch.cat(x, dim=0)
-    y = torch.cat(y, dim=0)
+    x = torch.cat(xs, dim=0)
+    y = torch.cat(ys, dim=0)
 
     idx = np.random.choice(range(len(x)), num_samples)
     sample_x = x[idx]
