@@ -125,8 +125,8 @@ def main():
     inference_model.load(f"{MODEL_PATH}/{NAME}")
 
     # Model RMSE
-    train_rmse = inference_model.evaluate(train_dataloader)
-    val_rmse = inference_model.evaluate(val_dataloader)
+    #train_rmse = inference_model.evaluate(train_dataloader)
+    #val_rmse = inference_model.evaluate(val_dataloader)
     test_rmse = inference_model.evaluate(test_dataloader)
 
     # Draw data samples
@@ -158,6 +158,8 @@ def main():
     print(f"KL divergence (knn): {kl_div_knn}")
     """
     #plot_comparison(pred_samp[:, 0], data_samp[:, 0], f"{RESULT_PATH}/{name}/comparison.png")
+    data_samp = data_samp.cpu().detach().numpy()
+    pred_samp = pred_samp.cpu().detach().numpy()
     plot_comparison_grid(data_samp, pred_samp, grid_size=2, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
 
 
