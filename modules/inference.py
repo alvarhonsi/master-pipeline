@@ -65,13 +65,13 @@ class MCMCInferenceModel(BayesianInferenceModel):
 
         #X, y = dataloader.dataset.tensors[0].to(self.device), dataloader.dataset.tensors[1].flatten().to(self.device)
         input_data_lists = defaultdict(list)
-            observation_data_list = []
-            for in_data, obs_data in iter(dataloader):
-                for i, data in enumerate(_as_tuple(in_data)):
-                    input_data_lists[i].append(data.to(self.device))
-                observation_data_list.append(obs_data.to(self.device))
-            X = tuple(torch.cat(input_data_lists[i]) for i in range(len(input_data_lists)))
-            y = torch.cat(observation_data_list)
+        observation_data_list = []
+        for in_data, obs_data in iter(dataloader):
+            for i, data in enumerate(_as_tuple(in_data)):
+                input_data_lists[i].append(data.to(self.device))
+            observation_data_list.append(obs_data.to(self.device))
+        X = tuple(torch.cat(input_data_lists[i]) for i in range(len(input_data_lists)))
+        y = torch.cat(observation_data_list)
 
         
         self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
