@@ -74,9 +74,9 @@ def main():
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE,
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=3,
     generator=torch.Generator(device=DEVICE))
-    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE,
+    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=3,
     generator=torch.Generator(device=DEVICE))
 
     # Create model

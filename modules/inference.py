@@ -2,9 +2,15 @@ import pyro
 import torch
 from pyro.infer import MCMC, SVI, Predictive, Trace_ELBO
 import os
+from collections import defaultdict
 import time
 from datetime import timedelta
 from abc import ABC, abstractmethod
+
+def _as_tuple(x):
+    if isinstance(x, (list, tuple)):
+        return x
+    return x,
 
 class BayesianInferenceModel(ABC):
     def __init__(self, model):
@@ -57,7 +63,17 @@ class MCMCInferenceModel(BayesianInferenceModel):
         pyro.clear_param_store()
         start = time.time()
 
-        X, y = dataloader.dataset.tensors[0].to(self.device), dataloader.dataset.tensors[1].flatten().to(self.device)
+        #X, y = dataloader.dataset.tensors[0].to(self.device), dataloader.dataset.tensors[1].flatten().to(self.device)
+        input_data_lists = defaultdict(list)
+            observation_data_list = []
+            for in_data, obs_data in iter(dataloader):
+                for i, data in enumerate(_as_tuple(in_data)):
+                    input_data_lists[i].append(data.to(self.device))
+                observation_data_list.append(obs_data.to(self.device))
+            X = tuple(torch.cat(input_data_lists[i]) for i in range(len(input_data_lists)))
+            y = torch.cat(observation_data_list)
+
+        
         self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
@@ -210,8 +226,4 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
         print(f"Loaded model and parameters from {path}")
-
-    def to(self, device):
-        super().to(device)
-        self.guide.to(device)
         
