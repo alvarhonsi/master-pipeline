@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+from numpy import genfromtxt
 import torch
 import json
 import scipy
@@ -81,17 +81,17 @@ def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10)):
     
     returns: (x_train, y_train), (x_val, y_val),  (x_test, y_test)
 '''
-def load_data(dataset_name):
-    train = pd.read_csv(f"./data/{dataset_name}/train.csv")
-    val = pd.read_csv(f"./data/{dataset_name}/val.csv")
-    test = pd.read_csv(f"./data/{dataset_name}/test.csv")
+def load_data(path):
+    train = genfromtxt(f"{path}/train.csv", delimiter=',')
+    val = genfromtxt(f"{path}/val.csv", delimiter=',')
+    test = genfromtxt(f"{path}/test.csv", delimiter=',')
 
-    x_train, y_train = train.drop(columns=["y"]), train["y"]
-    x_val, y_val = val.drop(columns=["y"]), val["y"]
-    x_test, y_test = test.drop(columns=["y"]), test["y"]
+    x_train, y_train = train[:,:-1], train[:,-1]
+    x_val, y_val = val[:,:-1], val[:,-1]
+    x_test, y_test = test[:,:-1], test[:,-1]
 
-    x_train, y_train = torch.Tensor(x_train.values), torch.Tensor(y_train.values)
-    x_val, y_val = torch.Tensor(x_val.values), torch.Tensor(y_val.values)
-    x_test, y_test = torch.Tensor(x_test.values), torch.Tensor(y_test.values)
+    x_train, y_train = torch.Tensor(x_train), torch.Tensor(y_train)
+    x_val, y_val = torch.Tensor(x_val), torch.Tensor(y_val)
+    x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
 
     return (x_train, y_train), (x_val, y_val),  (x_test, y_test)

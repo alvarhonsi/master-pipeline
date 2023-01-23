@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import pandas as pd
 import torch
 from pyro.infer import Predictive
 
@@ -32,12 +31,6 @@ class PredictivePosterior(SamplableDistribution):
     def sample(self, num_samples):
         predictive = Predictive(self.model, guide=self.guide, num_samples=num_samples, return_sites=("obs", "_RETURN"))
         samples = predictive(self.x)
-
-        y_samples = samples["obs"]
-        mean_samples = samples["_RETURN"]
-
-        y_df = pd.DataFrame(y_samples.numpy(), columns=[f"post_dist_{i}" for i in range(xs.shape[0])])
-        mean_df = pd.DataFrame(mean_samples.numpy(), columns=[f"post_dist_{i}" for i in range(xs.shape[0])])
 
 
         return self.model.sample(self.guide, self.predictive_samples, num_samples)

@@ -64,13 +64,12 @@ class MCMCInferenceModel(BayesianInferenceModel):
         start = time.time()
 
         #X, y = dataloader.dataset.tensors[0].to(self.device), dataloader.dataset.tensors[1].flatten().to(self.device)
-        input_data_lists = defaultdict(list)
+        input_data_list = []
         observation_data_list = []
-        for in_data, obs_data in iter(dataloader):
-            for i, data in enumerate(_as_tuple(in_data)):
-                input_data_lists[i].append(data.to(self.device))
+        for in_data, obs_data in dataloader:
+            input_data_list.append(in_data.to(self.device))
             observation_data_list.append(obs_data.to(self.device))
-        X = tuple(torch.cat(input_data_lists[i]) for i in range(len(input_data_lists)))
+        X = torch.cat(input_data_list)
         y = torch.cat(observation_data_list)
 
         
@@ -94,21 +93,37 @@ class MCMCInferenceModel(BayesianInferenceModel):
         if self.mcmc is None:
             raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
 
+        X = X.to(self.device)
+
         weight_samples = self.mcmc.get_samples(num_samples=num_predictions)
 
         predictive = Predictive(self.model, weight_samples, return_sites=("obs", ))
         predictions = predictive(X)
 
         #Rotate prediction matrix to [x_samples, num_dist_samples]
-        y_pred = torch.transpose(predictions["obs"], 0, 1)
+        #y_pred = torch.transpose(predictions["obs"], 0, 1)
+        y_pred = predictions["obs"]
 
         return y_pred
 
     def get_error(self, X, y, num_predictions=1):
+        X, y = X.to(self.device), y.to(self.device)
+
         predictions = self.predict(X, num_predictions=num_predictions)
         rmse = torch.sqrt(torch.mean((predictions - y)**2))
 
         return rmse.item()
+
+    def evaluate(self, dataloader, num_predictions=1):
+        rmse = 0
+        for X, y in dataloader:
+            X, y = X.to(self.device), y.to(self.device)
+
+            rmse += self.get_error(X, y, num_predictions=num_predictions)
+
+        rmse /= len(dataloader)
+
+        return rmse
 
     def save(self, path):
         if self.mcmc is None:
@@ -189,7 +204,8 @@ class SVIInferenceModel(BayesianInferenceModel):
         predictions = predictive(X)
 
         #Rotate prediction matrix to [x_samples, num_dist_samples]
-        y_pred = torch.transpose(predictions["obs"], 0, 1)
+        #y_pred = torch.transpose(predictions["obs"], 0, 1)
+        y_pred = predictions["obs"]
 
         return y_pred
 
@@ -204,6 +220,7 @@ class SVIInferenceModel(BayesianInferenceModel):
     def evaluate(self, dataloader, num_predictions=1):
         rmse = 0
         for X, y in dataloader:
+            X, y = X.to(self.device), y.to(self.device)
             rmse += self.get_error(X, y, num_predictions=num_predictions)
 
         rmse /= len(dataloader)

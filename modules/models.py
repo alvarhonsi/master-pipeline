@@ -50,14 +50,45 @@ class BayesianRegressor(PyroModule):
 
     def forward(self, x, y=None):
         out = self.fc(x)
-        mu = out.squeeze()
+        mu = out.squeeze().to(self.device)
 
-        sigma = pyro.sample("sigma", dist.Uniform(0., 10.))
+        sigma = pyro.sample("sigma", dist.Uniform(0., 10.)).to(self.device)
         with pyro.plate("data", out.shape[0], device=self.device):
             obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
         return mu
 
 
+
+class Regressor(nn.Module):
+    def __init__(self, in_features, out_features, hidden_features=[], device="cpu"):
+        super().__init__()
+        self.device = device
+
+        def make_layer(in_features, out_features):
+            return nn.Sequential(
+                nn.Linear(in_features, out_features, device=self.device),
+                nn.ReLU()
+            )
+
+        if len(hidden_features) == 0:
+            self.fc = nn.Sequential(
+                nn.Linear(in_features, out_features, device=self.device)
+            )
+        else:
+            self.fc = nn.Sequential(
+                make_layer(in_features, hidden_features[0]),
+                *[make_layer(hidden_features[i], hidden_features[i+1]) for i in range(len(hidden_features)-1)],
+                nn.Linear(hidden_features[-1], out_features, device=self.device)
+            )
+
+    def forward(self, x, y=None):
+        out = self.fc(x)
+        mu = out.squeeze().to(self.device)
+
+        return mu
+
+
 model_types = {
-    "BR": BayesianRegressor
+    "BR": BayesianRegressor,
+    "R": Regressor
 }

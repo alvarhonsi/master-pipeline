@@ -6,11 +6,14 @@ from modules.plots import plot_comparison, plot_comparison_grid
 from modules.metrics import KL_div_knn_estimation, KLdivergence
 from modules.distributions import PredictivePosterior, DataDistribution, NormalPosterior
 from modules.context import set_default_tensor_type
+import tyxe
+import dill
 import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 import pyro
+import pyro.distributions as dist
 from pyro.infer import Predictive, NUTS
 from pyro.infer.autoguide import AutoDiagonalNormal
 from pyro.distributions import Normal
@@ -32,20 +35,31 @@ def draw_data_samples(dataloader, num_samples=10):
     sample_y = y[idx]
     return sample_x, sample_y
 
-def eval(config, dataset_config, DIR, inference_model=None):
+def evaluate_bnn(bnn, dataloader, num_predictions=1, device="cpu"):
+    avg_err, avg_ll = 0., 0.
+    bnn.eval()
+    for x, y in iter(dataloader):
+        err, ll = bnn.evaluate(x.to(device), y.to(device), num_predictions=num_predictions)
+        avg_err += err / len(dataloader.sampler)
+        avg_ll += ll / len(dataloader.sampler)
+
+    return avg_err, avg_ll
+
+def eval(config, DIR, bnn=None):
+
     NAME = config["NAME"]
     SEED = config.getint("SEED")
     DEVICE = config["DEVICE"]
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")
-    DATASET = config["DATASET"]
 
-    DATA_FUNC = dataset_config["DATA_FUNC"]
-    MU = dataset_config.getint("MU")
-    SIGMA = dataset_config.getint("SIGMA")
+    DATA_FUNC = config["DATA_FUNC"]
+    MU = config.getint("MU")
+    SIGMA = config.getint("SIGMA")
 
     MODEL_TYPE = config["MODEL_TYPE"]
     HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
+    MODEL_PATH = config["MODEL_PATH"]
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
     SVI_GUIDE = config["SVI_GUIDE"]
@@ -55,6 +69,7 @@ def eval(config, dataset_config, DIR, inference_model=None):
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
     MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
 
+    RESULTS_PATH = config["RESULTS_PATH"]
     NUM_X_SAMPLES = config.getint("NUM_X_SAMPLES")
     NUM_DIST_SAMPLES = config.getint("NUM_DIST_SAMPLES")
     EVAL_BATCH_SIZE = config.getint("EVAL_BATCH_SIZE")
@@ -62,6 +77,10 @@ def eval(config, dataset_config, DIR, inference_model=None):
     # Check if GPU is available
     if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
         raise ValueError("GPU not available")
+    elif DEVICE[:4] == "cuda" and torch.cuda.is_available():
+        print("Cuda enabled !")
+        
+    
 
     # Reproducibility
     pyro.set_rng_seed(SEED)
@@ -70,12 +89,8 @@ def eval(config, dataset_config, DIR, inference_model=None):
 
     pyro.clear_param_store()
 
-    # Ready data directory
-    if not os.path.exists(f"{DIR}/{NAME}"):
-        os.mkdir(f"{DIR}/{NAME}")
-
     # Load data
-    (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_data(f"{DIR}/datasets/{DATASET}")
+    (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_data(f"{DIR}/data/{NAME}")
 
     # Make dataset
     train_dataset = TensorDataset(x_train, y_train)
@@ -87,33 +102,61 @@ def eval(config, dataset_config, DIR, inference_model=None):
     val_dataloader = DataLoader(val_dataset, batch_size=EVAL_BATCH_SIZE)
     test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE)
 
+    print("Dataloader device: ", next(iter(train_dataloader))[0].device)
     # Ready results directory
-    if not os.path.exists(f"{DIR}/{NAME}/results"):
-        os.mkdir(f"{DIR}/{NAME}/results")
+    if not os.path.exists(f"{DIR}/{RESULTS_PATH}"):
+        os.mkdir(f"{DIR}/{RESULTS_PATH}")
+
+    if not os.path.exists(f"{DIR}/{RESULTS_PATH}/{NAME}"):
+        os.mkdir(f"{DIR}/{RESULTS_PATH}/{NAME}")
     
+
     # Load model
-    if inference_model is None:
-        BNN = model_types[MODEL_TYPE]
-        model = BNN(X_DIM, Y_DIM, HIDDEN_FEATURES, device=DEVICE)
+    if bnn is None:
+        model = model_types[MODEL_TYPE]
+        net = model(X_DIM, Y_DIM, HIDDEN_FEATURES, device=DEVICE)
+
+        prior = tyxe.priors.IIDPrior(dist.Normal(torch.zeros(1, device=DEVICE), torch.ones(1, device=DEVICE)))
+        likelihood = tyxe.likelihoods.HomoskedasticGaussian(scale=0.1, dataset_size=len(train_dataloader.sampler))
 
         if INFERENCE_TYPE == "svi":
-            guide = AutoDiagonalNormal(model)
-            optim = pyro.optim.Adam({"lr": 1e-3})
-            inference_model = SVIInferenceModel(model, guide, optim, device=DEVICE)
+            guide = tyxe.guides.AutoNormal
+            bnn = tyxe.VariationalBNN(net, prior, likelihood, guide)
+
+            pyro.get_param_store().load(f"{DIR}/{MODEL_PATH}/{NAME}/svi_param_store.pt")
+            checkpoint = torch.load(f"{DIR}/{MODEL_PATH}/{NAME}/checkpoint.pt", map_location=DEVICE)
+            bnn.net.load_state_dict(checkpoint["net"])
+            print(bnn.state_dict())
+            sd = bnn.state_dict()
+            sd = checkpoint["bnn"]
+            print(bnn.state_dict())
+            
         elif INFERENCE_TYPE == "mcmc":
-            mcmc_kernel = NUTS(model)
-            inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
+            kernel = pyro.infer.mcmc.NUTS
+            bnn = tyxe.MCMC_BNN(net, prior, likelihood, kernel)
+
+            with open(f"{DIR}/{MODEL_PATH}/{NAME}/mcmc.pkl", 'rb') as f:
+                mcmc = dill.load(f)
+
+            bnn.load_state_dict(torch.load(f"{DIR}/{MODEL_PATH}/{NAME}/mcmc_state_dict.pt", map_location=DEVICE))
+            bnn._mcmc = mcmc
+
+            print(f"Saved model and samples to {DIR}/{MODEL_PATH}/{NAME}")
         else:
             raise ValueError(f"Invalid inference type: {INFERENCE_TYPE}")
 
-        inference_model.load(f"{DIR}/{NAME}/model")
-
-    print(f"====== valuating model with device: {DEVICE} ======")
+    print(f"======Evaluating model with device: {DEVICE}======")
 
     # Model RMSE
     #train_rmse = inference_model.evaluate(train_dataloader)
     #val_rmse = inference_model.evaluate(val_dataloader)
-    test_rmse = inference_model.evaluate(test_dataloader)
+    print("Evaluating model...")
+    val_error, val_ll = evaluate_bnn(bnn, test_dataloader, num_predictions=100, device=DEVICE)
+    print(f"Validation error: {val_error}")
+    print(f"Validation log-likelihood: {val_ll}")
+    test_error, test_ll = evaluate_bnn(bnn, test_dataloader, num_predictions=100, device=DEVICE)
+    print(f"Test error: {test_error}")
+    print(f"Test log-likelihood: {test_ll}")
 
     # Draw data samples
     # samp_x: (NUM_X_SAMPLES, X_DIM), samp_y: (NUM_X_SAMPLES)
@@ -135,7 +178,10 @@ def eval(config, dataset_config, DIR, inference_model=None):
 
     #Sample posterior distribution from model
     # pred_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
-    pred_samp = inference_model.predict(samp_x, NUM_DIST_SAMPLES)
+    print("Sampling from model!!!!")
+    pred_samp = bnn.predict(samp_x, NUM_DIST_SAMPLES, aggregate=False)
+    print(pred_samp)
+    print(pred_samp.shape)
     
 
 
@@ -155,8 +201,11 @@ def eval(config, dataset_config, DIR, inference_model=None):
     print(f"KL divergence predictive dist: {kl_div_pred}")
 
     # Save results
-    with open(f"{DIR}/{NAME}/results/results.txt", "w") as f:
-        f.write(f"Test RMSE: {test_rmse}\n")
+    with open(f"{DIR}/{RESULTS_PATH}/{NAME}/results.txt", "w") as f:
+        f.write(f"Validation error: {val_error}\n")
+        f.write(f"Validation log-likelihood: {val_ll}\n")
+        f.write(f"Test error: {test_error}\n")
+        f.write(f"Test log-likelihood: {test_ll}\n")
         f.write(f"KL divergence baseline: {kl_div_baseline}\n")
         f.write(f"KL divergence predictive dist: {kl_div_pred}\n")
 
@@ -175,5 +224,6 @@ if __name__ == "__main__":
     # Load config
     config = read_config(f"{DIR}/config.ini")
     config = config[args.config]
+
 
     eval(config, DIR)

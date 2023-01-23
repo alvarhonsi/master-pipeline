@@ -2,6 +2,7 @@ from modules.models import model_types
 from modules.inference import MCMCInferenceModel, SVIInferenceModel
 from modules.datageneration import load_data
 from modules.config import read_config
+from modules.context import set_default_tensor_type
 import os
 import numpy as np
 import torch
@@ -9,28 +10,24 @@ from torch.utils.data import TensorDataset, DataLoader
 import pyro
 from pyro.infer.autoguide import AutoDiagonalNormal
 from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive
+from pyro.infer.autoguide.initialization import init_to_feasible, init_to_median
 from datetime import timedelta
 import time
 import json
 import argparse
 
-def main():
-    parser = argparse.ArgumentParser(
-                    prog = 'Generate datasets',
-                    description = 'Generates datasets for training, testing and validation based on a given function and noise level. Configurations are read from config.ini. The generated datasets are saved in a named data directory.',
-                    epilog = 'Example: python generate.py -c DEFAULT')
-    parser.add_argument('-c', '--config', help='Name of configuration section', default="DEFAULT")
-    args = parser.parse_args()
+import functools
+from typing import Callable, Optional
 
-    # Load config
-    config = read_config("config.ini")
-    config = config[args.config]
+
+def train(config, DIR):
 
     NAME = config["NAME"]
     DEVICE = config["DEVICE"]
     SEED = config.getint("SEED")
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")
+    DATASET = config["DATASET"]
 
     MODEL_TYPE = config["MODEL_TYPE"]
     HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
@@ -44,40 +41,36 @@ def main():
     MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
 
     SAVE_MODEL = config.getboolean("SAVE_MODEL")
-    MODEL_PATH = config["MODEL_PATH"]
     EPOCHS = config.getint("EPOCHS")
+    LR = config.getfloat("LR")
     TRAIN_BATCH_SIZE = config.getint("TRAIN_BATCH_SIZE")
-    
-    # Check if GPU is available
-    if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
-        raise ValueError("GPU not available")
-    elif DEVICE[:4] == "cuda" and torch.cuda.is_available():
-        torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        print("Cuda enabled !")
 
     # Reproducibility
     pyro.set_rng_seed(SEED)
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
+    # Ready data directory
+    if not os.path.exists(f"{DIR}/{NAME}"):
+        os.mkdir(f"{DIR}/{NAME}")
+
     # Load data
-    (x_train, y_train), (x_val, y_val), _ = load_data(NAME)
+    (x_train, y_train), (x_val, y_val), _ = load_data(f"{DIR}/datasets/{DATASET}")
 
     # Ready model directory
-    if not os.path.exists(MODEL_PATH):
-        os.mkdir(MODEL_PATH)
+    if not os.path.exists(f"{DIR}/{NAME}/model"):
+        os.mkdir(f"{DIR}/{NAME}/model")
 
-    if not os.path.exists(f"{MODEL_PATH}/{NAME}"):
-        os.mkdir(f"{MODEL_PATH}/{NAME}")
-    
+    # Check if GPU is available
+    if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
+        raise ValueError("GPU not available")
+
     # Create datasets and dataloaders
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=3,
-    generator=torch.Generator(device=DEVICE))
-    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=3,
-    generator=torch.Generator(device=DEVICE))
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
+    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
 
     # Create model
     try:
@@ -88,8 +81,11 @@ def main():
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
-        guide = AutoDiagonalNormal(model)
-        optim = pyro.optim.Adam({"lr": 1e-3})
+        def init_func(*args):
+            return init_to_median(*args).to(DEVICE)
+
+        guide = AutoDiagonalNormal(model, init_loc_fn=init_func)
+        optim = pyro.optim.Adam({"lr": LR})
         inference_model = SVIInferenceModel(model, guide, optim, EPOCHS, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         mcmc_kernel = NUTS(model, adapt_step_size=True, max_tree_depth=10)
@@ -100,20 +96,33 @@ def main():
         raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
 
 
-
     # RUN TRAINING
-    print('Training model type {} with inference method {}: \n'.format(MODEL_TYPE, INFERENCE_TYPE)
-        + 'Model class {} with architecture: \n'.format(model.__class__.__name__)
-        + 'Input: {}, Output: {}, Hidden: {} \n'.format(X_DIM, Y_DIM, HIDDEN_FEATURES)
-        + 'Train set size: {}, Validation set size: {} \n'.format(x_train.shape[0], x_val.shape[0])
-        + 'Training for {} epochs with batch size {} \n'.format(EPOCHS, TRAIN_BATCH_SIZE)
-    )
-    print('====== Training on device: {} ======\n'.format(DEVICE))
+    print('Using device: {}'.format(DEVICE))
+    print(f'===== Training profile {NAME} =====')
     train_stats = inference_model.fit(train_dataloader)
+
     if SAVE_MODEL:
-        inference_model.save(f"{MODEL_PATH}/{NAME}")
-        with open(f"{MODEL_PATH}/{NAME}/train_stats.json", "w") as json_file:
+        inference_model.save(f"{DIR}/{NAME}/model")
+        with open(f"{DIR}/{NAME}/model/train_stats.json", "w") as json_file:
             json.dump(train_stats, json_file)
 
+    return inference_model
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+                    prog = 'Generate datasets',
+                    description = 'Generates datasets for training, testing and validation based on a given function and noise level. Configurations are read from config.ini. The generated datasets are saved in a named data directory.',
+                    epilog = 'Example: python generate.py -c DEFAULT')
+    parser.add_argument('-c', '--config', help='Name of configuration section', default="DEFAULT")
+    parser.add_argument('-dir', '--directory', help='Name of base directory where data will be stored', default=".")
+    args = parser.parse_args()
+
+    # Set base directory
+    DIR = args.directory
+
+    # Load config
+    config = read_config(f"{DIR}/config.ini")
+    config = config[args.config]
+
+
+    train(config, DIR)
