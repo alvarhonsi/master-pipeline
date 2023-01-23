@@ -144,25 +144,15 @@ def main():
     #Sample posterior distribution from model
     pred_samp = inference_model.predict(samp_x, NUM_DIST_SAMPLES)
 
-    """
-    # Baseline kl divergence (normal)
-    kl_div_norm = KLdivergence(normal_samples, data_samp)
-    print(f"KL divergence baseline: {kl_div_norm}")
-    kl_div_norm_knn = KL_div_knn_estimation(normal_samples, data_samp)
-    print(f"KL divergence baseline (knn): {kl_div_norm_knn}")
-
-    #Compare true and posterior distributions
-    kl_div = KLdivergence(pred_samp, data_samp)
-    print(f"KL divergence: {kl_div}")
-    kl_div_knn = KL_div_knn_estimation(pred_samp, data_samp)
-    print(f"KL divergence (knn): {kl_div_knn}")
-    """
     #plot_comparison(pred_samp[:, 0], data_samp[:, 0], f"{RESULT_PATH}/{name}/comparison.png")
     norm_samp = normal_samples.cpu().detach().numpy()
     data_samp = data_samp.cpu().detach().numpy()
     pred_samp = pred_samp.cpu().detach().numpy()
-    plot_comparison_grid(data_samp, pred_samp, grid_size=3, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
+    #plot_comparison_grid(data_samp, pred_samp, grid_size=3, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
 
+    print("Normal samples shape: ", norm_samp.shape)
+    print("Data samples shape: ", data_samp.shape)
+    print("Predictive samples shape: ", pred_samp.shape)
     # KL divergence
     kl_div_baseline = KLdivergence(norm_samp, data_samp)
     print(f"KL divergence baseline: {kl_div_baseline}")

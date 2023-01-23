@@ -1,13 +1,8 @@
 import pyro
 import torch
-import torch.nn as nn
-from pyro.nn import PyroSample, PyroModule
 from pyro.infer import MCMC, SVI, Predictive, Trace_ELBO
-from pyro.infer.mcmc.util import select_samples
-import pyro.distributions as dist
 import os
 import time
-import dill
 from datetime import timedelta
 from abc import ABC, abstractmethod
 
@@ -211,7 +206,7 @@ class SVIInferenceModel(BayesianInferenceModel):
         checkpoint = torch.load(f"{path}/checkpoint.pt", map_location=self.device)
         self.model.load_state_dict(checkpoint["model"])
         self.guide = checkpoint["guide"]
-        pyro.get_param_store().load(f"{path}/params.pt")
+        pyro.get_param_store().load(f"{path}/params.pt", map_location=self.device)
 
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
         print(f"Loaded model and parameters from {path}")
