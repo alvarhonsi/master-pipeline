@@ -166,6 +166,9 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         pyro.clear_param_store()
         start = time.time()
+
+        # Scale the loss to account for dataset size.
+        self.model = pyro.poutine.scale(self.model, scale=1.0/len(dataloader.dataset))
         
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
 
@@ -176,9 +179,9 @@ class SVIInferenceModel(BayesianInferenceModel):
                 X, y = X.to(self.device), y.to(self.device)
                 elbo += self.svi.step(X, y)
                 rmse += self.get_error(X, y, num_predictions=1)
-            
-            elbo /= len(dataloader)
-            rmse /= len(dataloader)
+
+            elbo = elbo / len(dataloader)
+            rmse = rmse / len(dataloader)
 
             if epoch % 10 == 0 or epoch == 1:
                 td = timedelta(seconds=round(time.time() - start))

@@ -74,13 +74,17 @@ def eval(config, dataset_config, DIR, inference_model=None):
     if not os.path.exists(f"{DIR}/{NAME}"):
         os.mkdir(f"{DIR}/{NAME}")
 
+    print("Loading data...")
     # Load data
     (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_data(f"{DIR}/datasets/{DATASET}")
 
+    print("Preparing datasets...")
     # Make dataset
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
     test_dataset = TensorDataset(x_test, y_test)
+
+    print("Preparing dataloaders...")
 
     train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE)
     val_dataloader = DataLoader(val_dataset, batch_size=EVAL_BATCH_SIZE)
@@ -91,6 +95,7 @@ def eval(config, dataset_config, DIR, inference_model=None):
         os.mkdir(f"{DIR}/{NAME}/results")
     
     # Load model
+    print("Loading model...")
     if inference_model is None:
         BNN = model_types[MODEL_TYPE]
         model = BNN(X_DIM, Y_DIM, HIDDEN_FEATURES, device=DEVICE)
@@ -113,6 +118,7 @@ def eval(config, dataset_config, DIR, inference_model=None):
     # Model RMSE
     #train_rmse = inference_model.evaluate(train_dataloader)
     #val_rmse = inference_model.evaluate(val_dataloader)
+    print("Evaluating model...")
     test_rmse = inference_model.evaluate(test_dataloader)
 
     # Draw data samples
