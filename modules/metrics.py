@@ -88,3 +88,27 @@ def KLdivergence(x, y):
     # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
     # on the first term of the right hand side.
     return -np.log(r/s).sum() * d / n + np.log(m / (n - 1.))
+
+def difference_mean(s1, s2):
+    """ Metric that compares the mean of the samples
+        s1: (N_1,D) Sample drawn from distribution P
+        s2: (N_2,D) Sample drawn from distribution Q
+        return: difference between the means
+    """
+    return np.abs(np.mean(s1) - np.mean(s2))
+
+def difference_std(s1, s2):
+    """ Metric that compares the std of the samples
+        s1: (N_1,D) Sample drawn from distribution P
+        s2: (N_2,D) Sample drawn from distribution Q
+        return: difference between the stds
+    """
+    return np.abs(np.std(s1) - np.std(s2))
+
+def difference_variances(s1, s2):
+    """ Metric that compares the variances of the samples
+        s1: (N_1,D) Sample drawn from distribution P
+        s2: (N_2,D) Sample drawn from distribution Q
+        return: difference between the variances
+    """
+    return np.abs(np.var(s1) - np.var(s2))
