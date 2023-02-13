@@ -13,6 +13,8 @@ if __name__ == "__main__":
                     description = 'Generates datasets for training, testing and validation based on a given function and noise level. Configurations are read from config.ini. The generated datasets are saved in a named data directory.',
                     epilog = 'Example: python generate.py -c DEFAULT')
     parser.add_argument('-dir', '--directory', help='Name of base directory where data will be stored', required=True)
+    parser.add_argument('-p', '--profiles', nargs="+", help='Specified profile to run', default="DEFAULT")
+    parser.add_argument('-dp', '--data-profiles', nargs="+", help='Specified data profile to run', default='DEFAULT')
     parser.add_argument('-g', '--generate', help='Generate datasets', action='store_true')
     parser.add_argument('-t', '--train', help='Train model', action='store_true')
     parser.add_argument('-e', '--eval', help='Evaluate model', action='store_true')
@@ -32,12 +34,14 @@ if __name__ == "__main__":
     if not os.path.exists(f"{BASE_DIR}/config.ini"):
         raise ValueError(f"Config file {BASE_DIR}/config.ini not found")
 
-    
     configs = read_config(f"{BASE_DIR}/config.ini")
     dataset_configs = read_config(f"{BASE_DIR}/dataset_config.ini")
 
+    config_filter = [p for p in configs.keys() if p in args.profiles]
+    dataset_filter = [p for p in dataset_configs.keys() if p in args.data_profiles]
+
     # Generate datasets
-    for dc in [x for x in dataset_configs if x != "DEFAULT"]:
+    for dc in [p for p in dataset_configs if p != "DEFAULT" and p in dataset_filter]:
         config = dataset_configs[dc]
 
         if GENERATE or ALL:
@@ -46,7 +50,7 @@ if __name__ == "__main__":
             generate.gen(config, f"{BASE_DIR}/datasets")
 
     # Run pipeline for each config except DEFAULT
-    for c in [x for x in configs if x != "DEFAULT"]:
+    for c in [p for p in configs if p != "DEFAULT" and p in config_filter]:
         config = configs[c]
         NAME = config["NAME"]
         dataset_config = dataset_configs[config["DATASET"]]

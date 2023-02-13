@@ -95,7 +95,6 @@ def train(config, DIR):
     else:
         raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
 
-
     # RUN TRAINING
     print('Using device: {}'.format(DEVICE))
     print(f'===== Training profile {NAME} =====')
