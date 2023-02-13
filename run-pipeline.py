@@ -37,11 +37,11 @@ if __name__ == "__main__":
     configs = read_config(f"{BASE_DIR}/config.ini")
     dataset_configs = read_config(f"{BASE_DIR}/dataset_config.ini")
 
-    config_filter = [p for p in configs.keys() if p in args.profiles]
-    dataset_filter = [p for p in dataset_configs.keys() if p in args.data_profiles]
+    config_filter = [p for p in configs.keys() if p not in args.profiles and args.profiles != ["DEFAULT"]]
+    dataset_filter = [p for p in dataset_configs.keys() if p not in args.data_profiles and args.profiles != ["DEFAULT"]]
 
     # Generate datasets
-    for dc in [p for p in dataset_configs if p != "DEFAULT" and p in dataset_filter]:
+    for dc in [p for p in dataset_configs if p != "DEFAULT" and p not in dataset_filter]:
         config = dataset_configs[dc]
 
         if GENERATE or ALL:
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             generate.gen(config, f"{BASE_DIR}/datasets")
 
     # Run pipeline for each config except DEFAULT
-    for c in [p for p in configs if p != "DEFAULT" and p in config_filter]:
+    for c in [p for p in configs if p != "DEFAULT" and p not in config_filter]:
         config = configs[c]
         NAME = config["NAME"]
         dataset_config = dataset_configs[config["DATASET"]]
