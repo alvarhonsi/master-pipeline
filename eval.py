@@ -81,7 +81,6 @@ def eval(config, dataset_config, DIR, inference_model=None):
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
     test_dataset = TensorDataset(x_test, y_test)
-    print(f"Test dataset size: {len(test_dataset)}")
 
     train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE)
     val_dataloader = DataLoader(val_dataset, batch_size=EVAL_BATCH_SIZE)
@@ -108,7 +107,8 @@ def eval(config, dataset_config, DIR, inference_model=None):
 
         inference_model.load(f"{DIR}/{NAME}/model")
 
-    print(f"====== valuating model with device: {DEVICE} ======")
+    print(f"using device: {DEVICE}")
+    print(f"====== evaluating profile {NAME} ======")
 
     # Model RMSE
     #train_rmse = inference_model.evaluate(train_dataloader)

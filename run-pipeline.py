@@ -37,12 +37,28 @@ if __name__ == "__main__":
     configs = read_config(f"{BASE_DIR}/config.ini")
     dataset_configs = read_config(f"{BASE_DIR}/dataset_config.ini")
 
-    config_filter = [p for p in configs.keys() if p not in args.profiles and args.profiles != ["DEFAULT"]]
-    dataset_filter = [p for p in dataset_configs.keys() if p not in args.data_profiles and args.profiles != ["DEFAULT"]]
+    # Validate profile arguments
+    if args.profiles != "DEFAULT":
+        for p in args.profiles:
+            if p not in configs:
+                raise ValueError(f"Profile {p} not found in config.ini")
+
+    if args.data_profiles != "DEFAULT":
+        for p in args.data_profiles:
+            if p not in dataset_configs:
+                raise ValueError(f"Profile {p} not found in dataset_config.ini")
+
+
+    # Set profiles to run
+    profiles = args.profiles if args.profiles != "DEFAULT" else [p for p in configs if p != "DEFAULT"]
+    dataset_profiles = args.data_profiles if args.data_profiles != "DEFAULT" else [p for p in dataset_configs if p != "DEFAULT"]
+
+    print(profiles)
+    print(dataset_profiles)
 
     # Generate datasets
-    for dc in [p for p in dataset_configs if p != "DEFAULT" and p not in dataset_filter]:
-        config = dataset_configs[dc]
+    for p in dataset_profiles:
+        config = dataset_configs[p]
 
         if GENERATE or ALL:
             if not os.path.exists(f"{BASE_DIR}/datasets"):
@@ -50,8 +66,8 @@ if __name__ == "__main__":
             generate.gen(config, f"{BASE_DIR}/datasets")
 
     # Run pipeline for each config except DEFAULT
-    for c in [p for p in configs if p != "DEFAULT" and p not in config_filter]:
-        config = configs[c]
+    for p in profiles:
+        config = configs[p]
         NAME = config["NAME"]
         dataset_config = dataset_configs[config["DATASET"]]
 

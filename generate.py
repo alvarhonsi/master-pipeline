@@ -37,13 +37,7 @@ def gen(dataset_config, DIR):
         os.mkdir(f"{DIR}/{NAME}")
 
     # Generate datasets
-    print('''Generating datasets with the following parameters: 
-X_dim: {}, Y_dim: {}
-Train size: {}, Test size: {}, Val size: {}
-Train sample space: {}, Test sample space: {}
-Data function: {}, Mu: {}, Sigma: {}
--------------------------------------------------
-'''.format(X_DIM, Y_DIM, TRAIN_SIZE, TEST_SIZE, VAL_SIZE, TRAIN_SAMPLE_SPACE, TEST_SAMPLE_SPACE, FUNC, MU, SIGMA))
+    print(f"====== Generating profile {NAME} ======")
 
     train = generate_dataset((TRAIN_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=TRAIN_SAMPLE_SPACE)
     val = generate_dataset((VAL_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=TRAIN_SAMPLE_SPACE)
