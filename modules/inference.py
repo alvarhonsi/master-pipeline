@@ -203,7 +203,7 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         X = X.to(self.device)
 
-        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ), parallel=True)
+        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ))
         predictions = predictive(X)
 
         #Rotate prediction matrix to [x_samples, num_dist_samples]

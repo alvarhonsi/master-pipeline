@@ -146,31 +146,31 @@ def eval(config, dataset_config, DIR, inference_model=None):
     results = {}
 
     test_rmse = inference_model.evaluate(test_dataloader)
-    results["test_rmse"] = test_rmse
+    results["test_rmse"] = np.float64(test_rmse)
 
     # KL divergence
     kl_div_baseline = KLdivergence(norm_samp, data_samp)
     kl_div_pred = KLdivergence(pred_samp, data_samp)
-    results["kl_div_normal_baseline"] = kl_div_baseline
-    results["kl_div_predictive"] = kl_div_pred
+    results["kl_div_normal_baseline"] = np.float64(kl_div_baseline)
+    results["kl_div_predictive"] = np.float64(kl_div_pred)
 
     # Difference in mean
     mean_diff_baseline = difference_mean(norm_samp, data_samp)
     mean_diff_pred = difference_mean(pred_samp, data_samp)
-    results["mean_diff_normal_baseline"] = mean_diff_baseline
-    results["mean_diff_predictive"] = mean_diff_pred
+    results["mean_diff_normal_baseline"] = np.float64(mean_diff_baseline)
+    results["mean_diff_predictive"] = np.float64(mean_diff_pred)
 
     # Difference in variance
     var_diff_baseline = difference_var(norm_samp, data_samp)
     var_diff_pred = difference_var(pred_samp, data_samp)
-    results["var_diff_normal_baseline"] = var_diff_baseline
-    results["var_diff_predictive"] = var_diff_pred
+    results["var_diff_normal_baseline"] = np.float64(var_diff_baseline)
+    results["var_diff_predictive"] = np.float64(var_diff_pred)
 
     # Difference in standard deviation
     std_diff_baseline = difference_std(norm_samp, data_samp)
     std_diff_pred = difference_std(pred_samp, data_samp)
-    results["std_diff_normal_baseline"] = std_diff_baseline
-    results["std_diff_predictive"] = std_diff_pred
+    results["std_diff_normal_baseline"] = np.float64(std_diff_baseline)
+    results["std_diff_predictive"] = np.float64(std_diff_pred)
 
     # Save results
     with open(f"{DIR}/{NAME}/results/results.json", "w") as f:

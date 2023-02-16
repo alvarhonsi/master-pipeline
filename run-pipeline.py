@@ -53,9 +53,6 @@ if __name__ == "__main__":
     profiles = args.profiles if args.profiles != "DEFAULT" else [p for p in configs if p != "DEFAULT"]
     dataset_profiles = args.data_profiles if args.data_profiles != "DEFAULT" else [p for p in dataset_configs if p != "DEFAULT"]
 
-    print(profiles)
-    print(dataset_profiles)
-
     # Generate datasets
     for p in dataset_profiles:
         config = dataset_configs[p]
