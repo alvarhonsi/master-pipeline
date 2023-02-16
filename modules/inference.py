@@ -203,14 +203,13 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         X = X.to(self.device)
 
-        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ))
+        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ), parallel=True)
         predictions = predictive(X)
 
         #Rotate prediction matrix to [x_samples, num_dist_samples]
         #y_pred = torch.transpose(predictions["obs"], 0, 1)
-        y_pred = predictions["obs"]
 
-        return y_pred
+        return predictions["obs"]
 
     def get_error(self, X, y, num_predictions=1):
         X, y = X.to(self.device), y.to(self.device)

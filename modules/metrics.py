@@ -105,7 +105,7 @@ def difference_std(s1, s2):
     """
     return np.abs(np.std(s1) - np.std(s2))
 
-def difference_variances(s1, s2):
+def difference_var(s1, s2):
     """ Metric that compares the variances of the samples
         s1: (N_1,D) Sample drawn from distribution P
         s2: (N_2,D) Sample drawn from distribution Q

@@ -68,22 +68,3 @@ def gen(dataset_config, DIR):
     ax.set_xlabel("y")
     ax.set_ylabel("Density")
     plt.savefig(f"{DIR}/{NAME}/sample_posterior.png")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-                    prog = 'Generate datasets',
-                    description = 'Generates datasets for training, testing and validation based on a given function and noise level. Configurations are read from config.ini. The generated datasets are saved in a named data directory.',
-                    epilog = 'Example: python generate.py -c DEFAULT')
-    parser.add_argument('-c', '--config', help='Name of configuration section', default="DEFAULT")
-    parser.add_argument('-dir', '--directory', help='Name of base directory where data will be stored', default=".")
-    args = parser.parse_args()
-
-    # Set base directory
-    DIR = args.directory
-
-    # Load config
-    config = read_config("config.ini")
-    config = config[args.config]
-
-    gen(config, DIR)

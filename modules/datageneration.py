@@ -81,17 +81,24 @@ def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10)):
     
     returns: (x_train, y_train), (x_val, y_val),  (x_test, y_test)
 '''
-def load_data(path):
-    train = genfromtxt(f"{path}/train.csv", delimiter=',')
-    val = genfromtxt(f"{path}/val.csv", delimiter=',')
-    test = genfromtxt(f"{path}/test.csv", delimiter=',')
+def load_data(path, load_train=True, load_val=True, load_test=True):
+    if load_train:
+        train = genfromtxt(f"{path}/train.csv", delimiter=',')
+        x_train, y_train = train[:,:-1], train[:,-1]
+        x_train, y_train = torch.Tensor(x_train), torch.Tensor(y_train)
 
-    x_train, y_train = train[:,:-1], train[:,-1]
-    x_val, y_val = val[:,:-1], val[:,-1]
-    x_test, y_test = test[:,:-1], test[:,-1]
+    if load_val:
+        val = genfromtxt(f"{path}/val.csv", delimiter=',')
+        x_val, y_val = val[:,:-1], val[:,-1]
+        x_val, y_val = torch.Tensor(x_val), torch.Tensor(y_val)
 
-    x_train, y_train = torch.Tensor(x_train), torch.Tensor(y_train)
-    x_val, y_val = torch.Tensor(x_val), torch.Tensor(y_val)
-    x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
+    if load_test:
+        test = genfromtxt(f"{path}/test.csv", delimiter=',')
+        x_test, y_test = test[:,:-1], test[:,-1]
+        x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
 
-    return (x_train, y_train), (x_val, y_val),  (x_test, y_test)
+    ret_train = (x_train, y_train) if load_train else None
+    ret_val = (x_val, y_val) if load_val else None
+    ret_test = (x_test, y_test) if load_test else None
+
+    return ret_train, ret_val, ret_test
