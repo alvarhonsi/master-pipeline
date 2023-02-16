@@ -172,7 +172,7 @@ class SVIInferenceModel(BayesianInferenceModel):
         # Scale the loss to account for dataset size.
         # Scale etter num parameters?
 
-        self.model = pyro.poutine.scale(self.model, scale=1.0/len(dataloader.dataset))
+        #self.model = pyro.poutine.scale(self.model, scale=1.0/len(dataloader.dataset))
         
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
 
