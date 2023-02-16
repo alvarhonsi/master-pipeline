@@ -171,7 +171,7 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         # Scale the loss to account for dataset size.
         # Scale etter num parameters?
-        
+
         self.model = pyro.poutine.scale(self.model, scale=1.0/len(dataloader.dataset))
         
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
@@ -187,7 +187,7 @@ class SVIInferenceModel(BayesianInferenceModel):
                 rmse += error
 
                 train_stats["elbo_minibatch"].append(loss)
-                train_stats["rmse"].append(error)
+                train_stats["rmse_minibatch"].append(error)
 
             elbo = elbo / len(dataloader)
             rmse = rmse / len(dataloader)
@@ -201,8 +201,6 @@ class SVIInferenceModel(BayesianInferenceModel):
 
             if callback is not None and callback(elbo, epoch):
                 break
-
-            train_stats["elbo"].append(elbo)
 
         end = time.time()
         train_stats["time"] = end - start
