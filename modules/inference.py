@@ -158,8 +158,10 @@ class SVIInferenceModel(BayesianInferenceModel):
 
     def fit(self, dataloader, callback=None, closed_form_kl=True):
         train_stats =  {
-            "elbo": [],
-            "rmse": [],
+            "elbo_minibatch": [],
+            "elbo_epoch": [],
+            "rmse_minibatch": [],
+            "rmse_epoch": [],
             "val_rmse": [],
             "time": 0,
         }
@@ -168,6 +170,8 @@ class SVIInferenceModel(BayesianInferenceModel):
         start = time.time()
 
         # Scale the loss to account for dataset size.
+        # Scale etter num parameters?
+        
         self.model = pyro.poutine.scale(self.model, scale=1.0/len(dataloader.dataset))
         
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
@@ -177,11 +181,19 @@ class SVIInferenceModel(BayesianInferenceModel):
             rmse = 0
             for X, y in dataloader:
                 X, y = X.to(self.device), y.to(self.device)
-                elbo += self.svi.step(X, y)
-                rmse += self.get_error(X, y, num_predictions=1)
+                loss = self.svi.step(X, y)
+                error = self.get_error(X, y, num_predictions=1)
+                elbo += loss
+                rmse += error
+
+                train_stats["elbo_minibatch"].append(loss)
+                train_stats["rmse"].append(error)
 
             elbo = elbo / len(dataloader)
             rmse = rmse / len(dataloader)
+
+            train_stats["elbo_epoch"].append(elbo)
+            train_stats["rmse_epoch"].append(rmse)
 
             if epoch % 10 == 0 or epoch == 1:
                 td = timedelta(seconds=round(time.time() - start))
