@@ -103,7 +103,10 @@ def difference_std(s1, s2):
         s2: (N_2,D) Sample drawn from distribution Q
         return: difference between the stds
     """
-    return np.abs(np.mean(np.std(s1, axis=1) - np.std(s2, axis=1)))
+    s1_std = np.std(s1, axis=1)
+    s2_std = np.std(s2, axis=1)
+    print(s1_std.shape, s2_std.shape)
+    return np.abs(np.mean(s1_std - s2_std))
 
 def difference_var(s1, s2):
     """ Metric that compares the variances of the samples

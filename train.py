@@ -55,7 +55,7 @@ def train(config, DIR):
         os.mkdir(f"{DIR}/{NAME}")
 
     # Load data
-    (x_train, y_train), (x_val, y_val), _ = load_data(f"{DIR}/datasets/{DATASET}")
+    (x_train, y_train), (x_val, y_val), _, _, _ = load_data(f"{DIR}/datasets/{DATASET}")
 
     # Ready model directory
     if not os.path.exists(f"{DIR}/{NAME}/model"):
@@ -103,6 +103,6 @@ def train(config, DIR):
     if SAVE_MODEL:
         inference_model.save(f"{DIR}/{NAME}/model")
         with open(f"{DIR}/{NAME}/model/train_stats.json", "w") as json_file:
-            json.dump(train_stats, json_file)
+            json.dump(train_stats, json_file, indent=4)
 
     return inference_model

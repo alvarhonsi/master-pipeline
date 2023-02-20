@@ -33,6 +33,26 @@ def draw_data_samples(dataloader, num_samples=10):
     sample_y = y[idx]
     return sample_x, sample_y
 
+def evaluate_posterior(posterior_samples, data_samples):
+    results = {}
+    # KL divergence
+    kl_div = KLdivergence(posterior_samples, data_samples)
+    results["kl_div"] = np.float64(kl_div)
+
+    # Difference in mean
+    mean_diff = difference_mean(posterior_samples, data_samples)
+    results["mean_diff"] = np.float64(mean_diff)
+
+    # Difference in variance
+    var_diff = difference_var(posterior_samples, data_samples)
+    results["var_diff"] = np.float64(var_diff)
+
+    # Difference in standard deviation
+    std_diff = difference_std(posterior_samples, data_samples)
+    results["std_diff"] = np.float64(std_diff)
+
+    return results
+
 def eval(config, dataset_config, DIR, inference_model=None):
     NAME = config["NAME"]
     SEED = config.getint("SEED")
@@ -72,14 +92,18 @@ def eval(config, dataset_config, DIR, inference_model=None):
     pyro.clear_param_store()
 
     # Load data
-    _, (x_val, y_val), (x_test, y_test) = load_data(f"{DIR}/datasets/{DATASET}", load_train=False)
+    _, (x_val, y_val), (x_test, y_test), (x_test_in_domain, y_test_in_domain), (x_test_out_domain, y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_train=False)
 
     # Make dataset
     val_dataset = TensorDataset(x_val, y_val)
     test_dataset = TensorDataset(x_test, y_test)
+    test_in_domain_dataset = TensorDataset(x_test_in_domain, y_test_in_domain)
+    test_out_domain_dataset = TensorDataset(x_test_out_domain, y_test_out_domain)
 
     val_dataloader = DataLoader(val_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
+    test_in_domain_dataloader = DataLoader(test_in_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
+    test_out_domain_dataloader = DataLoader(test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     
     # Load model
     if inference_model is None:
@@ -106,72 +130,77 @@ def eval(config, dataset_config, DIR, inference_model=None):
     print(f"====== evaluating profile {NAME} ======")
 
     # Draw samples from relevant distributions
+    
+    # Ready samples directory
+    if not os.path.exists(f"{DIR}/{NAME}/results/samples"):
+        os.mkdir(f"{DIR}/{NAME}/results/samples")
 
     # samp_x: (NUM_X_SAMPLES, X_DIM), samp_y: (NUM_X_SAMPLES)
-    samp_x, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES)
+    test_x_sample, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES)
+    test_in_domain_x_sample, _ = draw_data_samples(test_in_domain_dataloader, NUM_X_SAMPLES)
+    test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES)
     
 
     #Baseline normal distribution
     # normal_samples: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
-    base_dist = NormalPosterior(0, 1, samp_x)
-    normal_samples = base_dist.sample(NUM_DIST_SAMPLES)
-    
+    base_dist = NormalPosterior(0, 1, test_x_sample)
+    base_in_domain_dist = NormalPosterior(0, 1, test_in_domain_x_sample)
+    base_out_domain_dist = NormalPosterior(0, 1, test_out_domain_x_sample)
 
+    normal_samples = base_dist.sample(NUM_DIST_SAMPLES)
+    normal_in_domain_samples = base_in_domain_dist.sample(NUM_DIST_SAMPLES)
+    normal_out_domain_samples = base_out_domain_dist.sample(NUM_DIST_SAMPLES)
+
+    np.savetxt(f"{DIR}/{NAME}/results/samples/baseline_samples.csv", normal_samples.cpu().detach().numpy(), delimiter=",")
+    np.savetxt(f"{DIR}/{NAME}/results/samples/baseline_in_domain_samples.csv", normal_in_domain_samples.cpu().detach().numpy(), delimiter=",")
+    np.savetxt(f"{DIR}/{NAME}/results/samples/baseline_out_domain_samples.csv", normal_out_domain_samples.cpu().detach().numpy(), delimiter=",")
+    
     #Sample true distribution from data
     # data_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
     func = data_functions[DATA_FUNC]
-    data_dist = DataDistribution(func, MU, SIGMA, samp_x)
-    data_samp = data_dist.sample(NUM_DIST_SAMPLES)
+    data_dist = DataDistribution(func, MU, SIGMA, test_x_sample)
+    data_in_domain_dist = DataDistribution(func, MU, SIGMA, test_in_domain_x_sample)
+    data_out_domain_dist = DataDistribution(func, MU, SIGMA, test_out_domain_x_sample)
+
+    data_samples = data_dist.sample(NUM_DIST_SAMPLES)
+    data_in_domain_samples = data_in_domain_dist.sample(NUM_DIST_SAMPLES)
+    data_out_domain_samples = data_out_domain_dist.sample(NUM_DIST_SAMPLES)
+
+    np.savetxt(f"{DIR}/{NAME}/results/samples/data_samples.csv", data_samples.cpu().detach().numpy(), delimiter=",")
+    np.savetxt(f"{DIR}/{NAME}/results/samples/data_in_domain_samples.csv", data_in_domain_samples.cpu().detach().numpy(), delimiter=",")
+    np.savetxt(f"{DIR}/{NAME}/results/samples/data_out_domain_samples.csv", data_out_domain_samples.cpu().detach().numpy(), delimiter=",")
     
 
     #Sample posterior distribution from model
     # pred_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
-    pred_samp = inference_model.predict(samp_x, NUM_DIST_SAMPLES)
+    pred_samples = inference_model.predict(test_x_sample, NUM_DIST_SAMPLES)
+    pred_in_domain_samples = inference_model.predict(test_in_domain_x_sample, NUM_DIST_SAMPLES)
+    pred_out_domain_samples = inference_model.predict(test_out_domain_x_sample, NUM_DIST_SAMPLES)
+
+    np.savetxt(f"{DIR}/{NAME}/results/samples/predictive_samples.csv", pred_samples.cpu().detach().numpy(), delimiter=",")
+    np.savetxt(f"{DIR}/{NAME}/results/samples/predictive_in_domain_samples.csv", pred_in_domain_samples.cpu().detach().numpy(), delimiter=",")
+    np.savetxt(f"{DIR}/{NAME}/results/samples/predictive_out_domain_samples.csv", pred_out_domain_samples.cpu().detach().numpy(), delimiter=",")
     
-
-
-    #plot_comparison(pred_samp[:, 0], data_samp[:, 0], f"{RESULT_PATH}/{name}/comparison.png")
-    norm_samp = normal_samples.cpu().detach().numpy()
-    data_samp = data_samp.cpu().detach().numpy()
-    pred_samp = pred_samp.cpu().detach().numpy()
-    #plot_comparison_grid(data_samp, pred_samp, grid_size=3, save_path=f"{RESULTS_PATH}/{NAME}/comparison_grid.png")
-
-    # Save samples
-    np.savetxt(f"{DIR}/{NAME}/results/baseline_normal_samples.csv", norm_samp, delimiter=",")
-    np.savetxt(f"{DIR}/{NAME}/results/data_samples.csv", data_samp, delimiter=",")
-    np.savetxt(f"{DIR}/{NAME}/results/predictive_samples.csv", pred_samp, delimiter=",")
 
     # Evaluate
 
     results = {}
 
     test_rmse = inference_model.evaluate(test_dataloader)
+    test_in_domain_rmse = inference_model.evaluate(test_in_domain_dataloader)
+    test_out_domain_rmse = inference_model.evaluate(test_out_domain_dataloader)
     results["test_rmse"] = np.float64(test_rmse)
+    results["test_in_domain_rmse"] = np.float64(test_in_domain_rmse)
+    results["test_out_domain_rmse"] = np.float64(test_out_domain_rmse)
 
-    # KL divergence
-    kl_div_baseline = KLdivergence(norm_samp, data_samp)
-    kl_div_pred = KLdivergence(pred_samp, data_samp)
-    results["kl_div_normal_baseline"] = np.float64(kl_div_baseline)
-    results["kl_div_predictive"] = np.float64(kl_div_pred)
+    results["baseline"] = evaluate_posterior(normal_samples, data_samples)
+    results["baseline_in_domain"] = evaluate_posterior(normal_in_domain_samples, data_in_domain_samples)
+    results["baseline_out_domain"] = evaluate_posterior(normal_out_domain_samples, data_out_domain_samples)
 
-    # Difference in mean
-    mean_diff_baseline = difference_mean(norm_samp, data_samp)
-    mean_diff_pred = difference_mean(pred_samp, data_samp)
-    results["mean_diff_normal_baseline"] = np.float64(mean_diff_baseline)
-    results["mean_diff_predictive"] = np.float64(mean_diff_pred)
-
-    # Difference in variance
-    var_diff_baseline = difference_var(norm_samp, data_samp)
-    var_diff_pred = difference_var(pred_samp, data_samp)
-    results["var_diff_normal_baseline"] = np.float64(var_diff_baseline)
-    results["var_diff_predictive"] = np.float64(var_diff_pred)
-
-    # Difference in standard deviation
-    std_diff_baseline = difference_std(norm_samp, data_samp)
-    std_diff_pred = difference_std(pred_samp, data_samp)
-    results["std_diff_normal_baseline"] = np.float64(std_diff_baseline)
-    results["std_diff_predictive"] = np.float64(std_diff_pred)
+    results["predictive"] = evaluate_posterior(pred_samples, data_samples)
+    results["predictive_in_domain"] = evaluate_posterior(pred_in_domain_samples, data_in_domain_samples)
+    results["predictive_out_domain"] = evaluate_posterior(pred_out_domain_samples, data_out_domain_samples)
 
     # Save results
     with open(f"{DIR}/{NAME}/results/results.json", "w") as f:
-        json.dump(results, f)
+        json.dump(results, f, indent=4)

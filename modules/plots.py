@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 
 
 
-def plot_distribution(samples, save_path=None, ax=None):
+def plot_distribution(samples, save_path=None, ax=None, figsize=(10,10)):
     sns.set_style("darkgrid")
     sns.set_context("paper")
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10,10))
+        fig, ax = plt.subplots(figsize=figsize)
 
     sns.kdeplot(samples, fill=True, ax=ax)
 
@@ -22,12 +22,12 @@ def plot_distribution(samples, save_path=None, ax=None):
     if save_path:
         plt.savefig(save_path)
 
-def plot_comparison(data_sample, post_sample, save_path=None, ax=None):
+def plot_comparison(post_sample, data_sample, save_path=None, ax=None, figsize=(10,10)):
     sns.set_style("darkgrid")
     sns.set_context("paper")
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10,10))
+        fig, ax = plt.subplots(figsize=figsize)
 
     sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
     sns.kdeplot(post_sample, fill=True, ax=ax, label="Posterior")
@@ -44,18 +44,15 @@ def plot_comparison(data_sample, post_sample, save_path=None, ax=None):
         plt.savefig(save_path)
 
 """Plots a grid of comparisons between the posterior and data distributions"""
-def plot_comparison_grid(data_samples, posterior_samples, grid_size=2, save_path=None):
+def plot_comparison_grid(posterior_samples, data_samples, grid_size=(2,2), save_path=None, figsize=(10,10)):
     assert posterior_samples.shape[1] == data_samples.shape[1]
     num_x = data_samples.shape[1]
-    assert grid_size**2 <= num_x
-
-    print(data_samples.shape)
-    print(posterior_samples.shape)
+    assert (grid_size[0] * grid_size[1]) <= num_x
 
     sns.set_style("darkgrid")
     sns.set_context("paper")
 
-    fig, axs = plt.subplots(grid_size, grid_size, figsize=(10,10))
+    fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=figsize)
     axs = axs.flatten()
     fig.tight_layout()
     fig.suptitle("Posterior vs Data Distributions", fontsize=15)
@@ -64,7 +61,7 @@ def plot_comparison_grid(data_samples, posterior_samples, grid_size=2, save_path
     fig.text(0.04, 0.5, 'Density', va='center', rotation='vertical', fontsize=15)
 
     for i, ax in enumerate(axs):
-        plot_comparison(data_samples[:,i], posterior_samples[:,i], ax=ax)
+        plot_comparison(posterior_samples[:,i], data_samples[:,i], ax=ax)
     
     handles, labels = axs[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right')    

@@ -51,7 +51,7 @@ data_functions = {
 
     returns: tuple of numpy arrays (x, y)
 '''
-def data_gen(sample_size, func, mu, sigma, sample_space):
+def data_gen(sample_size, func, mu, sigma, sample_space, void_space=None):
     try:
         func = data_functions[func]
     except KeyError:
@@ -59,13 +59,19 @@ def data_gen(sample_size, func, mu, sigma, sample_space):
 
     lower, upper = sample_space
 
-    x = np.random.uniform(lower, upper, sample_size)
-    y = func(x) + np.random.normal(mu, sigma**2, sample_size[0])
+    if void_space is not None:
+        lower_stop, upper_start = void_space
+        x1 = np.random.uniform(lower, lower_stop, (sample_size[0]//2, sample_size[1]))
+        x2 = np.random.uniform(upper_start, upper, (sample_size[0]//2, sample_size[1]))
+        x = np.concatenate((x1, x2))
+    else:
+        x = np.random.uniform(lower, upper, sample_size)
 
+    y = func(x) + np.random.normal(mu, sigma**2, sample_size[0])
     return x, y
 
-def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10)):
-    x, y = data_gen(sample_shape, func, mu, sigma, sample_space)
+def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10), void_space=None):
+    x, y = data_gen(sample_shape, func, mu, sigma, sample_space, void_space)
     return x, y
 
 '''
@@ -97,8 +103,19 @@ def load_data(path, load_train=True, load_val=True, load_test=True):
         x_test, y_test = test[:,:-1], test[:,-1]
         x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
 
+        test_in_domain = genfromtxt(f"{path}/test_in_domain.csv", delimiter=',')
+        x_test_in_domain, y_test_in_domain = test_in_domain[:,:-1], test_in_domain[:,-1]
+        x_test_in_domain, y_test_in_domain = torch.Tensor(x_test_in_domain), torch.Tensor(y_test_in_domain)
+
+        test_out_domain = genfromtxt(f"{path}/test_out_domain.csv", delimiter=',')
+        x_test_out_domain, y_test_out_domain = test_out_domain[:,:-1], test_out_domain[:,-1]
+        x_test_out_domain, y_test_out_domain = torch.Tensor(x_test_out_domain), torch.Tensor(y_test_out_domain)
+
+
     ret_train = (x_train, y_train) if load_train else None
     ret_val = (x_val, y_val) if load_val else None
     ret_test = (x_test, y_test) if load_test else None
+    ret_test_in_domain = (x_test_in_domain, y_test_in_domain) if load_test else None
+    ret_test_out_domain = (x_test_out_domain, y_test_out_domain) if load_test else None
 
-    return ret_train, ret_val, ret_test
+    return ret_train, ret_val, ret_test, ret_test_in_domain, ret_test_out_domain
