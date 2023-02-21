@@ -161,7 +161,6 @@ class SVIInferenceModel(BayesianInferenceModel):
             "elbo_epoch": [],
             "rmse_minibatch": [],
             "rmse_epoch": [],
-            "val_rmse": [],
             "time": 0,
         }
 
