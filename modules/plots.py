@@ -2,6 +2,40 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
+def lineplot(data, x_label=None, y_label=None, figsize=(10, 5), ax=None, save_path=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    sns.lineplot(data=data, ax=ax)
+    
+    if ax is None:
+        ax.set_ylabel(y_label)
+        ax.set_xlabel(x_label)
+    else:
+        ax.set_ylabel("")
+        ax.set_xlabel("")
+    
+    if save_path:
+        plt.savefig(save_path)
+
+def plot_elbo(train_stats, save_path=None, figsize=(20, 8)):
+    sns.set_style("darkgrid")
+    sns.set_context("paper")
+
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=figsize)
+    fig.suptitle("ELBO for epochs and pr. minibatch", fontsize=15)
+    
+    lineplot(train_stats["elbo_minibatch"], ax=ax[0])
+    ax[0].set_ylabel("ELBO")
+    ax[0].set_xlabel("Minibatch")
+
+    lineplot(train_stats["elbo_epoch"], ax=ax[1])
+    ax[1].set_ylabel("ELBO")
+    ax[1].set_xlabel("Epoch")
+
+    if save_path:
+        plt.savefig(save_path)
+
 
 def plot_distribution(samples, save_path=None, ax=None, figsize=(10,10)):
     sns.set_style("darkgrid")
