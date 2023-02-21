@@ -100,8 +100,6 @@ class MCMCInferenceModel(BayesianInferenceModel):
         predictive = Predictive(self.model, weight_samples, return_sites=("obs", ))
         predictions = predictive(X)
 
-        #Rotate prediction matrix to [x_samples, num_dist_samples]
-        #y_pred = torch.transpose(predictions["obs"], 0, 1)
         y_pred = predictions["obs"]
 
         return y_pred
@@ -110,7 +108,8 @@ class MCMCInferenceModel(BayesianInferenceModel):
         X, y = X.to(self.device), y.to(self.device)
 
         predictions = self.predict(X, num_predictions=num_predictions)
-        rmse = torch.sqrt(torch.mean((predictions - y)**2))
+        mean_predictions = torch.mean(predictions, dim=0)
+        rmse = (mean_predictions - y).pow(2).mean().sqrt()
 
         return rmse.item()
 
@@ -195,9 +194,9 @@ class SVIInferenceModel(BayesianInferenceModel):
             train_stats["elbo_epoch"].append(elbo)
             train_stats["rmse_epoch"].append(rmse)
 
-            if epoch % 10 == 0 or epoch == 1:
+            if epoch % 50 == 0 or epoch == 1:
                 td = timedelta(seconds=round(time.time() - start))
-                print(f"[{td}][epoch {epoch}] elbo: {elbo:.2f} rmse: {round(rmse, 2)}")
+                print(f"[{td}][epoch {epoch}] elbo: {elbo} rmse: {rmse}")
 
             if callback is not None and callback(elbo, epoch):
                 break
@@ -216,20 +215,18 @@ class SVIInferenceModel(BayesianInferenceModel):
         predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ))
         predictions = predictive(X)
 
-        #Rotate prediction matrix to [x_samples, num_dist_samples]
-        #y_pred = torch.transpose(predictions["obs"], 0, 1)
-
         return predictions["obs"]
 
-    def get_error(self, X, y, num_predictions=1):
+    def get_error(self, X, y, num_predictions=100):
         X, y = X.to(self.device), y.to(self.device)
 
         predictions = self.predict(X, num_predictions=num_predictions)
-        rmse = torch.sqrt(torch.mean((predictions - y)**2))
+        mean_predictions = torch.mean(predictions, dim=0)
+        rmse = (mean_predictions - y).pow(2).mean().sqrt()
 
         return rmse.item()
 
-    def evaluate(self, dataloader, num_predictions=1):
+    def evaluate(self, dataloader, num_predictions=100):
         rmse = 0
         for X, y in dataloader:
             X, y = X.to(self.device), y.to(self.device)
