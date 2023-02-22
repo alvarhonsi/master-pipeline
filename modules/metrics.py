@@ -24,14 +24,12 @@ def KL_div_knn_estimation(s1, s2, k=1):
     verify_sample_shapes(s1, s2, k)
 
     n, m = len(s1), len(s2)
-    print(n, m)
     d = float(s1.shape[1])
     D = np.log(m / (n - 1))
 
     nu_d,  nu_i   = KDTree(s2).query(s1, k)
     rho_d, rhio_i = KDTree(s1).query(s1, k+1)
 
-    print(nu_d.shape, rho_d.shape)
 
     # KTree.query returns different shape in k==1 vs k > 1
     if k > 1:
@@ -72,6 +70,8 @@ def KLdivergence(x, y):
     n,d = x.shape
     m,dy = y.shape
 
+    print(x.shape, y.shape)
+
     assert(d == dy)
 
 
@@ -87,7 +87,17 @@ def KLdivergence(x, y):
 
     # There is a mistake in the paper. In Eq. 14, the right side misses a negative sign
     # on the first term of the right hand side.
-    return -np.log(r/s).sum() * d / n + np.log(m / (n - 1.))
+
+    # -np.log(r/s).sum() * d / n + np.log(m / (n - 1.))
+
+    a = r/(s)
+    print("a", a)
+    b = m / (n - 1.)
+    print("b", b)
+    c = n + np.log(b)
+    print("c", c)
+
+    return -np.log(a).sum() * d / n + np.log(b)
 
 def difference_mean(s1, s2):
     """ Metric that compares the mean of the samples
@@ -95,7 +105,8 @@ def difference_mean(s1, s2):
         s2: (N_2,D) Sample drawn from distribution Q
         return: difference between the means
     """
-    return np.abs(np.mean(np.mean(s1, axis=1) - np.mean(s2, axis=1)))
+    s1_mean, s2_mean = np.mean(s1, axis=0), np.mean(s2, axis=0)
+    return np.mean(np.abs(s1_mean - s2_mean))
 
 def difference_std(s1, s2):
     """ Metric that compares the std of the samples
@@ -103,10 +114,8 @@ def difference_std(s1, s2):
         s2: (N_2,D) Sample drawn from distribution Q
         return: difference between the stds
     """
-    s1_std = np.std(s1, axis=1)
-    s2_std = np.std(s2, axis=1)
-    print(s1_std.shape, s2_std.shape)
-    return np.abs(np.mean(s1_std - s2_std))
+    s1_std, s2_std = np.std(s1, axis=0), np.std(s2, axis=0)
+    return np.mean(np.abs(s1_std - s2_std))
 
 def difference_var(s1, s2):
     """ Metric that compares the variances of the samples
@@ -114,4 +123,5 @@ def difference_var(s1, s2):
         s2: (N_2,D) Sample drawn from distribution Q
         return: difference between the variances
     """
-    return np.abs(np.mean(np.var(s1, axis=1) - np.var(s2, axis=1)))
+    s1_var, s2_var = np.var(s1, axis=0), np.var(s2, axis=0)
+    return np.mean(np.abs(s1_var - s2_var))
