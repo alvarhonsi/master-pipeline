@@ -20,6 +20,9 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--eval', help='Evaluate model', action='store_true')
     args = parser.parse_args()
 
+    if not args.generate and not args.train and not args.eval:
+        parser.error("at least one of --generate or --train or --eval is required")
+
     # Set base directory
     BASE_DIR = args.directory
     if not os.path.exists(f"{BASE_DIR}"):
@@ -28,7 +31,6 @@ if __name__ == "__main__":
     GENERATE = args.generate
     TRAIN = args.train
     EVAL = args.eval
-    ALL = not GENERATE and not TRAIN and not EVAL
 
     # Load configs
     if not os.path.exists(f"{BASE_DIR}/config.ini"):
@@ -57,7 +59,7 @@ if __name__ == "__main__":
     for p in dataset_profiles:
         config = dataset_configs[p]
 
-        if GENERATE or ALL:
+        if GENERATE:
             if not os.path.exists(f"{BASE_DIR}/datasets"):
                 os.mkdir(f"{BASE_DIR}/datasets")
             generate.gen(config, f"{BASE_DIR}/datasets")
@@ -69,13 +71,13 @@ if __name__ == "__main__":
         dataset_config = dataset_configs[config["DATASET"]]
 
         # Train model
-        if TRAIN or ALL:
+        if TRAIN:
             if not os.path.exists(f"{BASE_DIR}/{NAME}"):
                 os.mkdir(f"{BASE_DIR}/{NAME}")
             inference_model = train.train(config, f"{BASE_DIR}")
 
         # Evaluate model
-        if EVAL or ALL:
+        if EVAL:
             if not os.path.exists(f"{BASE_DIR}/{NAME}"):
                 os.mkdir(f"{BASE_DIR}/{NAME}")
             eval.eval(config, dataset_config, f"{BASE_DIR}")

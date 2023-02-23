@@ -7,11 +7,6 @@ import time
 from datetime import timedelta
 from abc import ABC, abstractmethod
 
-def _as_tuple(x):
-    if isinstance(x, (list, tuple)):
-        return x
-    return x,
-
 class BayesianInferenceModel(ABC):
     def __init__(self, model):
         self.model = model
@@ -26,10 +21,24 @@ class BayesianInferenceModel(ABC):
         """Returns predictions for X"""
         raise NotImplementedError
 
-    @abstractmethod
-    def get_error(self, X, y, num_predictions=1):
-        """Returns error for X and y (RMSE)"""
-        raise NotImplementedError
+    def get_error(self, X, y, num_predictions=100):
+        X, y = X.to(self.device), y.to(self.device)
+
+        predictions = self.predict(X, num_predictions=num_predictions)
+        mean_predictions = torch.mean(predictions, dim=0)
+        rmse = (mean_predictions - y).pow(2).mean().sqrt()
+
+        return rmse.item()
+
+    def evaluate(self, dataloader, num_predictions=100):
+        rmse = 0
+        for X, y in dataloader:
+            X, y = X.to(self.device), y.to(self.device)
+            rmse += self.get_error(X, y, num_predictions=num_predictions)
+
+        rmse /= len(dataloader)
+
+        return rmse
 
     @abstractmethod
     def save(self, path):
@@ -103,26 +112,6 @@ class MCMCInferenceModel(BayesianInferenceModel):
         y_pred = predictions["obs"]
 
         return y_pred
-
-    def get_error(self, X, y, num_predictions=1):
-        X, y = X.to(self.device), y.to(self.device)
-
-        predictions = self.predict(X, num_predictions=num_predictions)
-        mean_predictions = torch.mean(predictions, dim=0)
-        rmse = (mean_predictions - y).pow(2).mean().sqrt()
-
-        return rmse.item()
-
-    def evaluate(self, dataloader, num_predictions=1):
-        rmse = 0
-        for X, y in dataloader:
-            X, y = X.to(self.device), y.to(self.device)
-
-            rmse += self.get_error(X, y, num_predictions=num_predictions)
-
-        rmse /= len(dataloader)
-
-        return rmse
 
     def save(self, path):
         if self.mcmc is None:
@@ -215,25 +204,6 @@ class SVIInferenceModel(BayesianInferenceModel):
         predictions = predictive(X)
 
         return predictions["obs"]
-
-    def get_error(self, X, y, num_predictions=100):
-        X, y = X.to(self.device), y.to(self.device)
-
-        predictions = self.predict(X, num_predictions=num_predictions)
-        mean_predictions = torch.mean(predictions, dim=0)
-        rmse = (mean_predictions - y).pow(2).mean().sqrt()
-
-        return rmse.item()
-
-    def evaluate(self, dataloader, num_predictions=100):
-        rmse = 0
-        for X, y in dataloader:
-            X, y = X.to(self.device), y.to(self.device)
-            rmse += self.get_error(X, y, num_predictions=num_predictions)
-
-        rmse /= len(dataloader)
-
-        return rmse
 
     def save(self, path):
         if self.svi is None:
