@@ -197,10 +197,6 @@ def eval(config, dataset_config, DIR, inference_model=None):
     #results["test_in_domain_rmse"] = np.float64(test_in_domain_rmse)
     #results["test_out_domain_rmse"] = np.float64(test_out_domain_rmse)
 
-    #results["baseline"] = evaluate_posterior(normal_samples, data_samples)
-    #results["baseline_in_domain"] = evaluate_posterior(normal_in_domain_samples, data_in_domain_samples)
-    #results["baseline_out_domain"] = evaluate_posterior(normal_out_domain_samples, data_out_domain_samples)
-
     results["predictive"] = evaluate_posterior(pred_samples, data_samples)
     results["predictive_in_domain"] = evaluate_posterior(pred_in_domain_samples, data_in_domain_samples)
     results["predictive_out_domain"] = evaluate_posterior(pred_out_domain_samples, data_out_domain_samples)
