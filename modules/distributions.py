@@ -56,7 +56,10 @@ class DataDistribution(SamplableDistribution):
 
     def sample(self, num_samples) -> torch.Tensor:
         ys = self.func(self.x).unsqueeze(0) # calc y values [x_samples, 1]
-        distributions = Normal(self.mu, self.std) # create normal distribution with mean and std
-        noise = distributions.sample(sample_shape=(num_samples, self.x.shape[0])) # sample noise [num_dist_samples, x_samples]
+        if self.std == 0.0:
+            noise = torch.zeros(num_samples, self.x.shape[0])
+        else:
+            distributions = Normal(self.mu, self.std) # create normal distribution with mean and std
+            noise = distributions.sample(sample_shape=(num_samples, self.x.shape[0])) # sample noise [num_dist_samples, x_samples]
         samples = torch.add(noise, ys) # add y values to noise -> [num_dist_samples, x_samples]
         return samples

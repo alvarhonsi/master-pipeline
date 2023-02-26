@@ -61,6 +61,9 @@ def gen(dataset_config, DIR):
     np.savetxt(f"{DIR}/{NAME}/test_out_domain.csv", test_out_domain_complete, delimiter=",")
 
     # Visualize datasets
+    if SIGMA == 0:
+        return
+    
     sample_train_x = train[0][[0]]
     func = data_functions[FUNC]
     sample_train_y = func(sample_train_x)

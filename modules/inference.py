@@ -6,6 +6,7 @@ from collections import defaultdict
 import time
 from datetime import timedelta
 from abc import ABC, abstractmethod
+from tqdm.auto import trange, tqdm
 
 class BayesianInferenceModel(ABC):
     def __init__(self, model):
@@ -16,10 +17,12 @@ class BayesianInferenceModel(ABC):
         """Fits training data to inference model"""
         raise NotImplementedError
 
-    @abstractmethod
     def predict(self, X, num_predictions=1):
-        """Returns predictions for X"""
-        raise NotImplementedError
+        X = X.to(self.device)
+        predictive = self.get_predictive(num_predictions=num_predictions)
+        predictions = predictive(X)
+
+        return predictions["obs"]
 
     def get_error(self, X, y, num_predictions=100):
         X, y = X.to(self.device), y.to(self.device)
@@ -98,20 +101,13 @@ class MCMCInferenceModel(BayesianInferenceModel):
 
         return train_stats
 
-    def predict(self, X, num_predictions=1):
+    def get_predictive(self, num_predictions=1):
         if self.mcmc is None:
             raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
 
-        X = X.to(self.device)
-
         weight_samples = self.mcmc.get_samples(num_samples=num_predictions)
-
-        predictive = Predictive(self.model, weight_samples, return_sites=("obs", ))
-        predictions = predictive(X)
-
-        y_pred = predictions["obs"]
-
-        return y_pred
+        predictive = Predictive(self.model, weight_samples, return_sites=("obs", "_RETURN"))
+        return predictive
 
     def save(self, path):
         if self.mcmc is None:
@@ -163,7 +159,8 @@ class SVIInferenceModel(BayesianInferenceModel):
         
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
 
-        for epoch in range(1, self.epochs + 1):
+        bar = trange(self.epochs, desc="Epoch", leave=True)
+        for epoch in bar:
             elbo = 0
             rmse = 0
             for X, y in dataloader:
@@ -179,12 +176,11 @@ class SVIInferenceModel(BayesianInferenceModel):
             elbo = elbo / len(dataloader)
             rmse = rmse / len(dataloader)
 
+            bar.set_description(f'Training: [EPOCH {epoch}]')
+            bar.set_postfix(loss=f'{loss:.3f}', rmse=f'{rmse:.3f}')
+
             train_stats["elbo_epoch"].append(elbo)
             train_stats["rmse_epoch"].append(rmse)
-
-            if epoch % 50 == 0 or epoch == 1:
-                td = timedelta(seconds=round(time.time() - start))
-                print(f"[{td}][epoch {epoch}] elbo: {elbo} rmse: {rmse}")
 
             if callback is not None and callback(elbo, epoch):
                 break
@@ -194,16 +190,12 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         return train_stats
 
-    def predict(self, X, num_predictions=1):
+    def get_predictive(self, num_predictions=1):
         if self.svi is None:
             raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
-
-        X = X.to(self.device)
-
-        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", ))
-        predictions = predictive(X)
-
-        return predictions["obs"]
+            
+        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", "_RETURN", "sigma"))
+        return predictive
 
     def save(self, path):
         if self.svi is None:

@@ -57,6 +57,37 @@ def evaluate_posterior(posterior_samples, data_samples):
 
     return results
 
+def load_model(dir, config):
+    NAME = config["NAME"]
+    X_DIM = config.getint("X_DIM")
+    Y_DIM = config.getint("Y_DIM")
+    DEVICE = config["DEVICE"]
+    MODEL_TYPE = config["MODEL_TYPE"]
+    HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
+    INFERENCE_TYPE = config["INFERENCE_TYPE"]
+    MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
+    MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
+    MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
+
+
+
+    BNN = model_types[MODEL_TYPE]
+    model = BNN(X_DIM, Y_DIM, HIDDEN_FEATURES, device=DEVICE)
+
+    if INFERENCE_TYPE == "svi":
+        guide = AutoDiagonalNormal(model)
+        optim = pyro.optim.Adam({"lr": 1e-3})
+        inference_model = SVIInferenceModel(model, guide, optim, device=DEVICE)
+    elif INFERENCE_TYPE == "mcmc":
+        mcmc_kernel = NUTS(model)
+        inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
+    else:
+        raise ValueError(f"Invalid inference type: {INFERENCE_TYPE}")
+
+    inference_model.load(f"{dir}/{NAME}/model")
+
+    return inference_model
+
 def eval(config, dataset_config, DIR, inference_model=None):
     NAME = config["NAME"]
     SEED = config.getint("SEED")
@@ -110,21 +141,7 @@ def eval(config, dataset_config, DIR, inference_model=None):
     test_out_domain_dataloader = DataLoader(test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     
     # Load model
-    if inference_model is None:
-        BNN = model_types[MODEL_TYPE]
-        model = BNN(X_DIM, Y_DIM, HIDDEN_FEATURES, device=DEVICE)
-
-        if INFERENCE_TYPE == "svi":
-            guide = AutoDiagonalNormal(model)
-            optim = pyro.optim.Adam({"lr": 1e-3})
-            inference_model = SVIInferenceModel(model, guide, optim, device=DEVICE)
-        elif INFERENCE_TYPE == "mcmc":
-            mcmc_kernel = NUTS(model)
-            inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
-        else:
-            raise ValueError(f"Invalid inference type: {INFERENCE_TYPE}")
-
-        inference_model.load(f"{DIR}/{NAME}/model")
+    inference_model = load_model(DIR, config) if inference_model is None else inference_model
 
     # Ready results directory
     if not os.path.exists(f"{DIR}/{NAME}/results"):

@@ -9,6 +9,9 @@ import time
 from datetime import timedelta
 from abc import ABC, abstractmethod
 
+## Skal noise for bias og sigma være 1 eller 10.?
+## 10 ser ut til å gjøre at modellene ikke trener riktig
+
 class BayesianLinear(PyroModule):
     def __init__(self, in_features, out_features, device="cpu"):
         super().__init__()
@@ -52,7 +55,7 @@ class BayesianRegressor(PyroModule):
         out = self.fc(x)
         mu = out.squeeze().to(self.device)
 
-        sigma = pyro.sample("sigma", dist.Uniform(0., 10.)).to(self.device)
+        sigma = pyro.sample("sigma", dist.Uniform(0., 1.)).to(self.device)
         with pyro.plate("data", out.shape[0], device=self.device):
             obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
         return mu

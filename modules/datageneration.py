@@ -13,8 +13,8 @@ def linear_func(x) -> np.array:
 def polynomial_func(x) -> np.array:
     return 0.5*x**2 - 3*x + 1
 
-def sinusoidal_func(x) -> np.array:
-    return np.sin(x) * 2 + 3
+def sinusoidal_func(xs) -> np.array:
+    return np.squeeze(np.sin(xs.sum(axis=1)) * 2 + 3)
 
 
 def normal_percentile(mu, sigma, percentile) -> float:
@@ -67,7 +67,9 @@ def data_gen(sample_size, func, mu, sigma, sample_space, void_space=None):
     else:
         x = np.random.uniform(lower, upper, sample_size)
 
-    y = func(x) + np.random.normal(mu, sigma**2, sample_size[0])
+    res = func(x)
+    noise = np.random.normal(mu, sigma**2, sample_size[0])
+    y = res + noise
     return x, y
 
 def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10), void_space=None):
