@@ -79,7 +79,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc = None
         self.samples = None
 
-    def fit(self, dataloader):
+    def fit(self, dataloader, time=False):
         train_stats =  {
             "rmse": [],
             "val_rmse": [],
@@ -154,7 +154,7 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = None
 
-    def fit(self, dataloader, callback=None, closed_form_kl=True):
+    def fit(self, dataloader, callback=None, closed_form_kl=True, time=False):
         train_stats =  {
             "elbo_minibatch": [],
             "elbo_epoch": [],
@@ -178,11 +178,19 @@ class SVIInferenceModel(BayesianInferenceModel):
             elbo = 0
             rmse = 0
             for X, y in dataloader:
+                ms = time.time()
+                print("start minibatch", ms)
                 X, y = X.to(self.device), y.to(self.device)
+                print("data to device", time.time() - ms)
                 loss = self.svi.step(X, y)
+                print("step", time.time() - ms)
                 error = self.get_rmse(X, y, num_predictions=1)
+                print("rmse", time.time() - ms)
                 elbo += loss
                 rmse += error
+
+                print("end minibatch", time.time() - ms)
+                print("")
 
                 train_stats["elbo_minibatch"].append(loss)
                 train_stats["rmse_minibatch"].append(error)
