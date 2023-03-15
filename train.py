@@ -58,8 +58,8 @@ def train(config, DIR):
     (x_train, y_train), (x_val, y_val), _, _, _ = load_data(f"{DIR}/datasets/{DATASET}")
 
     # Ready model directory
-    if not os.path.exists(f"{DIR}/{NAME}/model"):
-        os.mkdir(f"{DIR}/{NAME}/model")
+    if not os.path.exists(f"{DIR}/models/{NAME}"):
+        os.mkdir(f"{DIR}/models/{NAME}")
 
     # Check if GPU is available
     if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
@@ -69,8 +69,8 @@ def train(config, DIR):
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
-    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=4)
+    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=4)
 
     # Create model
     try:
@@ -101,8 +101,8 @@ def train(config, DIR):
     train_stats = inference_model.fit(train_dataloader)
 
     if SAVE_MODEL:
-        inference_model.save(f"{DIR}/{NAME}/model")
-        with open(f"{DIR}/{NAME}/model/train_stats.json", "w") as json_file:
+        inference_model.save(f"{DIR}/models/{NAME}")
+        with open(f"{DIR}/models/{NAME}/train_stats.json", "w") as json_file:
             json.dump(train_stats, json_file, indent=4)
 
     return inference_model

@@ -24,7 +24,7 @@ class BayesianInferenceModel(ABC):
 
         return predictions["obs"]
 
-    def get_error(self, X, y, num_predictions=100):
+    def get_rmse(self, X, y, num_predictions=100):
         X, y = X.to(self.device), y.to(self.device)
 
         predictions = self.predict(X, num_predictions=num_predictions)
@@ -33,15 +33,29 @@ class BayesianInferenceModel(ABC):
 
         return rmse.item()
 
-    def evaluate(self, dataloader, num_predictions=100):
-        rmse = 0
+    def get_mae(self, X, y, num_predictions=100):
+        X, y = X.to(self.device), y.to(self.device)
+
+        predictions = self.predict(X, num_predictions=num_predictions)
+        mean_predictions = torch.mean(predictions, dim=0)
+        mae = (mean_predictions - y).abs().mean()
+
+        return mae.item()
+
+    def evaluate(self, dataloader, metric="rmse", num_predictions=100):
+        error = 0
         for X, y in dataloader:
             X, y = X.to(self.device), y.to(self.device)
-            rmse += self.get_error(X, y, num_predictions=num_predictions)
+            if metric == "rmse":
+                error += self.get_rmse(X, y, num_predictions=num_predictions)
+            elif metric == "mae":
+                error += self.get_mae(X, y, num_predictions=num_predictions)
+            else:
+                raise ValueError(f"Invalid metric: {metric}")
 
-        rmse /= len(dataloader)
+        error /= len(dataloader)
 
-        return rmse
+        return error
 
     @abstractmethod
     def save(self, path):
@@ -89,7 +103,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
 
-        train_rmse = self.get_error(X, y)
+        train_rmse = self.get_rmse(X, y)
 
         td = timedelta(seconds=round(time.time() - start))
         print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 2)}")
@@ -166,7 +180,7 @@ class SVIInferenceModel(BayesianInferenceModel):
             for X, y in dataloader:
                 X, y = X.to(self.device), y.to(self.device)
                 loss = self.svi.step(X, y)
-                error = self.get_error(X, y, num_predictions=1)
+                error = self.get_rmse(X, y, num_predictions=1)
                 elbo += loss
                 rmse += error
 

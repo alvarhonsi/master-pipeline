@@ -62,6 +62,7 @@ if __name__ == "__main__":
         if GENERATE:
             if not os.path.exists(f"{BASE_DIR}/datasets"):
                 os.mkdir(f"{BASE_DIR}/datasets")
+                
             generate.gen(config, f"{BASE_DIR}/datasets")
 
     # Run pipeline for each config except DEFAULT
@@ -72,12 +73,14 @@ if __name__ == "__main__":
 
         # Train model
         if TRAIN:
-            if not os.path.exists(f"{BASE_DIR}/{NAME}"):
-                os.mkdir(f"{BASE_DIR}/{NAME}")
+            if not os.path.exists(f"{BASE_DIR}/models"):
+                os.mkdir(f"{BASE_DIR}/models")
+
             inference_model = train.train(config, f"{BASE_DIR}")
 
         # Evaluate model
         if EVAL:
-            if not os.path.exists(f"{BASE_DIR}/{NAME}"):
-                os.mkdir(f"{BASE_DIR}/{NAME}")
+            if not os.path.exists(f"{BASE_DIR}/results"):
+                os.mkdir(f"{BASE_DIR}/results")
+
             eval.eval(config, dataset_config, f"{BASE_DIR}")

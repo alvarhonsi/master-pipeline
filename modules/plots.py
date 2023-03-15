@@ -74,23 +74,29 @@ def plot_distribution(samples, save_path=None, ax=None, figsize=(10,10)):
     if save_path:
         plt.savefig(save_path)
 
-def plot_comparison(post_sample, data_sample, save_path=None, ax=None, figsize=(10,10)):
+def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10,10)):
     sns.set_style("darkgrid")
     sns.set_context("paper")
 
+    standalone = False
     if ax is None:
+        standalone = True   
+
+    if standalone:
         fig, ax = plt.subplots(figsize=figsize)
-
-    sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
-    sns.kdeplot(post_sample, fill=True, ax=ax, label="Posterior")
-    
-
-    if ax is None:
-        ax.set_ylabel("Density")
-        ax.set_xlabel("y")
+        ax.set_ylabel(y_label)
+        ax.set_xlabel(x_label)   
     else:
         ax.set_ylabel("")
         ax.set_xlabel("")
+        
+
+    sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
+    sns.kdeplot(post_sample, fill=True, ax=ax, label="Posterior")
+
+    if standalone:
+        ax.set_title(title)
+        ax.legend()
     
     if save_path:
         plt.savefig(save_path)

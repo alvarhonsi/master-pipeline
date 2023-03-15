@@ -23,8 +23,8 @@ def gen(dataset_config, DIR):
     IN_DOMAIN_SAMPLE_SPACE = dataset_config.gettuple("IN_DOMAIN_SAMPLE_SPACE")
     OUT_DOMAIN_SAMPLE_SPACE = dataset_config.gettuple("OUT_DOMAIN_SAMPLE_SPACE")
     FUNC = dataset_config["DATA_FUNC"]
-    MU = dataset_config.getint("MU")
-    SIGMA = dataset_config.getint("SIGMA")
+    MU = dataset_config.getfloat("MU")
+    SIGMA = dataset_config.getfloat("SIGMA")
         
 
     # Reproducibility
@@ -60,9 +60,6 @@ def gen(dataset_config, DIR):
     np.savetxt(f"{DIR}/{NAME}/test_in_domain.csv", test_in_domain_complete, delimiter=",")
     np.savetxt(f"{DIR}/{NAME}/test_out_domain.csv", test_out_domain_complete, delimiter=",")
 
-    # Visualize datasets
-    if SIGMA == 0:
-        return
     
     sample_train_x = train[0][[0]]
     func = data_functions[FUNC]

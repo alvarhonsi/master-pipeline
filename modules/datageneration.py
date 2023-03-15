@@ -4,21 +4,36 @@ import torch
 import json
 import scipy
 
-def identity(x) -> np.array:
-    return x
+def identity(x, noise=0) -> np.array:
+    return x + noise
 
-def linear_func(x) -> np.array:
-    return 2*x + 1
+def linear_func(x, noise=0) -> np.array:
+    return (2*x + 1) + noise
 
-def polynomial_func(x) -> np.array:
-    return 0.5*x**2 - 3*x + 1
+def polynomial_func(x, noise=0) -> np.array:
+    return (0.5*x**2 - 3*x + 1) + noise
 
-def sinusoidal_func(xs) -> np.array:
-    return np.squeeze(np.sin(xs.sum(axis=1)) * 2 + 3)
+def sinusoidal_func(xs, noise=0) -> np.array:
+    return np.squeeze(np.sin(xs.sum(axis=1)) * 2 + 3) + noise
 
+def sinusoidal_combination(x, noise=0) -> np.array:
+    if len(x.shape) == 2 and x.shape[1] > 1:
+        raise Exception("Function only takes 1D input")
+    if len(x.shape) == 2:
+        x = x.reshape(-1)
+
+    return np.squeeze(x + 0.3 * np.sin(2 * (x + noise*0.6)) + 0.3 * np.sin(4 * (x + noise*0.4)) + noise) 
 
 def normal_percentile(mu, sigma, percentile) -> float:
     return mu + sigma * scipy.stats.norm.ppf(percentile)
+
+def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
+
+    return x1 + np.sin(x2 + x3) + np.sin(x4 * x5) + np.sin(x6 + x7) + np.sin(x8 * x9) + x10 + noise
+
+def sum(xs, noise=0) -> np.array:
+    return np.sum(xs, axis=1) + noise
 
 '''
     Dictionary of functions that can be used in data_gen
@@ -29,13 +44,9 @@ data_functions = {
     "linear": linear_func,
     "polynomial": polynomial_func,
     "sinusoidal": sinusoidal_func,
-    "sum": lambda xs : xs.sum(axis=1),
-    "product": lambda xs : xs.prod(axis=1),
-    "mean": lambda xs : xs.mean(axis=1),
-    "max": lambda xs : xs.max(axis=1),
-    "min": lambda xs : xs.min(axis=1),
-    "sqrt_of_sum": lambda xs : np.sqrt(xs.sum(axis=1)),
-    "euclidean_norm": lambda xs : np.sqrt((xs**2).sum(axis=1)), #sqrt of sum of squares
+    "sinusoidal_combination": sinusoidal_combination,
+    "sum": sum,
+    "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
 } 
     
 '''
@@ -67,9 +78,8 @@ def data_gen(sample_size, func, mu, sigma, sample_space, void_space=None):
     else:
         x = np.random.uniform(lower, upper, sample_size)
 
-    res = func(x)
-    noise = np.random.normal(mu, sigma**2, sample_size[0])
-    y = res + noise
+    noise = np.random.normal(mu, sigma, size=(sample_size[0],))
+    y = func(x, noise)
     return x, y
 
 def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10), void_space=None):

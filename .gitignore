@@ -1,4 +1,8 @@
 /tyxe/*
+/experiments/*/models/checkpoint.pt
+/experiments/*/models/params.pt
+/experiments/*/datasets/*
+/experiments/*/samples/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

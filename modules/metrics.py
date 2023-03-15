@@ -23,9 +23,13 @@ def KL_div_knn_estimation(s1, s2, k=1):
     """
     verify_sample_shapes(s1, s2, k)
 
+    print("kl shapoe:", s1.shape, s2.shape)
+
     n, m = len(s1), len(s2)
     d = float(s1.shape[1])
     D = np.log(m / (n - 1))
+
+    print("n: ", n, "m: ", m, "d: ", d, "D: ", D)
 
     nu_d,  nu_i   = KDTree(s2).query(s1, k)
     rho_d, rhio_i = KDTree(s1).query(s1, k+1)
@@ -70,7 +74,7 @@ def KLdivergence(x, y):
     n,d = x.shape
     m,dy = y.shape
 
-    print(x.shape, y.shape)
+    print("kl shapoe:", x.shape, y.shape)
 
     assert(d == dy)
 
@@ -99,29 +103,51 @@ def KLdivergence(x, y):
 
     return -np.log(a).sum() * d / n + np.log(b)
 
+
+
+#Assumes normal distributions
+def KL_divergance_normal(dist1, dist2):
+    '''
+    x : 2D array (n,d)
+    Samples from distribution P, which typically represents the true
+    distribution.
+    y : 2D array (m,d)
+    Samples from distribution Q, which typically represents the approximate
+    distribution.
+    Returns
+    '''
+    mu1, mu2 = np.mean(dist1, axis=0), np.mean(dist2, axis=0)
+    sigma1, sigma2 = np.std(dist1, axis=0), np.std(dist2, axis=0)
+    kl_div = np.log(sigma2/sigma1) + (sigma1**2 + (mu1 - mu2)**2)/(2*sigma2**2) - 0.5
+
+    return kl_div
+
+
 def difference_mean(s1, s2):
     """ Metric that compares the mean of the samples
         s1: (N_1,D) Sample drawn from distribution P
         s2: (N_2,D) Sample drawn from distribution Q
-        return: difference between the means
+        return: mean difference between means of each distribution
     """
     s1_mean, s2_mean = np.mean(s1, axis=0), np.mean(s2, axis=0)
-    return np.mean(np.abs(s1_mean - s2_mean))
+    return s1_mean - s2_mean
+
+def standardized_mean_difference(s1, s2):
+    """ Metric that compares the mean of the samples
+        s1: (N_1,D) Sample drawn from distribution P
+        s2: (N_2,D) Sample drawn from distribution Q
+        return: mean difference between means of each distribution
+    """
+    s1_mean, s2_mean = np.mean(s1, axis=0), np.mean(s2, axis=0)
+    s1_std, s2_std = np.std(s1, axis=0), np.std(s2, axis=0)
+    standardized_diff = (s1_mean - s2_mean) / np.sqrt(np.power(s1_std, 2) + np.power(s2_std, 2))
+    return standardized_diff
 
 def difference_std(s1, s2):
     """ Metric that compares the std of the samples
         s1: (N_1,D) Sample drawn from distribution P
         s2: (N_2,D) Sample drawn from distribution Q
-        return: difference between the stds
+        return: mean difference between std of each distribution
     """
     s1_std, s2_std = np.std(s1, axis=0), np.std(s2, axis=0)
-    return np.mean(np.abs(s1_std - s2_std))
-
-def difference_var(s1, s2):
-    """ Metric that compares the variances of the samples
-        s1: (N_1,D) Sample drawn from distribution P
-        s2: (N_2,D) Sample drawn from distribution Q
-        return: difference between the variances
-    """
-    s1_var, s2_var = np.var(s1, axis=0), np.var(s2, axis=0)
-    return np.mean(np.abs(s1_var - s2_var))
+    return s1_std - s2_std

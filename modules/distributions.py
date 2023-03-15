@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 import torch
 from pyro.infer import Predictive
 from pyro.distributions import Normal
@@ -53,8 +54,20 @@ class DataDistribution(SamplableDistribution):
         self.mu = mu
         self.std = std
         self.x = x
+        self.x_samples = x.shape[0]
 
     def sample(self, num_samples) -> torch.Tensor:
+        samples = torch.zeros(num_samples, self.x_samples)
+        for i in range(self.x_samples):
+            x = self.x[i].unsqueeze(0).repeat(num_samples, 1).cpu().numpy()
+            noise = np.random.normal(self.mu, self.std, size=(num_samples,))
+            y = self.func(x, noise)
+
+            samples[:, i] = torch.from_numpy(y)
+        return samples
+
+        
+    '''def sample(self, num_samples) -> torch.Tensor:
         ys = self.func(self.x).unsqueeze(0) # calc y values [x_samples, 1]
         if self.std == 0.0:
             noise = torch.zeros(num_samples, self.x.shape[0])
@@ -62,4 +75,4 @@ class DataDistribution(SamplableDistribution):
             distributions = Normal(self.mu, self.std) # create normal distribution with mean and std
             noise = distributions.sample(sample_shape=(num_samples, self.x.shape[0])) # sample noise [num_dist_samples, x_samples]
         samples = torch.add(noise, ys) # add y values to noise -> [num_dist_samples, x_samples]
-        return samples
+        return samples '''
