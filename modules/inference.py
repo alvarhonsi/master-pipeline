@@ -79,7 +79,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc = None
         self.samples = None
 
-    def fit(self, dataloader, time=False):
+    def fit(self, dataloader, time_steps=False):
         train_stats =  {
             "rmse": [],
             "val_rmse": [],
@@ -154,7 +154,7 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = None
 
-    def fit(self, dataloader, callback=None, closed_form_kl=True, time=False):
+    def fit(self, dataloader, callback=None, closed_form_kl=True, time_steps=False):
         train_stats =  {
             "elbo_minibatch": [],
             "elbo_epoch": [],

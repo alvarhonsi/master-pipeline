@@ -77,7 +77,7 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/models"):
                 os.mkdir(f"{BASE_DIR}/models")
 
-            inference_model = train.train(config, f"{BASE_DIR}", time=args.time)
+            inference_model = train.train(config, f"{BASE_DIR}", time_steps=args.time)
 
         # Evaluate model
         if EVAL:
