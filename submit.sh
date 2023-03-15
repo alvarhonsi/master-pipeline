@@ -12,9 +12,11 @@
 #SBATCH --output=slurm-%j.out    # %j is the jobid
 #SBATCH --export=ALL
 
-conda activate master
-
 echo "Running on $SLURM_JOB_NODELIST"
+
+# ACTIVATE ANACONDA
+eval "$(conda shell.bash hook)"
+conda activate ai-benchmark
 
 python run-pipeline.py --dir /experiments/model-test/ --generate --train --eval
 
