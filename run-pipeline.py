@@ -18,7 +18,6 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--generate', help='Generate datasets', action='store_true')
     parser.add_argument('-t', '--train', help='Train model', action='store_true')
     parser.add_argument('-e', '--eval', help='Evaluate model', action='store_true')
-    parser.add_argument('-ti', '--time', help='Time model', action='store_true')
     args = parser.parse_args()
 
     if not args.generate and not args.train and not args.eval:
@@ -77,7 +76,7 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/models"):
                 os.mkdir(f"{BASE_DIR}/models")
 
-            inference_model = train.train(config, f"{BASE_DIR}", time_steps=args.time)
+            inference_model = train.train(config, f"{BASE_DIR}")
 
         # Evaluate model
         if EVAL:

@@ -79,10 +79,9 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc = None
         self.samples = None
 
-    def fit(self, dataloader, time_steps=False):
+    def fit(self, dataloader):
         train_stats =  {
-            "rmse": [],
-            "val_rmse": [],
+            "train_rmse": 0,
             "time": 0,
         }
 
@@ -103,12 +102,12 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
 
-        train_rmse = self.get_rmse(X, y)
+        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=1000)
 
         td = timedelta(seconds=round(time.time() - start))
         print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 2)}")
 
-        train_stats["rmse"].append(train_rmse)
+        train_stats["rmse"] = train_rmse
 
         end = time.time()
         train_stats["time"] = end - start
@@ -154,12 +153,11 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = None
 
-    def fit(self, dataloader, callback=None, closed_form_kl=True, time_steps=False):
+    def fit(self, dataloader, callback=None, closed_form_kl=True):
         train_stats =  {
             "elbo_minibatch": [],
             "elbo_epoch": [],
-            "rmse_minibatch": [],
-            "rmse_epoch": [],
+            "train_rmse": 0,
             "time": 0,
         }
 
@@ -176,36 +174,25 @@ class SVIInferenceModel(BayesianInferenceModel):
         bar = trange(self.epochs, desc="Epoch", leave=True)
         for epoch in bar:
             elbo = 0
-            rmse = 0
             for X, y in dataloader:
-                ms = time.time()
-                print("start minibatch", ms)
                 X, y = X.to(self.device), y.to(self.device)
-                print("data to device", time.time() - ms)
                 loss = self.svi.step(X, y)
-                print("step", time.time() - ms)
-                error = self.get_rmse(X, y, num_predictions=1)
-                print("rmse", time.time() - ms)
                 elbo += loss
-                rmse += error
-
-                print("end minibatch", time.time() - ms)
-                print("")
 
                 train_stats["elbo_minibatch"].append(loss)
-                train_stats["rmse_minibatch"].append(error)
 
             elbo = elbo / len(dataloader)
-            rmse = rmse / len(dataloader)
 
             bar.set_description(f'Training: [EPOCH {epoch}]')
-            bar.set_postfix(loss=f'{loss:.3f}', rmse=f'{rmse:.3f}')
+            bar.set_postfix(loss=f'{loss:.3f}')
 
             train_stats["elbo_epoch"].append(elbo)
-            train_stats["rmse_epoch"].append(rmse)
 
             if callback is not None and callback(elbo, epoch):
                 break
+
+        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=1000)
+        train_stats["train_rmse"] = train_rmse
 
         end = time.time()
         train_stats["time"] = end - start
