@@ -213,9 +213,9 @@ def eval(config, dataset_config, DIR, inference_model=None):
     np.savetxt(f"{DIR}/results/{NAME}/samples/predictive_out_domain_samples.csv", pred_out_domain_samples, delimiter=",")
 
     # Sanity Checks
-    plot_comparison_grid(pred_samples, data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Test", save_path=f"{DIR}/results/{NAME}/samples/test_sanity.png")
-    plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", save_path=f"{DIR}/results/{NAME}/samples/test_in_domain_sanity.png")
-    plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", save_path=f"{DIR}/results/{NAME}/samples/test_out_domain_sanity.png")
+    plot_comparison_grid(pred_samples, data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Test", save_path=f"{DIR}/results/{NAME}/test_sanity.png")
+    plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", save_path=f"{DIR}/results/{NAME}/test_in_domain_sanity.png")
+    plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", save_path=f"{DIR}/results/{NAME}/test_out_domain_sanity.png")
     
 
     # Evaluate
