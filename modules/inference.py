@@ -105,9 +105,9 @@ class MCMCInferenceModel(BayesianInferenceModel):
         train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=1000)
 
         td = timedelta(seconds=round(time.time() - start))
-        print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 2)}")
+        print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 4)}")
 
-        train_stats["rmse"] = train_rmse
+        train_stats["train_rmse"] = train_rmse
 
         end = time.time()
         train_stats["time"] = end - start
