@@ -1,5 +1,6 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
+from .metrics import KL_divergance_normal
 
 
 def lineplot(data, x_label=None, y_label=None, figsize=(10, 5), ax=None, save_path=None):
@@ -74,35 +75,35 @@ def plot_distribution(samples, save_path=None, ax=None, figsize=(10,10)):
     if save_path:
         plt.savefig(save_path)
 
-def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10,10)):
+def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10,10), kl_div=False):
     sns.set_style("darkgrid")
     sns.set_context("paper")
+
+    if kl_div:
+        kl = KL_divergance_normal(post_sample, data_sample)
+        title = f"KL-divergence: {kl:.4f}"
 
     standalone = False
     if ax is None:
         standalone = True   
 
     if standalone:
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.set_ylabel(y_label)
-        ax.set_xlabel(x_label)   
-    else:
-        ax.set_ylabel("")
-        ax.set_xlabel("")
-        
+        fig, ax = plt.subplots(figsize=figsize)   
 
     sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
     sns.kdeplot(post_sample, fill=True, ax=ax, label="Posterior")
+    ax.legend()
+    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label)
 
-    if standalone:
+    if title:
         ax.set_title(title)
-        ax.legend()
     
     if save_path:
         plt.savefig(save_path)
 
 """Plots a grid of comparisons between the posterior and data distributions"""
-def plot_comparison_grid(posterior_samples, data_samples, grid_size=(2,2), save_path=None, figsize=(10,10)):
+def plot_comparison_grid(posterior_samples, data_samples, title=None, grid_size=(2,2), save_path=None, figsize=(10,10), kl_div=False):
     assert posterior_samples.shape[1] == data_samples.shape[1]
     num_x = data_samples.shape[1]
     assert (grid_size[0] * grid_size[1]) <= num_x
@@ -113,16 +114,13 @@ def plot_comparison_grid(posterior_samples, data_samples, grid_size=(2,2), save_
     fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=figsize)
     axs = axs.flatten()
     fig.tight_layout()
-    fig.suptitle("Posterior vs Data Distributions", fontsize=15)
+    fig.suptitle(title, fontsize=15)
     fig.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9, hspace=0.4, wspace=0.4)
     fig.text(0.5, 0.04, 'Y', ha='center', fontsize=15)
     fig.text(0.04, 0.5, 'Density', va='center', rotation='vertical', fontsize=15)
 
     for i, ax in enumerate(axs):
-        plot_comparison(posterior_samples[:,i], data_samples[:,i], ax=ax)
-    
-    handles, labels = axs[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper right')    
+        plot_comparison(posterior_samples[:,i], data_samples[:,i], ax=ax, kl_div=kl_div)   
 
     if save_path:
         plt.savefig(save_path)

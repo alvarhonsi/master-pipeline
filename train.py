@@ -50,10 +50,6 @@ def train(config, DIR):
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    # Ready data directory
-    if not os.path.exists(f"{DIR}/{NAME}"):
-        os.mkdir(f"{DIR}/{NAME}")
-
     # Load data
     (x_train, y_train), (x_val, y_val), _, _, _ = load_data(f"{DIR}/datasets/{DATASET}")
 
