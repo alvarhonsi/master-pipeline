@@ -30,7 +30,7 @@ def normal_percentile(mu, sigma, percentile) -> float:
 def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
 
-    return x1 + np.sin(x2 + x3) + np.sin(x4 * x5) + np.sin(x6 + x7) + np.sin(x8 * x9) + x10 + noise
+    return 0*x1 + np.sin(x2 + x3) + np.sin(x4 * x5) + np.sin(x6 + x7) + np.sin(x8 * x9) + 0*x10 + noise
 
 def sum(xs, noise=0) -> np.array:
     return np.sum(xs, axis=1) + noise

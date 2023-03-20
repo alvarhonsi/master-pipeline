@@ -84,7 +84,8 @@ def train(config, DIR):
         optim = pyro.optim.Adam({"lr": LR})
         inference_model = SVIInferenceModel(model, guide, optim, EPOCHS, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
-        mcmc_kernel = NUTS(model, adapt_step_size=True, jit_compile=True)
+        #mcmc_kernel = NUTS(model, adapt_step_size=True, jit_compile=True)
+        mcmc_kernel = NUTS(model, adapt_step_size=True)
         #mcmc_kernel = HMC(model, adapt_step_size=True)
         inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, 
         num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
