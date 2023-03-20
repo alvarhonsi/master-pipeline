@@ -79,7 +79,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc = None
         self.samples = None
 
-    def fit(self, dataloader):
+    def fit(self, dataloader, val_dataloader=None):
         train_stats =  {
             "train_rmse": 0,
             "time": 0,
@@ -153,10 +153,11 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = None
 
-    def fit(self, dataloader, callback=None, closed_form_kl=True):
+    def fit(self, dataloader, val_dataloader, callback=None, closed_form_kl=True):
         train_stats =  {
             "elbo_minibatch": [],
             "elbo_epoch": [],
+            "val_rmse_epoch": [],
             "train_rmse": 0,
             "time": 0,
         }
@@ -183,10 +184,13 @@ class SVIInferenceModel(BayesianInferenceModel):
 
             elbo = elbo / len(dataloader)
 
+            val_rmse_epoch = self.evaluate(val_dataloader, metric="rmse", num_predictions=1000)
+
             bar.set_description(f'Training: [EPOCH {epoch}]')
-            bar.set_postfix(loss=f'{loss:.3f}')
+            bar.set_postfix(loss=f'{loss:.3f}', val_rmse=f'{val_rmse_epoch:.3f}')
 
             train_stats["elbo_epoch"].append(elbo)
+            train_stats["val_rmse_epoch"].append(val_rmse_epoch)
 
             if callback is not None and callback(elbo, epoch):
                 break

@@ -95,7 +95,7 @@ def train(config, DIR):
     # RUN TRAINING
     print('Using device: {}'.format(DEVICE))
     print(f'===== Training profile {NAME} =====')
-    train_stats = inference_model.fit(train_dataloader)
+    train_stats = inference_model.fit(train_dataloader, val_dataloader)
 
     if SAVE_MODEL:
         inference_model.save(f"{DIR}/models/{NAME}")
