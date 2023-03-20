@@ -18,6 +18,8 @@ from contextlib import contextmanager
 import os
 import argparse
 import json
+import time
+import datetime
 
 def draw_data_samples(dataloader, num_samples=10):
     xs, ys = [], []
@@ -153,6 +155,7 @@ def eval(config, dataset_config, DIR, inference_model=None):
     if not os.path.exists(f"{DIR}/results/{NAME}"):
         os.mkdir(f"{DIR}/results/{NAME}")
 
+    start = time.time()
     print(f"using device: {DEVICE}")
     print(f"====== evaluating profile {NAME} ======")
 
@@ -236,3 +239,7 @@ def eval(config, dataset_config, DIR, inference_model=None):
     # Save results
     with open(f"{DIR}/results/{NAME}/results.json", "w") as f:
         json.dump(results, f, indent=4)
+
+    # Get time and format to HH:MM:SS
+    elapsed_time = str(datetime.timedelta(seconds=time.time() - start))
+    print(f"Eval done in {elapsed_time}")
