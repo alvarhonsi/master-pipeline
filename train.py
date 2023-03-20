@@ -20,10 +20,10 @@ import functools
 from typing import Callable, Optional
 
 
-def train(config, DIR):
+def train(config, DIR, device=None):
 
     NAME = config["NAME"]
-    DEVICE = config["DEVICE"]
+    DEVICE = device if device != None else config["DEVICE"]
     SEED = config.getint("SEED")
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")

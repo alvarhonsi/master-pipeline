@@ -98,10 +98,10 @@ def load_model(dir, config):
 
     return inference_model
 
-def eval(config, dataset_config, DIR, inference_model=None):
+def eval(config, dataset_config, DIR, inference_model=None, device=None):
     NAME = config["NAME"]
     SEED = config.getint("SEED")
-    DEVICE = config["DEVICE"]
+    DEVICE = device if device != None else config["DEVICE"]
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")
     DATASET = config["DATASET"]
