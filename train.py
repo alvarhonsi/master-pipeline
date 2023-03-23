@@ -20,7 +20,7 @@ import functools
 from typing import Callable, Optional
 
 
-def train(config, DIR, device=None):
+def train(config, DIR, device=None, print_train=False):
 
     NAME = config["NAME"]
     DEVICE = device if device != None else config["DEVICE"]
@@ -95,7 +95,9 @@ def train(config, DIR, device=None):
     # RUN TRAINING
     print('Using device: {}'.format(DEVICE))
     print(f'===== Training profile {NAME} =====')
-    train_stats = inference_model.fit(train_dataloader, val_dataloader)
+    train_stats = inference_model.fit(train_dataloader, val_dataloader, print_every=50 if print_train else None)
+
+    print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
 
     if SAVE_MODEL:
         inference_model.save(f"{DIR}/models/{NAME}")

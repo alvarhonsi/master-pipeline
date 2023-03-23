@@ -79,7 +79,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc = None
         self.samples = None
 
-    def fit(self, dataloader, val_dataloader=None):
+    def fit(self, dataloader, val_dataloader=None, print_every=None):
         train_stats =  {
             "train_rmse": 0,
             "time": 0,
@@ -102,7 +102,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
 
-        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=1000)
+        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=20)
 
         td = timedelta(seconds=round(time.time() - start))
         print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 4)}")
@@ -153,7 +153,7 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = None
 
-    def fit(self, dataloader, val_dataloader, callback=None, closed_form_kl=True):
+    def fit(self, dataloader, val_dataloader, callback=None, closed_form_kl=True, print_every=None):
         train_stats =  {
             "elbo_minibatch": [],
             "elbo_epoch": [],
@@ -172,7 +172,7 @@ class SVIInferenceModel(BayesianInferenceModel):
         
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
 
-        bar = trange(self.epochs, desc="Epoch", leave=True)
+        bar = range(self.epochs) if print_every != None else trange(self.epochs, desc="Epoch", leave=True)
         for epoch in bar:
             elbo = 0
             for X, y in dataloader:
@@ -184,10 +184,15 @@ class SVIInferenceModel(BayesianInferenceModel):
 
             elbo = elbo / len(dataloader)
 
-            val_rmse_epoch = self.evaluate(val_dataloader, metric="rmse", num_predictions=1000)
+            val_rmse_epoch = self.evaluate(val_dataloader, metric="rmse", num_predictions=20)
 
-            bar.set_description(f'Training: [EPOCH {epoch}]')
-            bar.set_postfix(loss=f'{loss:.3f}', val_rmse=f'{val_rmse_epoch:.3f}')
+            if print_every != None and epoch % print_every == 0:
+                td = timedelta(seconds=round(time.time() - start))
+                print(f"[{td}] [EPOCH {epoch}] loss: {loss:.3f}, val_rmse: {val_rmse_epoch:.3f}")
+            elif print_every == None:
+                bar.set_description(f'Training: [EPOCH {epoch}]')
+                bar.set_postfix(loss=f'{loss:.3f}', val_rmse=f'{val_rmse_epoch:.3f}')
+            
 
             train_stats["elbo_epoch"].append(elbo)
             train_stats["val_rmse_epoch"].append(val_rmse_epoch)
@@ -195,7 +200,7 @@ class SVIInferenceModel(BayesianInferenceModel):
             if callback is not None and callback(elbo, epoch):
                 break
 
-        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=1000)
+        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=20)
         train_stats["train_rmse"] = train_rmse
 
         end = time.time()

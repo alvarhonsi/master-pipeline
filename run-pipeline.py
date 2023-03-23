@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--train', help='Train model', action='store_true')
     parser.add_argument('-e', '--eval', help='Evaluate model', action='store_true')
     parser.add_argument('-dev', '--device', help='Device to use for training', default='')
+    parser.add_argument('-print', '--print', help='Print training progress', action='store_true')
     args = parser.parse_args()
 
     if not args.generate and not args.train and not args.eval:
@@ -77,7 +78,7 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/models"):
                 os.mkdir(f"{BASE_DIR}/models")
 
-            inference_model = train.train(config, f"{BASE_DIR}", device=args.device)
+            inference_model = train.train(config, f"{BASE_DIR}", device=args.device, print_train=args.print)
 
         # Evaluate model
         if EVAL:

@@ -225,9 +225,9 @@ def eval(config, dataset_config, DIR, inference_model=None, device=None):
 
     results = {}
 
-    test_error = evaluate_error(inference_model, test_dataloader, num_predictions=1000)
-    in_domain_error = evaluate_error(inference_model, test_in_domain_dataloader, num_predictions=1000)
-    out_domain_error = evaluate_error(inference_model, test_out_domain_dataloader, num_predictions=1000)
+    test_error = evaluate_error(inference_model, test_dataloader, num_predictions=100)
+    in_domain_error = evaluate_error(inference_model, test_in_domain_dataloader, num_predictions=100)
+    out_domain_error = evaluate_error(inference_model, test_out_domain_dataloader, num_predictions=100)
     results["test_error"] = test_error
     results["in_domain_error"] = in_domain_error
     results["out_domain_error"] = out_domain_error
