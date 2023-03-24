@@ -16,6 +16,6 @@ echo "Running on $SLURM_JOB_NODELIST"
 eval "$(conda shell.bash hook)"
 conda activate master
 
-python run-pipeline.py --dir ./experiments/model-tests/summodel-sigma025 --generate --train --eval --dev cuda
+python run-pipeline.py --dir ./experiments/model-tests/summodel-sigma025 --generate --train --eval --dev cuda -p five-layer-sum -print
 
 echo "Done"

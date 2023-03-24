@@ -1,0 +1,32 @@
+{
+    "test_error": {
+        "rmse": 1.7138399600982666,
+        "mae": 1.36910799741745
+    },
+    "in_domain_error": {
+        "rmse": 1.7566354513168334,
+        "mae": 1.3845852851867675
+    },
+    "out_domain_error": {
+        "rmse": 1.7403324246406555,
+        "mae": 1.4904028534889222
+    },
+    "predictive": {
+        "kl_div": 1.5420033931732178,
+        "standardized_mean_diff": -0.02597048506140709,
+        "mean_diff": -0.025088228285312653,
+        "std_diff": 0.5780238509178162
+    },
+    "predictive_in_domain": {
+        "kl_div": 1.0013928413391113,
+        "standardized_mean_diff": 0.049761686474084854,
+        "mean_diff": 0.07746755331754684,
+        "std_diff": 0.18427510559558868
+    },
+    "predictive_out_domain": {
+        "kl_div": 6.797297954559326,
+        "standardized_mean_diff": 0.013631676323711872,
+        "mean_diff": 0.03639201447367668,
+        "std_diff": 2.527625799179077
+    }
+}
