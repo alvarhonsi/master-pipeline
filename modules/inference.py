@@ -41,8 +41,8 @@ class BayesianInferenceModel(ABC):
         mae = (mean_predictions - y).abs().mean()
 
         return mae.item()
-
-    def evaluate(self, dataloader, metric="rmse", num_predictions=100):
+    
+    def calc_error(self, dataloader, metric="rmse", num_predictions=100):
         error = 0
         for X, y in dataloader:
             X, y = X.to(self.device), y.to(self.device)
@@ -56,6 +56,19 @@ class BayesianInferenceModel(ABC):
         error /= len(dataloader)
 
         return error
+
+    def evaluate(self, dataloader, num_predictions=100):
+        rmse = 0
+        mae = 0
+        for X, y in dataloader:
+            X, y = X.to(self.device), y.to(self.device)
+            rmse += self.get_rmse(X, y, num_predictions=num_predictions)
+            mae += self.get_mae(X, y, num_predictions=num_predictions)
+
+        rmse /= len(dataloader)
+        mae /= len(dataloader)
+
+        return rmse, mae
 
     @abstractmethod
     def save(self, path):
@@ -102,7 +115,7 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
 
-        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=20)
+        train_rmse = self.calc_error(dataloader, metric="rmse", num_predictions=20)
 
         td = timedelta(seconds=round(time.time() - start))
         print(f"[{td}][mcmc finished] rmse: {round(train_rmse, 4)}")
@@ -184,7 +197,7 @@ class SVIInferenceModel(BayesianInferenceModel):
 
             elbo = elbo / len(dataloader)
 
-            val_rmse_epoch = self.evaluate(val_dataloader, metric="rmse", num_predictions=20)
+            val_rmse_epoch = self.calc_error(val_dataloader, metric="rmse", num_predictions=20)
 
             if print_every != None and epoch % print_every == 0:
                 td = timedelta(seconds=round(time.time() - start))
@@ -200,7 +213,7 @@ class SVIInferenceModel(BayesianInferenceModel):
             if callback is not None and callback(elbo, epoch):
                 break
 
-        train_rmse = self.evaluate(dataloader, metric="rmse", num_predictions=20)
+        train_rmse = self.calc_error(dataloader, metric="rmse", num_predictions=20)
         train_stats["train_rmse"] = train_rmse
 
         end = time.time()

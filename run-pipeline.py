@@ -4,6 +4,8 @@ import generate
 import train
 import eval
 import os
+import time
+import datetime
 
 
 
@@ -24,6 +26,9 @@ if __name__ == "__main__":
 
     if not args.generate and not args.train and not args.eval:
         parser.error("at least one of --generate or --train or --eval is required")
+
+    start = time.time()
+    print(f"Start time: {datetime.datetime.now()}")
 
     # Set base directory
     BASE_DIR = args.directory
@@ -86,3 +91,8 @@ if __name__ == "__main__":
                 os.mkdir(f"{BASE_DIR}/results")
 
             eval.eval(config, dataset_config, f"{BASE_DIR}", device=args.device)
+
+    end = time.time()
+    print(f"End time: {datetime.datetime.now()}")
+    td = datetime.timedelta(seconds=end-start)
+    print(f"Total time: {td}")

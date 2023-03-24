@@ -38,9 +38,8 @@ def draw_data_samples(dataloader, num_samples=10):
 def evaluate_error(inference_model, dataloader, num_predictions=100):
     results = {}
     # Evaluate error
-    rmse = inference_model.evaluate(dataloader, metric="rmse", num_predictions=num_predictions)
+    rmse, mae = inference_model.evaluate(dataloader, num_predictions=num_predictions)
     results["rmse"] = np.float64(rmse)
-    mae = inference_model.evaluate(dataloader, metric="mae", num_predictions=num_predictions)
     results["mae"] = np.float64(mae)
 
     return results
@@ -52,10 +51,6 @@ def evaluate_posterior(posterior_samples, data_samples):
     # Mean kl divergence
     kl_div = np.mean(KL_divergance_normal(posterior_samples, data_samples))
     results["kl_div"] = np.float64(kl_div)
-
-    # Standardized mean difference
-    std_mean_diff = np.mean(standardized_mean_difference(posterior_samples, data_samples))
-    results["standardized_mean_diff"] = np.float64(std_mean_diff)
 
     # Difference in mean
     mean_diff = np.mean(difference_mean(posterior_samples, data_samples))
