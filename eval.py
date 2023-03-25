@@ -3,7 +3,7 @@ from modules.datageneration import load_data, data_functions
 from modules.models import model_types
 from modules.inference import MCMCInferenceModel, SVIInferenceModel
 from modules.plots import plot_comparison, plot_comparison_grid
-from modules.metrics import difference_mean, difference_std, KL_divergance_normal, standardized_mean_difference
+from modules.metrics import difference_mean, difference_std, KL_divergance_normal
 from modules.distributions import PredictivePosterior, DataDistribution, NormalPosterior
 from modules.context import set_default_tensor_type
 import pandas as pd

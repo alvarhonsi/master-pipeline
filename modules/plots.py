@@ -1,6 +1,6 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
-from .metrics import KL_divergance_normal
+from .metrics import KL_divergance_normal, difference_mean, difference_std
 
 
 def lineplot(data, x_label=None, y_label=None, figsize=(10, 5), ax=None, save_path=None):
@@ -81,7 +81,9 @@ def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", ti
 
     if kl_div:
         kl = KL_divergance_normal(post_sample, data_sample)
-        title = f"KL-divergence: {kl:.4f}"
+        mean_diff = difference_mean(post_sample, data_sample)
+        std_diff = difference_std(post_sample, data_sample)
+        title = f"KL-divergence: {kl:.4f} | Mean diff: {mean_diff:.4f} | Std diff: {std_diff:.4f}"
 
     standalone = False
     if ax is None:
