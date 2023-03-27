@@ -59,6 +59,41 @@ class BayesianRegressor(PyroModule):
         with pyro.plate("data", out.shape[0], device=self.device):
             obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
         return mu
+    
+class BayesianRegressorGamma(PyroModule):
+    def __init__(self, in_features, out_features, hidden_features=[], device="cpu"):
+        super().__init__()
+        self.device = device
+
+        def make_layer(in_features, out_features):
+            return PyroModule[nn.Sequential](
+                BayesianLinear(in_features, out_features, device=self.device),
+                nn.ReLU()
+            )
+
+        if len(hidden_features) == 0:
+            self.fc = PyroModule[nn.Sequential](
+                BayesianLinear(in_features, out_features, device=self.device)
+            )
+        else:
+            self.fc = PyroModule[nn.Sequential](
+                make_layer(in_features, hidden_features[0]),
+                *[make_layer(hidden_features[i], hidden_features[i+1]) for i in range(len(hidden_features)-1)],
+                BayesianLinear(hidden_features[-1], out_features, device=self.device)
+            )
+
+        #self.sigma = PyroSample(dist.Gamma(1., 1.))
+
+    def forward(self, x, y=None):
+        out = self.fc(x)
+        mu = out.squeeze().to(self.device)
+
+        concentration = pyro.param("concentration", torch.tensor(1.))
+        rate = pyro.param("rate", torch.tensor(1.))
+        sigma = pyro.sample("sigma", dist.Gamma(concentration, rate)).to(self.device)
+        with pyro.plate("data", out.shape[0], device=self.device):
+            obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
+        return mu
 
 
 
@@ -92,6 +127,7 @@ class Regressor(nn.Module):
 
 
 model_types = {
+    "BRG": BayesianRegressorGamma,
     "BR": BayesianRegressor,
     "R": Regressor
 }
