@@ -32,6 +32,11 @@ def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
 
     return 0*x1 + np.sin(x2 + x3) + np.sin(x4 * x5) + np.sin(x6 + x7) + np.sin(x8 * x9) + 0*x10 + noise
 
+def tendim_sinusoidal_weighted(xs, noise=0) -> np.array:
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
+
+    return np.sin(x1) * 6*np.sin(x2) + 8 * np.sin(x3) + 4 * np.sin(x4) * np.sin(x5) + 6*np.sin(x6) + 10 * np.sin(x7) * np.sin(x8) + 5 * np.sin(x9) * np.sin(x10) + noise
+
 def sum(xs, noise=0) -> np.array:
     return np.sum(xs, axis=1) + noise
 
@@ -47,6 +52,7 @@ data_functions = {
     "sinusoidal_combination": sinusoidal_combination,
     "sum": sum,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
+    "tendim_sinusoidal_weighted": tendim_sinusoidal_weighted
 } 
     
 '''
