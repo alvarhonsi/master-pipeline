@@ -95,8 +95,8 @@ def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", ti
     sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
     sns.kdeplot(post_sample, fill=True, ax=ax, label="Posterior")
     if plot_mean:
-        ax.axvline(data_sample.mean(), color="red", label="Data mean")
-        ax.axvline(post_sample.mean(), color="green", label="Posterior mean")
+        ax.axvline(data_sample.mean(), color="red", label="Data mean", aplha=0.4)
+        ax.axvline(post_sample.mean(), color="green", label="Posterior mean", alpha=0.4)
     ax.legend()
     ax.set_ylabel(y_label)
     ax.set_xlabel(x_label)

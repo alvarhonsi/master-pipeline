@@ -169,21 +169,6 @@ def eval(config, dataset_config, DIR, inference_model=None, device=None):
     np.savetxt(f"{DIR}/results/{NAME}/samples/test_in_domain_x_sample.csv", test_in_domain_x_sample, delimiter=",")
     np.savetxt(f"{DIR}/results/{NAME}/samples/test_out_domain_x_sample.csv", test_out_domain_x_sample, delimiter=",")
     
-
-    #Baseline normal distribution
-    # normal_samples: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
-    base_dist = NormalPosterior(0, 1, test_x_sample)
-    base_in_domain_dist = NormalPosterior(0, 1, test_in_domain_x_sample)
-    base_out_domain_dist = NormalPosterior(0, 1, test_out_domain_x_sample)
-
-    normal_samples = base_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    normal_in_domain_samples = base_in_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    normal_out_domain_samples = base_out_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-
-    np.savetxt(f"{DIR}/results/{NAME}/samples/baseline_samples.csv", normal_samples, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/baseline_in_domain_samples.csv", normal_in_domain_samples, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/baseline_out_domain_samples.csv", normal_out_domain_samples, delimiter=",")
-    
     #Sample true distribution from data
     # data_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
     func = data_functions[DATA_FUNC]
@@ -211,6 +196,17 @@ def eval(config, dataset_config, DIR, inference_model=None, device=None):
     np.savetxt(f"{DIR}/results/{NAME}/samples/predictive_out_domain_samples.csv", pred_out_domain_samples, delimiter=",")
 
     # Sanity Checks
+    train_x_sample, train_y_sample = draw_data_samples(test_dataloader, 20)
+    idxs = list(range(len(train_y_sample)))
+    idxs.sort(key=lambda x: np.abs(train_y_sample[x]))
+    idxs = idxs[:9]
+    train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample[idxs])
+    train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+    train_pred_samples = inference_model.predict(train_x_sample[idxs], NUM_DIST_SAMPLES).cpu().detach().numpy()
+    plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train (extreme ys)", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
+
+
+
     plot_comparison_grid(pred_samples, data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Test", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_sanity.png")
     plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_in_domain_sanity.png")
     plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_out_domain_sanity.png")
