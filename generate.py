@@ -69,7 +69,8 @@ def gen(dataset_config, DIR):
     train_sample_posterior = train_sample_dist.sample(100000).squeeze()
 
     fig, ax = plt.subplots(figsize=(15, 10))
-    plot_distribution(train_sample_posterior, ax=ax)
+    if train_sample_posterior.std() != 0:
+        plot_distribution(train_sample_posterior, ax=ax)
     ax.axvline(sample_train_y, color="red", label=f"f(x) = {sample_train_y.item():.2f}")
     ax.legend()
     ax.set_title(f"Posterior distribution of y for sample x = {[round(x.item(), 2) for x in sample_train_x[0]]}")
