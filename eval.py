@@ -48,10 +48,15 @@ def evaluate_error(inference_model, dataloader, num_predictions=100):
 def evaluate_posterior(posterior_samples, data_samples):
     results = {}
 
-    # Mean kl divergence
-    kl_div = np.mean(KL_divergance_normal(posterior_samples, data_samples))
-    results["kl_div"] = np.float64(kl_div)
+    post_std_is_zero = any(np.std(posterior_samples, axis=0) == 0)
+    data_std_is_zero = any(np.std(data_samples, axis=0) == 0)
 
+    # Mean kl divergence
+    if not post_std_is_zero and not data_std_is_zero:
+        kl_div = np.mean(KL_divergance_normal(posterior_samples, data_samples))
+        results["kl_div"] = np.float64(kl_div)
+    else:
+        results["kl_div"] = np.float64(-1)
     # Difference in mean
     mean_diff = np.mean(difference_mean(posterior_samples, data_samples))
     results["mean_diff"] = np.float64(mean_diff)

@@ -79,8 +79,12 @@ def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", ti
     sns.set_style("darkgrid")
     sns.set_context("paper")
 
+    data_std = data_sample.std()
+    post_std = post_sample.std()
+
     if kl_div:
-        kl = KL_divergance_normal(post_sample, data_sample)
+
+        kl = KL_divergance_normal(post_sample, data_sample) if data_std != 0 and post_std != 0 else -1
         mean_diff = difference_mean(post_sample, data_sample)
         std_diff = difference_std(post_sample, data_sample)
         title = f"KL-divergence: {kl:.4f} | Mean diff: {mean_diff:.4f} | Std diff: {std_diff:.4f}"
@@ -90,12 +94,14 @@ def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", ti
         standalone = True   
 
     if standalone:
-        fig, ax = plt.subplots(figsize=figsize)   
-
-    sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
+        fig, ax = plt.subplots(figsize=figsize)
+    
+    
+    if data_std != 0:
+        sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
     sns.kdeplot(post_sample, fill=True, ax=ax, label="Posterior")
     if plot_mean:
-        ax.axvline(data_sample.mean(), color="red", label="Data mean", aplha=0.4)
+        ax.axvline(data_sample.mean(), color="red", label="Data mean", alpha=0.4)
         ax.axvline(post_sample.mean(), color="green", label="Posterior mean", alpha=0.4)
     ax.legend()
     ax.set_ylabel(y_label)

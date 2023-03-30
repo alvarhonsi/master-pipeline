@@ -13,6 +13,9 @@ def KL_divergance_normal(dist1, dist2):
     '''
     mu1, mu2 = np.mean(dist1, axis=0), np.mean(dist2, axis=0)
     sigma1, sigma2 = np.std(dist1, axis=0), np.std(dist2, axis=0)
+    if sigma1 == 0 or sigma2 == 0:
+        print("sigma 0 detected")
+
     kl_div = np.log(sigma2/sigma1) + (sigma1**2 + (mu1 - mu2)**2)/(2*sigma2**2) - 0.5
 
     return kl_div
