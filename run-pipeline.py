@@ -83,7 +83,7 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/models"):
                 os.mkdir(f"{BASE_DIR}/models")
 
-            inference_model = train.train(config, f"{BASE_DIR}", device=args.device, print_train=args.print)
+            inference_model = train.train(config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print)
 
         # Evaluate model
         if EVAL:

@@ -7,6 +7,7 @@ import time
 from datetime import timedelta
 from abc import ABC, abstractmethod
 from tqdm.auto import trange, tqdm
+import numpy as np
 
 class BayesianInferenceModel(ABC):
     def __init__(self, model):
@@ -18,10 +19,15 @@ class BayesianInferenceModel(ABC):
         raise NotImplementedError
 
     def predict(self, X, num_predictions=1):
+        self.set_grad_enabled(False)
         X = X.to(self.device)
+        print(X.shape)
         predictive = self.get_predictive(num_predictions=num_predictions)
+        print(predictive)
         predictions = predictive(X)
+        print(predictions.keys())
 
+        self.set_grad_enabled(True)
         return predictions["obs"]
 
     def get_rmse(self, X, y, num_predictions=100):
@@ -58,6 +64,7 @@ class BayesianInferenceModel(ABC):
         return error
 
     def evaluate(self, dataloader, num_predictions=100):
+        self.set_grad_enabled(False)
         rmse = 0
         mae = 0
         for X, y in dataloader:
@@ -68,7 +75,18 @@ class BayesianInferenceModel(ABC):
         rmse /= len(dataloader)
         mae /= len(dataloader)
 
+        self.set_grad_enabled(True)
         return rmse, mae
+    
+    @abstractmethod
+    def set_grad_enabled(self, grad):
+        """toggles gradient calculation"""
+        raise NotImplementedError
+    
+    @abstractmethod
+    def initialize(self):
+        """Initializes inference model"""
+        raise NotImplementedError
 
     @abstractmethod
     def save(self, path):
@@ -92,6 +110,13 @@ class MCMCInferenceModel(BayesianInferenceModel):
         self.mcmc = None
         self.samples = None
 
+    def initialize(self):
+        self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
+
+    def set_grad_enabled(self, grad):
+        """toggles gradient calculation"""
+        raise NotImplementedError
+
     def fit(self, dataloader, val_dataloader=None, print_every=None):
         train_stats =  {
             "train_rmse": 0,
@@ -101,7 +126,6 @@ class MCMCInferenceModel(BayesianInferenceModel):
         pyro.clear_param_store()
         start = time.time()
 
-        #X, y = dataloader.dataset.tensors[0].to(self.device), dataloader.dataset.tensors[1].flatten().to(self.device)
         input_data_list = []
         observation_data_list = []
         for in_data, obs_data in dataloader:
@@ -110,8 +134,9 @@ class MCMCInferenceModel(BayesianInferenceModel):
         X = torch.cat(input_data_list)
         y = torch.cat(observation_data_list)
 
+        if self.mcmc is None:
+            self.initialize()
         
-        self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
 
@@ -166,6 +191,18 @@ class SVIInferenceModel(BayesianInferenceModel):
 
         self.svi = None
 
+    def initialize(self):
+        pyro.clear_param_store()
+        self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
+
+    def set_grad_enabled(self, grad):
+        #Togglew gradient calculation
+        for p in self.model.parameters():
+            p.requires_grad = grad
+        
+        for p in self.guide.parameters():
+            p.requires_grad = grad
+
     def fit(self, dataloader, val_dataloader, callback=None, closed_form_kl=True, print_every=None):
         train_stats =  {
             "elbo_minibatch": [],
@@ -181,9 +218,10 @@ class SVIInferenceModel(BayesianInferenceModel):
         # Scale the loss to account for dataset size.
         # Scale etter num parameters?
 
-        #self.model = pyro.poutine.scale(self.model, scale=1.0/len(dataloader.dataset))
-        
-        self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
+        if self.svi is None:
+            self.initialize()
+
+        # Sanity check
 
         bar = range(self.epochs) if print_every != None else trange(self.epochs, desc="Epoch", leave=True)
         for epoch in bar:
@@ -224,8 +262,9 @@ class SVIInferenceModel(BayesianInferenceModel):
     def get_predictive(self, num_predictions=1):
         if self.svi is None:
             raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
-            
+        print("am here")
         predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", "_RETURN", "sigma"))
+        print("am here 2")
         return predictive
 
     def save(self, path):

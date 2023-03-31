@@ -137,13 +137,16 @@ def eval(config, dataset_config, DIR, inference_model=None, device=None):
     pyro.clear_param_store()
 
     # Load data
-    _, _, (x_test, y_test), (x_test_in_domain, y_test_in_domain), (x_test_out_domain, y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_train=False, load_val=False)
+    (x_train, y_train), _, (x_test, y_test), (x_test_in_domain, y_test_in_domain), (x_test_out_domain, y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_val=False)
 
     # Make dataset
+    train_dataset = TensorDataset(x_train, y_train)
     test_dataset = TensorDataset(x_test, y_test)
     test_in_domain_dataset = TensorDataset(x_test_in_domain, y_test_in_domain)
     test_out_domain_dataset = TensorDataset(x_test_out_domain, y_test_out_domain)
 
+    # Make dataloader
+    train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     test_in_domain_dataloader = DataLoader(test_in_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     test_out_domain_dataloader = DataLoader(test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
@@ -201,7 +204,7 @@ def eval(config, dataset_config, DIR, inference_model=None, device=None):
     np.savetxt(f"{DIR}/results/{NAME}/samples/predictive_out_domain_samples.csv", pred_out_domain_samples, delimiter=",")
 
     # Sanity Checks
-    train_x_sample, train_y_sample = draw_data_samples(test_dataloader, 20)
+    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 20)
     idxs = list(range(len(train_y_sample)))
     idxs.sort(key=lambda x: np.abs(train_y_sample[x]))
     idxs = idxs[:9]

@@ -1,8 +1,11 @@
 from modules.models import model_types
 from modules.inference import MCMCInferenceModel, SVIInferenceModel
-from modules.datageneration import load_data
+from modules.datageneration import load_data, data_functions
 from modules.config import read_config
 from modules.context import set_default_tensor_type
+from modules.plots import plot_comparison_grid
+from modules.distributions import DataDistribution
+from eval import draw_data_samples
 import os
 import numpy as np
 import torch
@@ -20,7 +23,7 @@ import functools
 from typing import Callable, Optional
 
 
-def train(config, DIR, device=None, print_train=False):
+def train(config, dataset_config, DIR, device=None, print_train=False):
 
     NAME = config["NAME"]
     DEVICE = device if device != None else config["DEVICE"]
@@ -28,6 +31,10 @@ def train(config, DIR, device=None, print_train=False):
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")
     DATASET = config["DATASET"]
+
+    MU = dataset_config.getfloat("MU")
+    SIGMA = dataset_config.getfloat("SIGMA")
+    DATA_FUNC = dataset_config["DATA_FUNC"]
 
     MODEL_TYPE = config["MODEL_TYPE"]
     HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
@@ -44,6 +51,7 @@ def train(config, DIR, device=None, print_train=False):
     EPOCHS = config.getint("EPOCHS")
     LR = config.getfloat("LR")
     TRAIN_BATCH_SIZE = config.getint("TRAIN_BATCH_SIZE")
+    NUM_DIST_SAMPLES = config.getint("NUM_DIST_SAMPLES")
 
     # Reproducibility
     pyro.set_rng_seed(SEED)
@@ -91,6 +99,32 @@ def train(config, DIR, device=None, print_train=False):
         num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
     else:
         raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
+    
+    pyro.clear_param_store()
+    
+    inference_model.initialize()
+
+    # Sanity check
+    #func = data_functions[DATA_FUNC]
+    #train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 10)
+    #train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
+    #print("sample data dist:")
+    #train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+    #print("sample model dist:")
+    #train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+    #print("plotting...")
+    #plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train init", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
+    func = data_functions[DATA_FUNC]
+    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 20)
+    idxs = list(range(len(train_y_sample)))
+    idxs.sort(key=lambda x: np.abs(train_y_sample[x]))
+    idxs = idxs[:9]
+    train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample[idxs])
+    train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+    train_pred_samples = inference_model.predict(train_x_sample[idxs], NUM_DIST_SAMPLES).cpu().detach().numpy()
+    plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train (extreme ys)", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
+
+
 
     # RUN TRAINING
     print('Using device: {}'.format(DEVICE))
