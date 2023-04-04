@@ -117,8 +117,8 @@ class BayesianRegressorGamma(PyroModule):
         out = self.fc(x)
         mu = out.squeeze().to(self.device)
 
-        concentration = pyro.param("concentration", torch.tensor(self.prior.sigma_concentration))
-        rate = pyro.param("rate", torch.tensor(self.prior.sigma_rate))
+        concentration = pyro.param("concentration", torch.tensor(self.prior.sigma_concentration, device=self.device))
+        rate = pyro.param("rate", torch.tensor(self.prior.sigma_rate, device=self.device))
 
         sigma_dist = self.prior.sigma_dist
         sigma = pyro.sample("sigma", sigma_dist(concentration, rate)).to(self.device)
@@ -152,6 +152,7 @@ class BayesianRegressorFixed(PyroModule):
 
 
     def forward(self, x, y=None):
+        x = x.to(self.device)
         out = self.fc(x)
         mu = out.squeeze().to(self.device)
 
