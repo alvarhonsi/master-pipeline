@@ -10,8 +10,9 @@ from tqdm.auto import trange, tqdm
 import numpy as np
 
 class BayesianInferenceModel(ABC):
-    def __init__(self, model):
+    def __init__(self, model, prior):
         self.model = model
+        self.prior = prior
     
     @abstractmethod
     def fit(self, dataloader):
@@ -21,11 +22,8 @@ class BayesianInferenceModel(ABC):
     def predict(self, X, num_predictions=1):
         self.set_grad_enabled(False)
         X = X.to(self.device)
-        print(X.shape)
         predictive = self.get_predictive(num_predictions=num_predictions)
-        print(predictive)
         predictions = predictive(X)
-        print(predictions.keys())
 
         self.set_grad_enabled(True)
         return predictions["obs"]
@@ -99,8 +97,8 @@ class BayesianInferenceModel(ABC):
         raise NotImplementedError
 
 class MCMCInferenceModel(BayesianInferenceModel):
-    def __init__(self, model, kernel, num_samples=1000, num_chains=1, num_warmup=1000, device="cpu"):
-        super().__init__(model)
+    def __init__(self, model, prior, kernel, num_samples=1000, num_chains=1, num_warmup=1000, device="cpu"):
+        super().__init__(model, prior)
         self.kernel = kernel
         self.num_samples = num_samples
         self.num_chains = num_chains
@@ -179,8 +177,8 @@ class MCMCInferenceModel(BayesianInferenceModel):
         print(f"Loaded model and samples from {path}")
 
 class SVIInferenceModel(BayesianInferenceModel):
-    def __init__(self, model, guide, optim, epochs=100, num_steps=1000, loss=None, num_particles=1, device="cpu"):
-        super().__init__(model)
+    def __init__(self, model, prior, guide, optim, epochs=100, num_steps=1000, loss=None, num_particles=1, device="cpu"):
+        super().__init__(model, prior)
         self.guide = guide
         self.optim = optim
         self.loss = loss if loss else Trace_ELBO(num_particles=num_particles)
@@ -262,9 +260,7 @@ class SVIInferenceModel(BayesianInferenceModel):
     def get_predictive(self, num_predictions=1):
         if self.svi is None:
             raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
-        print("am here")
         predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", "_RETURN", "sigma"))
-        print("am here 2")
         return predictive
 
     def save(self, path):

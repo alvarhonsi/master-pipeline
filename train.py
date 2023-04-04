@@ -5,6 +5,7 @@ from modules.config import read_config
 from modules.context import set_default_tensor_type
 from modules.plots import plot_comparison_grid
 from modules.distributions import DataDistribution
+from modules.priors import prior_types
 from eval import draw_data_samples
 import os
 import numpy as np
@@ -39,6 +40,14 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     MODEL_TYPE = config["MODEL_TYPE"]
     HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
 
+    PRIOR_TYPE = config["PRIOR_TYPE"]
+    WEIGHT_LOC = config.getfloat("WEIGHT_LOC")
+    WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
+    BIAS_LOC = config.getfloat("BIAS_LOC")
+    BIAS_SCALE = config.getfloat("BIAS_SCALE")
+    SIGMA_CONCENTRATION = config.getfloat("SIGMA_CONCENTRATION")
+    SIGMA_RATE = config.getfloat("SIGMA_RATE")
+
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
     SVI_GUIDE = config["SVI_GUIDE"]
     SVI_ELBO = config["SVI_ELBO"]
@@ -65,6 +74,10 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     if not os.path.exists(f"{DIR}/models/{NAME}"):
         os.mkdir(f"{DIR}/models/{NAME}")
 
+    # Ready results directory
+    if not os.path.exists(f"{DIR}/results/{NAME}"):
+        os.mkdir(f"{DIR}/results/{NAME}")
+
     # Check if GPU is available
     if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
         raise ValueError("GPU not available")
@@ -78,10 +91,16 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     # Create model
     try:
+        PRIOR = prior_types[PRIOR_TYPE]
+    except KeyError:
+        raise ValueError(f"Prior type {PRIOR_TYPE} not supported. Supported types: {prior_types.keys()}")
+    try:
         BNN = model_types[MODEL_TYPE]
     except KeyError:
         raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
-    model = BNN(X_DIM, Y_DIM, hidden_features=HIDDEN_FEATURES, device=DEVICE)
+    
+    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE, SIGMA_CONCENTRATION, SIGMA_RATE)
+    model = BNN(X_DIM, Y_DIM, prior, hidden_features=HIDDEN_FEATURES, device=DEVICE)
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
@@ -90,12 +109,12 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
         guide = AutoDiagonalNormal(model, init_loc_fn=init_func)
         optim = pyro.optim.Adam({"lr": LR})
-        inference_model = SVIInferenceModel(model, guide, optim, EPOCHS, device=DEVICE)
+        inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         #mcmc_kernel = NUTS(model, adapt_step_size=True, jit_compile=True)
         mcmc_kernel = NUTS(model, adapt_step_size=True)
         #mcmc_kernel = HMC(model, adapt_step_size=True)
-        inference_model = MCMCInferenceModel(model, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, 
+        inference_model = MCMCInferenceModel(model, prior, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, 
         num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
     else:
         raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
@@ -115,15 +134,15 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     #print("plotting...")
     #plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train init", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
     func = data_functions[DATA_FUNC]
-    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 20)
-    idxs = list(range(len(train_y_sample)))
-    idxs.sort(key=lambda x: np.abs(train_y_sample[x]))
-    idxs = idxs[:9]
-    train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample[idxs])
+    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 10)
+    train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
     train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    train_pred_samples = inference_model.predict(train_x_sample[idxs], NUM_DIST_SAMPLES).cpu().detach().numpy()
-    plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train (extreme ys)", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
 
+    inference_model.svi.step(train_x_sample[-1], train_y_sample[-1]) # Must pass at least one sample to initialize the guide
+    train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+    plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Initialized Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/init_train_sanity.png")
+
+    pyro.clear_param_store()
 
 
     # RUN TRAINING

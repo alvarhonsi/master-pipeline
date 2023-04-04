@@ -1,8 +1,8 @@
 /tyxe/*
-**/experiments/**/checkpoint.pt
-**/experiments/**/params.pt
-**/experiments/**/datasets/*
-**/experiments/**/samples/*
+**/checkpoint.pt
+**/params.pt
+**/datasets/*
+**/samples/*
 
 slurm-*.out
 
