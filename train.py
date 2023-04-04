@@ -133,16 +133,17 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     #train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
     #print("plotting...")
     #plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train init", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
-    func = data_functions[DATA_FUNC]
-    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 10)
-    train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
-    train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+    if INFERENCE_TYPE == "svi":
+        func = data_functions[DATA_FUNC]
+        train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 10)
+        train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
+        train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
 
-    inference_model.svi.step(train_x_sample[-1], train_y_sample[-1]) # Must pass at least one sample to initialize the guide
-    train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
-    plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Initialized Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/init_train_sanity.png")
+        inference_model.svi.step(train_x_sample[-1], train_y_sample[-1]) # Must pass at least one sample to initialize the guide
+        train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+        plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Initialized Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/init_train_sanity.png")
 
-    pyro.clear_param_store()
+        pyro.clear_param_store()
 
 
     # RUN TRAINING
