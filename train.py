@@ -139,7 +139,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
         train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
         train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
 
-        inference_model.svi.step(train_x_sample[-1], train_y_sample[-1]) # Must pass at least one sample to initialize the guide
+        inference_model.svi.step(train_x_sample[-1].to(DEVICE), train_y_sample[-1].to(DEVICE)) # Must pass at least one sample to initialize the guide
         train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
         plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Initialized Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/init_train_sanity.png")
 
