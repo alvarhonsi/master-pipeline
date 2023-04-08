@@ -7,7 +7,7 @@ class NormalPrior():
         self.weight_scale = weight_scale
         self.bias_loc = bias_loc
         self.bias_scale = bias_scale
-        self.sigma_dist = dist.Normal
+        self.sigma_dist = dist.Gamma
         self.sigma_concentration = sigma_concentration
         self.sigma_rate = sigma_rate
 
