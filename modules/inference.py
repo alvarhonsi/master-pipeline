@@ -20,12 +20,11 @@ class BayesianInferenceModel(ABC):
         raise NotImplementedError
 
     def predict(self, X, num_predictions=1):
-        self.set_grad_enabled(False)
-        X = X.to(self.device)
-        predictive = self.get_predictive(num_predictions=num_predictions)
-        predictions = predictive(X)
+        with torch.no_grad():
+            X = X.to(self.device)
+            predictive = self.get_predictive(num_predictions=num_predictions)
+            predictions = predictive(X)
 
-        self.set_grad_enabled(True)
         return predictions["obs"]
 
     def get_rmse(self, X, y, num_predictions=100):
@@ -62,24 +61,18 @@ class BayesianInferenceModel(ABC):
         return error
 
     def evaluate(self, dataloader, num_predictions=100):
-        self.set_grad_enabled(False)
-        rmse = 0
-        mae = 0
-        for X, y in dataloader:
-            X, y = X.to(self.device), y.to(self.device)
-            rmse += self.get_rmse(X, y, num_predictions=num_predictions)
-            mae += self.get_mae(X, y, num_predictions=num_predictions)
+        with torch.no_grad():
+            rmse = 0
+            mae = 0
+            for X, y in dataloader:
+                X, y = X.to(self.device), y.to(self.device)
+                rmse += self.get_rmse(X, y, num_predictions=num_predictions)
+                mae += self.get_mae(X, y, num_predictions=num_predictions)
 
-        rmse /= len(dataloader)
-        mae /= len(dataloader)
+            rmse /= len(dataloader)
+            mae /= len(dataloader)
 
-        self.set_grad_enabled(True)
         return rmse, mae
-    
-    @abstractmethod
-    def set_grad_enabled(self, grad):
-        """toggles gradient calculation"""
-        raise NotImplementedError
     
     @abstractmethod
     def initialize(self):
@@ -110,10 +103,6 @@ class MCMCInferenceModel(BayesianInferenceModel):
 
     def initialize(self):
         self.mcmc = MCMC(self.kernel, num_samples=self.num_samples, num_chains=self.num_chains, warmup_steps=self.num_warmup)
-
-    def set_grad_enabled(self, grad):
-        """toggles gradient calculation"""
-        raise NotImplementedError
 
     def fit(self, dataloader, val_dataloader=None, print_every=None):
         train_stats =  {
@@ -192,14 +181,6 @@ class SVIInferenceModel(BayesianInferenceModel):
     def initialize(self):
         pyro.clear_param_store()
         self.svi = SVI(self.model, self.guide, self.optim, loss=self.loss)
-
-    def set_grad_enabled(self, grad):
-        #Togglew gradient calculation
-        for p in self.model.parameters():
-            p.requires_grad = grad
-        
-        for p in self.guide.parameters():
-            p.requires_grad = grad
 
     def fit(self, dataloader, val_dataloader, callback=None, closed_form_kl=True, print_every=None):
         train_stats =  {
