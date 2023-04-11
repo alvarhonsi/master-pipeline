@@ -1,0 +1,3 @@
+python run-pipeline.py -dir tests/model-test-fixed/low-var-fixed-small/ -t -e -dev cuda:0 -p sin-2layer-10x sin-4layer-10x
+python run-pipeline.py -dir tests/model-test-fixed/low-var-fixed-small/ -t -e -dev cuda:1 -p sin-weighted-2layer-10x sin-weighted-4layer-10x
+python run-pipeline.py -dir tests/model-test-fixed/low-var-fixed-small/ -t -e -dev cuda:2 -p sum-2layer-10x sum-2layer-10x
