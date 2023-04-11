@@ -27,6 +27,12 @@ def sinusoidal_combination(x, noise=0) -> np.array:
 def normal_percentile(mu, sigma, percentile) -> float:
     return mu + sigma * scipy.stats.norm.ppf(percentile)
 
+def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
+    res = np.zeros(xs.shape[0])
+    for i in range(xs.shape[1]):
+        res += 6 * np.sin(xs[:, i])
+    return res + noise
+
 def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
 
@@ -52,7 +58,8 @@ data_functions = {
     "sinusoidal_combination": sinusoidal_combination,
     "sum": sum,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
-    "tendim_sinusoidal_weighted": tendim_sinusoidal_weighted
+    "tendim_sinusoidal_weighted": tendim_sinusoidal_weighted,
+    "multidim_sinusoidal_combination": multidim_sinusoidal_combination
 } 
     
 '''
