@@ -8,6 +8,6 @@ do
     echo "starting $SESH"
     echo $line
     tmux new-session -d -s $SESH
-    tmux send-keys -t $SESH "conda run -n master $CMD" Enter
+    tmux send-keys -t $SESH "conda run -n master $line" Enter
     COUNT=$((COUNT + 1))
 done < "$INPUT"
