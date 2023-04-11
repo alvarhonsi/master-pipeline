@@ -7,8 +7,6 @@ do
     SESH="$NAME-$COUNT"
     echo "starting $SESH"
     echo $line
-    tmux new-session -d -s $SESH "conda activate master"
-    sleep 1
-    tmux send-keys -t $SESH $CMD Enter
+    tmux new-session -d -s $SESH "conda activate master && $CMD"
     COUNT=$((COUNT + 1))
 done < "$INPUT"
