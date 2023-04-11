@@ -2,7 +2,9 @@
 INPUT=$1
 NAME=$2
 COUNT=1
-while IFS= read -r line
+
+IFS=''
+while read -r line
 do
     SESH="$NAME-$COUNT"
     echo "starting $SESH"
