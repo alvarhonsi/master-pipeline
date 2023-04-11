@@ -1,13 +1,14 @@
 #!/bin/bash
+INPUT=$1
 NAME=$2
 COUNT=1
-for CMD in `cat $1`
+while IFS= read -r line
 do
-    SESH=$NAME$COUNT
+    SESH="$NAME-$COUNT"
     echo "starting $SESH"
-    echo $CMD
-    tmux new-session -d -s $SESH -n myWindow
-    tmux send-keys -t $SESH:myWindow "conda activate master" Enter
-    tmux send-keys -t $SESH:myWindow $CMD Enter
+    echo $line
+    #tmux new-session -d -s $SESH -n myWindow
+    #tmux send-keys -t $SESH:myWindow "conda activate master" Enter
+    #tmux send-keys -t $SESH:myWindow $CMD Enter
     COUNT=$((COUNT + 1))
-done
+done < "$INPUT"
