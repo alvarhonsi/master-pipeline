@@ -46,6 +46,16 @@ def tendim_sinusoidal_weighted(xs, noise=0) -> np.array:
 def sum(xs, noise=0) -> np.array:
     return np.sum(xs, axis=1) + noise
 
+def tendim_pairwise_product(xs, noise=0) -> np.array:
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
+
+    return x1 * x2 + x3 * x4 + x5 * x6 + x7 * x8 + x9 * x10 + noise
+
+def tendim_sinusoidal_linear(xs, noise=0) -> np.array:
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
+
+    return np.sin(x1)*x2 + np.sin(x3)*x4 + x5 + x6 + x7 + x8 + x9 + x10 + noise
+
 '''
     Dictionary of functions that can be used in data_gen
     functions should take a numpy array [n, x_dim] and return a numpy array [n] - the output of the function
@@ -59,7 +69,9 @@ data_functions = {
     "sum": sum,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
     "tendim_sinusoidal_weighted": tendim_sinusoidal_weighted,
-    "multidim_sinusoidal_combination": multidim_sinusoidal_combination
+    "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
+    "tendim_pairwise_product": tendim_pairwise_product,
+    "tendim_sinusoidal_linear": tendim_sinusoidal_linear
 } 
     
 '''
