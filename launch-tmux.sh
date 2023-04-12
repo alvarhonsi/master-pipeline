@@ -11,7 +11,7 @@ do
     echo $line
     tmux new-session -d -s $SESH
     tmux send-keys -t $SESH "conda activate master" Enter
-    sleep 0.5
+    sleep 2
     tmux send-keys -t $SESH $line Enter
     COUNT=$((COUNT + 1))
 done < "$INPUT"
