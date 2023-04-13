@@ -23,6 +23,63 @@ import argparse
 import functools
 from typing import Callable, Optional
 
+def make_inference_model(config, device=None):
+    DEVICE = device if device != None else config["DEVICE"]
+    X_DIM = config.getint("X_DIM")
+    Y_DIM = config.getint("Y_DIM")
+
+    MODEL_TYPE = config["MODEL_TYPE"]
+    HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
+
+    PRIOR_TYPE = config["PRIOR_TYPE"]
+    WEIGHT_LOC = config.getfloat("WEIGHT_LOC")
+    WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
+    BIAS_LOC = config.getfloat("BIAS_LOC")
+    BIAS_SCALE = config.getfloat("BIAS_SCALE")
+    SIGMA_CONCENTRATION = config.getfloat("SIGMA_CONCENTRATION")
+    SIGMA_RATE = config.getfloat("SIGMA_RATE")
+
+    INFERENCE_TYPE = config["INFERENCE_TYPE"]
+    MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
+    MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
+    MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
+
+    EPOCHS = config.getint("EPOCHS")
+    LR = config.getfloat("LR")
+
+
+    try:
+        PRIOR = prior_types[PRIOR_TYPE]
+    except KeyError:
+        raise ValueError(f"Prior type {PRIOR_TYPE} not supported. Supported types: {prior_types.keys()}")
+    try:
+        BNN = model_types[MODEL_TYPE]
+    except KeyError:
+        raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
+    
+    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE, SIGMA_CONCENTRATION, SIGMA_RATE)
+    model = BNN(X_DIM, Y_DIM, prior, hidden_features=HIDDEN_FEATURES, device=DEVICE)
+
+    # Create inference model
+    if INFERENCE_TYPE == "svi":
+        def init_func(*args):
+            return init_to_median(*args).to(DEVICE)
+
+        guide = AutoDiagonalNormal(model, init_loc_fn=init_func)
+        optim = pyro.optim.Adam({"lr": LR})
+        inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, device=DEVICE)
+        return inference_model
+    elif INFERENCE_TYPE == "mcmc":
+        #mcmc_kernel = NUTS(model, adapt_step_size=True, jit_compile=True)
+        mcmc_kernel = NUTS(model, adapt_step_size=True)
+        #mcmc_kernel = HMC(model, adapt_step_size=True)
+        inference_model = MCMCInferenceModel(model, prior, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, 
+        num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
+        return inference_model
+    else:
+        raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
+    
+
 
 def train(config, dataset_config, DIR, device=None, print_train=False):
 
@@ -90,34 +147,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
 
     # Create model
-    try:
-        PRIOR = prior_types[PRIOR_TYPE]
-    except KeyError:
-        raise ValueError(f"Prior type {PRIOR_TYPE} not supported. Supported types: {prior_types.keys()}")
-    try:
-        BNN = model_types[MODEL_TYPE]
-    except KeyError:
-        raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
-    
-    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE, SIGMA_CONCENTRATION, SIGMA_RATE)
-    model = BNN(X_DIM, Y_DIM, prior, hidden_features=HIDDEN_FEATURES, device=DEVICE)
-
-    # Create inference model
-    if INFERENCE_TYPE == "svi":
-        def init_func(*args):
-            return init_to_median(*args).to(DEVICE)
-
-        guide = AutoDiagonalNormal(model, init_loc_fn=init_func)
-        optim = pyro.optim.Adam({"lr": LR})
-        inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, device=DEVICE)
-    elif INFERENCE_TYPE == "mcmc":
-        #mcmc_kernel = NUTS(model, adapt_step_size=True, jit_compile=True)
-        mcmc_kernel = NUTS(model, adapt_step_size=True)
-        #mcmc_kernel = HMC(model, adapt_step_size=True)
-        inference_model = MCMCInferenceModel(model, prior, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, 
-        num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
-    else:
-        raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
+    inference_model = make_inference_model(config, device=DEVICE)
     
     pyro.clear_param_store()
     
