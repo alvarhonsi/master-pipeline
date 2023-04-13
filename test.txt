@@ -1,3 +1,3 @@
-python run-pipeline.py -dir tests/model-test-fixed/low-var-fixed-small/ -t -e -dev cuda:0 -p sin-2layer-10x sin-4layer-10x
-python run-pipeline.py -dir tests/model-test-fixed/low-var-fixed-small/ -t -e -dev cuda:0 -p sin-2layer-10x sin-4layer-10x
-python run-pipeline.py -dir tests/model-test-fixed/low-var-fixed-small/ -t -e -dev cuda:0 -p sin-2layer-10x sin-4layer-10x
+dir = tests/model-test-fixed/low-var-fixed-small/
+devices = cuda:0, cuda:1, cuda:2
+profiles = sin-2layer-10x sin-4layer-10x, sin-2layer-10x sin-4layer-10x, sin-2layer-10x sin-4layer-10x
