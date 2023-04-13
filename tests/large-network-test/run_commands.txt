@@ -1,0 +1,3 @@
+python run-pipeline.py -dir tests/large-network-test/ -t -e -dev cuda:4 -p 5-layer-sin 10-layer-sin 15-layer-sin
+python run-pipeline.py -dir tests/large-network-test/ -t -e -dev cuda:5 -p 5-layer-sin-weighted 10-layer-sin-weighted 15-layer-sin-weighted
+python run-pipeline.py -dir tests/large-network-test/ -t -e -dev cuda:7 -p 5-layer-sum 10-layer-sum 15-layer-sum
