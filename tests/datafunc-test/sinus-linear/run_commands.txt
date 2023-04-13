@@ -1,2 +1,2 @@
-python run-pipeline.py -dir tests/datafunc-test/sinus-linear/ -t -e -dev cuda:6 -p sinlin-0layer sinlin-2layer sinlin-5layer sinlin-10layer
-python run-pipeline.py -dir tests/datafunc-test/sinus-linear/ -t -e -dev cuda:7 -p sinlin-noise-0layer sinlin-noise-2layer sinlin-noise-5layer sinlin-noise-10layer
+python run-pipeline.py -dir tests/datafunc-test/sinus-linear/ -t -e -dev cuda:0 -p sinlin-0layer sinlin-2layer sinlin-5layer sinlin-10layer
+python run-pipeline.py -dir tests/datafunc-test/sinus-linear/ -t -e -dev cuda:1 -p sinlin-noise-0layer sinlin-noise-2layer sinlin-noise-5layer sinlin-noise-10layer
