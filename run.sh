@@ -27,6 +27,7 @@ do
     tmux new-session -d -s $SESH
     tmux send-keys -t $SESH "conda activate master" Enter
     sleep 2
+    echo $RUNCMD
     tmux send-keys -t $SESH $RUNCMD Enter
     COUNT=$((COUNT + 1))
 done
