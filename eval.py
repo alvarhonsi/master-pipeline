@@ -81,8 +81,6 @@ def load_model(dir, config):
     WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
     BIAS_LOC = config.getfloat("BIAS_LOC")
     BIAS_SCALE = config.getfloat("BIAS_SCALE")
-    SIGMA_CONCENTRATION = config.getfloat("SIGMA_CONCENTRATION")
-    SIGMA_RATE = config.getfloat("SIGMA_RATE")
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
@@ -92,7 +90,7 @@ def load_model(dir, config):
 
     PRIOR = prior_types[PRIOR_TYPE]
     BNN = model_types[MODEL_TYPE]
-    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE, SIGMA_CONCENTRATION, SIGMA_RATE)
+    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE)
     model = BNN(X_DIM, Y_DIM, prior, hidden_features = HIDDEN_FEATURES, device=DEVICE)
 
     if INFERENCE_TYPE == "svi":
