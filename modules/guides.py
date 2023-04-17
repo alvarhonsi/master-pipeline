@@ -92,45 +92,53 @@ class OwnGuideTest(PyroModule):
         pyro.sample("model.fc.1.linear.bias", dist.Normal(self._get_param("bias2_loc"), self._get_param("bias2_scale")).to_event(1))
 
 
+class OwnEasyGuide(PyroModule):
+    def __init__(self, model, device="cpu"):
+        super().__init__()
+        self.model = model
+
+        #Register sigma loc
+        self.sigma_loc = PyroParam(torch.tensor(1.0, device=device), constraint=constraints.interval(0., 10.))
+        self.sigma_rate = PyroParam(torch.tensor(1.0, device=device), constraint=constraints.positive)
+
+        self.weight1_loc = PyroParam(torch.full((32, 1), 0.0, device=device))
+        self.weight1_scale = PyroParam(torch.full((32, 1), 1.0, device=device), constraint=constraints.positive)
+
+        self.bias1_loc = PyroParam(torch.full((32,), 0.0, device=device))
+        self.bias1_scale = PyroParam(torch.full((32,), 10.0, device=device), constraint=constraints.positive)
+
+        self.weight2_loc = PyroParam(torch.full((32, 32), 0.0, device=device))
+        self.weight2_scale = PyroParam(torch.full((32, 32), 1.0, device=device), constraint=constraints.positive)
+
+        self.bias2_loc = PyroParam(torch.full((32,), 0.0, device=device))
+        self.bias2_scale = PyroParam(torch.full((32,), 10.0, device=device), constraint=constraints.positive)
+
+        self.weight3_loc = PyroParam(torch.full((1, 32), 0.0, device=device))
+        self.weight3_scale = PyroParam(torch.full((1, 32), 1.0, device=device), constraint=constraints.positive)
+
+        self.bias3_loc = PyroParam(torch.full((1,), 0.0, device=device))
+        self.bias3_scale = PyroParam(torch.full((1,), 10.0, device=device), constraint=constraints.positive)
+
+    def forward(self, x, y=None):
+        pyro.sample("OwnEasyGuideTest.ownguide.model.fc.0.0.linear.weight", dist.Normal(self.weight1_loc, self.weight1_scale).to_event(2))
+        pyro.sample("OwnEasyGuideTest.ownguide.model.fc.0.0.linear.bias", dist.Normal(self.bias1_loc, self.bias1_scale).to_event(1))
+
+        pyro.sample("OwnEasyGuideTest.ownguide.model.fc.1.0.linear.weight", dist.Normal(self.weight2_loc, self.weight2_scale).to_event(2))
+        pyro.sample("OwnEasyGuideTest.ownguide.model.fc.1.0.linear.bias", dist.Normal(self.bias2_loc, self.bias2_scale).to_event(1))
+
+        pyro.sample("OwnEasyGuideTest.ownguide.model.fc.2.linear.weight", dist.Normal(self.weight3_loc, self.weight3_scale).to_event(2))
+        pyro.sample("OwnEasyGuideTest.ownguide.model.fc.2.linear.bias", dist.Normal(self.bias3_loc, self.bias3_scale).to_event(1))
+
+        pyro.sample("sigma", dist.Gamma(self.sigma_loc, self.sigma_rate))
+
+
 class OwnEasyGuideTest(EasyGuide):
     def __init__(self, *args, device="cpu"):
         super().__init__(*args)
         self.device = device
+        self.ownguide = OwnEasyGuide(self.model, device=device)
     def guide(self, x, y=None):
-
-        sigma_scale = pyro.param("sigma_scale", torch.tensor(1.0, device=self.device), constraint=constraints.positive)
-        sigma_rate = pyro.param("sigma_rate", torch.tensor(1.0, device=self.device), constraint=constraints.positive)
-
-
-        weight1_loc = pyro.param("weight1_loc", torch.full((32, 1), 0.0, device=self.device))
-        weight1_scale =pyro.param("weight1_scale", torch.full((32, 1), 1.0, device=self.device), constraint=constraints.positive)
-
-        bias1_loc = pyro.param("bias1_loc", torch.full((32,), 0.0, device=self.device))
-        bias1_scale = pyro.param("bias1_scale", torch.full((32,), 10.0, device=self.device), constraint=constraints.positive)
-
-        weight2_loc = pyro.param("weight2_loc", torch.full((32, 32), 0.0, device=self.device))
-        weight2_scale = pyro.param("weight2_scale", torch.full((32, 32), 1.0, device=self.device), constraint=constraints.positive)
-
-        bias2_loc = pyro.param("bias2_loc", torch.full((32,), 0.0, device=self.device))
-        bias2_scale = pyro.param("bias2_scale", torch.full((32,), 10.0, device=self.device), constraint=constraints.positive)
-
-        weight3_loc = pyro.param("weight3_loc", torch.full((1, 32), 0.0, device=self.device))
-        weight3_scale = pyro.param("weight3_scale", torch.full((1, 32), 1.0, device=self.device), constraint=constraints.positive)
-
-        bias3_loc = pyro.param("bias3_loc", torch.full((1,), 0.0, device=self.device))
-        bias3_scale = pyro.param("bias3_scale", torch.full((1,), 10.0, device=self.device), constraint=constraints.positive)
-
-
-        weight1 = pyro.sample("fc.0.0.linear.weight", dist.Normal(weight1_loc, weight1_scale).to_event(2))
-        bias1 = pyro.sample("fc.0.0.linear.bias", dist.Normal(bias1_loc, bias1_scale).to_event(1))
-
-        weight2 = pyro.sample("fc.1.0.linear.weight", dist.Normal(weight2_loc, weight2_scale).to_event(2))
-        bias2 = pyro.sample("fc.1.0.linear.bias", dist.Normal(bias2_loc, bias2_scale).to_event(1))
-
-        weight3 = pyro.sample("fc.2.linear.weight", dist.Normal(weight3_loc, weight3_scale).to_event(2))
-        bias3 = pyro.sample("fc.2.linear.bias", dist.Normal(bias3_loc, bias3_scale).to_event(1))
-
-        sigma = pyro.sample("sigma", dist.Normal(sigma_scale, sigma_rate))
+        self.ownguide(x, y)
 
 
 
