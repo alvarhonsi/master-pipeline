@@ -79,7 +79,7 @@ class BayesianRegressor(PyroModule):
         out = self.fc(x)
         mu = out.squeeze().to(self.device)
 
-        sigma = pyro.sample("sigma", dist.Uniform(0., 10.))
+        sigma = pyro.sample("sigma", dist.Uniform(0., 10.), device=self.device)
         with pyro.plate("data", out.shape[0], device=self.device):
             obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
         return mu
