@@ -164,16 +164,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     inference_model.initialize()
 
     # Sanity check
-    #func = data_functions[DATA_FUNC]
-    #train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 10)
-    #train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
-    #print("sample data dist:")
-    #train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    #print("sample model dist:")
-    #train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
-    #print("plotting...")
-    #plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train init", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
-    if INFERENCE_TYPE == "svi":
+    if INFERENCE_TYPE == "svi" and False:
         func = data_functions[DATA_FUNC]
         train_x_sample, train_y_sample = draw_data_samples(train_dataloader, 10)
         train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
