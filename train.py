@@ -76,6 +76,7 @@ def make_inference_model(config, device=None):
     # Create inference model
     if INFERENCE_TYPE == "svi":
         guide = GUIDE(model, device=DEVICE)
+        print(guide)
         optim = OPTIMIZER({"lr": LR})
         inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, device=DEVICE)
         return inference_model
