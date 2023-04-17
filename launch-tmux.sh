@@ -3,6 +3,9 @@ INPUT=$1
 NAME=$2
 COUNT=1
 
+# array declaration
+declare -A props
+
 IFS=''
 while read -r line
 do

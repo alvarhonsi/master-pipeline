@@ -27,7 +27,6 @@ do
     tmux new-session -d -s $SESH
     tmux send-keys -t $SESH "conda activate master" Enter
     sleep 2
-    echo $RUNCMD
-    tmux send-keys -t $SESH $RUNCMD Enter
+    tmux send-keys -t $SESH "python" Space "run-pipeline.py" Space "-dir" Space "$DIR" Space "--train" Space "--eval" Space "-p" Space "$PROF" Space "--device" Space "$DEV" Enter
     COUNT=$((COUNT + 1))
 done

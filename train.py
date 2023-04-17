@@ -6,6 +6,8 @@ from modules.context import set_default_tensor_type
 from modules.plots import plot_comparison_grid
 from modules.distributions import DataDistribution
 from modules.priors import prior_types
+from modules.optimizers import optimizer_types
+from modules.guides import guide_types
 from eval import draw_data_samples
 import os
 import numpy as np
@@ -36,10 +38,12 @@ def make_inference_model(config, device=None):
     WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
     BIAS_LOC = config.getfloat("BIAS_LOC")
     BIAS_SCALE = config.getfloat("BIAS_SCALE")
-    SIGMA_CONCENTRATION = config.getfloat("SIGMA_CONCENTRATION")
-    SIGMA_RATE = config.getfloat("SIGMA_RATE")
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
+    SVI_GUIDE = config["SVI_GUIDE"]
+    SVI_ELBO = config["SVI_ELBO"]
+    SVI_OPTIMIZER = config["SVI_OPTIMIZER"]
+    MCMC_KERNEL = config["MCMC_KERNEL"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
     MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
@@ -56,17 +60,23 @@ def make_inference_model(config, device=None):
         BNN = model_types[MODEL_TYPE]
     except KeyError:
         raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
+    try:
+        OPTIMIZER = optimizer_types[SVI_OPTIMIZER]
+    except KeyError:
+        raise ValueError(f"Optimizer type {SVI_OPTIMIZER} not supported. Supported types: {optimizer_types.keys()}")
+    try:
+        GUIDE = guide_types[SVI_GUIDE]
+    except KeyError:
+        raise ValueError(f"Guide type {SVI_GUIDE} not supported. Supported types: {guide_types.keys()}")
     
-    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE, SIGMA_CONCENTRATION, SIGMA_RATE)
+    
+    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE)
     model = BNN(X_DIM, Y_DIM, prior, hidden_features=HIDDEN_FEATURES, device=DEVICE)
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
-        def init_func(*args):
-            return init_to_median(*args).to(DEVICE)
-
-        guide = AutoDiagonalNormal(model, init_loc_fn=init_func)
-        optim = pyro.optim.Adam({"lr": LR})
+        guide = GUIDE(model, device=DEVICE)
+        optim = OPTIMIZER({"lr": LR})
         inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, device=DEVICE)
         return inference_model
     elif INFERENCE_TYPE == "mcmc":

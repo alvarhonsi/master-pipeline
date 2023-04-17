@@ -24,10 +24,6 @@ class BayesianLinear(PyroModule):
         prior_loc_b = torch.full_like(self.linear.bias, prior.bias_loc, device=self.device)
         prior_scale_b = torch.full_like(self.linear.bias, prior.bias_scale, device=self.device)
 
-        #prior_loc_w = torch.zeros(out_features, in_features, device=self.device)
-        #prior_scale_w = torch.ones(out_features, in_features, device=self.device)
-        #prior_loc_b = torch.zeros(out_features, device=self.device)
-
         prior_dist = prior.prior_dist
         self.linear.weight = PyroSample(prior_dist(prior_loc_w, prior_scale_w).to_event(2))
         self.linear.bias = PyroSample(prior_dist(prior_loc_b, prior_scale_b).to_event(1))
@@ -59,6 +55,8 @@ class BayesianRegressor(PyroModule):
         super().__init__()
         self.device = device
         self.prior = prior
+        self.in_features = in_features
+        self.out_features = out_features
 
         def make_layer(in_features, out_features):
             return PyroModule[nn.Sequential](
@@ -81,57 +79,19 @@ class BayesianRegressor(PyroModule):
         out = self.fc(x)
         mu = out.squeeze().to(self.device)
 
-
-        sigma = pyro.sample("sigma", dist.Uniform(0, 10).to_event(0))
-
-        prior_dist = self.prior.prior_dist
-        with pyro.plate("data", out.shape[0], device=self.device):
-            obs = pyro.sample("obs", prior_dist(mu, sigma), obs=y)
-        return mu
-    
-class BayesianRegressorGamma(PyroModule):
-    def __init__(self, in_features, out_features, prior=NormalPrior(), hidden_features=[], device="cpu"):
-        super().__init__()
-        self.device = device
-        self.prior = prior
-
-        def make_layer(in_features, out_features):
-            return PyroModule[nn.Sequential](
-                BayesianLinear(in_features, out_features, self.prior, device=self.device),
-                nn.ReLU()
-            )
-
-        if len(hidden_features) == 0:
-            self.fc = PyroModule[nn.Sequential](
-                BayesianLinear(in_features, out_features, self.prior, device=self.device)
-            )
-        else:
-            self.fc = PyroModule[nn.Sequential](
-                make_layer(in_features, hidden_features[0]),
-                *[make_layer(hidden_features[i], hidden_features[i+1]) for i in range(len(hidden_features)-1)],
-                BayesianLinear(hidden_features[-1], out_features, self.prior, device=self.device)
-            )
-
-
-    def forward(self, x, y=None):
-        out = self.fc(x)
-        mu = out.squeeze().to(self.device)
-
-        concentration = pyro.param("concentration", torch.tensor(self.prior.sigma_concentration, device=self.device))
-        rate = pyro.param("rate", torch.tensor(self.prior.sigma_rate, device=self.device))
-
-        sigma_dist = self.prior.sigma_dist
-        sigma = pyro.sample("sigma", sigma_dist(concentration, rate)).to(self.device)
+        sigma = pyro.sample("sigma", dist.Uniform(0., 10.))
         with pyro.plate("data", out.shape[0], device=self.device):
             obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
-
         return mu
+
     
 class BayesianRegressorFixed(PyroModule):
     def __init__(self, in_features, out_features, prior=NormalPrior(), hidden_features=[], device="cpu"):
         super().__init__()
         self.device = device
         self.prior = prior
+        self.in_features = in_features
+        self.out_features = out_features
 
         def make_layer(in_features, out_features):
             return PyroModule[nn.Sequential](
@@ -167,6 +127,8 @@ class Regressor(nn.Module):
     def __init__(self, in_features, out_features, hidden_features=[], device="cpu"):
         super().__init__()
         self.device = device
+        self.in_features = in_features
+        self.out_features = out_features
 
         def make_layer(in_features, out_features):
             return nn.Sequential(
@@ -193,7 +155,6 @@ class Regressor(nn.Module):
     
 
 model_types = {
-    "BRG": BayesianRegressorGamma,
     "BR": BayesianRegressor,
     "R": Regressor,
     "BRF": BayesianRegressorFixed
