@@ -15,7 +15,7 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 import pyro
 from pyro.infer.autoguide import AutoDiagonalNormal
-from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive
+from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive, TraceMeanField_ELBO
 from pyro.infer.autoguide.initialization import init_to_feasible, init_to_median
 from datetime import timedelta
 import time
@@ -78,7 +78,7 @@ def make_inference_model(config, device=None):
         guide = GUIDE(model, device=DEVICE)
         print(guide)
         optim = OPTIMIZER({"lr": LR})
-        inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, device=DEVICE)
+        inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, loss=TraceMeanField_ELBO(), device=DEVICE)
         return inference_model
     elif INFERENCE_TYPE == "mcmc":
         #mcmc_kernel = NUTS(model, adapt_step_size=True, jit_compile=True)

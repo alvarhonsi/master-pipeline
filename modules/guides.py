@@ -170,7 +170,7 @@ guide_types = {
     "autodiagonalnormal": getAutoDiagonalNormal,
     "autodelta": getAutoDelta,
     "autogaussian": getAutoGaussian,
-    "autoNormal": getAutoNormal,
+    "autonormal": getAutoNormal,
     "ownguide": OwnGuide,
     "ownguidetest": OwnGuideTest,
     "owneasyguidetest": OwnEasyGuideTest,

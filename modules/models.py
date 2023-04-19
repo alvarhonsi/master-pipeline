@@ -70,7 +70,8 @@ class BayesianRegressor(PyroModule):
         def make_layer(in_features, out_features):
             return PyroModule[nn.Sequential](
                 BayesianLinear(in_features, out_features, self.prior, device=self.device),
-                nn.ReLU()
+                #nn.ReLU()
+                nn.LeakyReLU(0.1)
             )
 
         if len(hidden_features) == 0:
