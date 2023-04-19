@@ -93,7 +93,7 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/results"):
                 os.mkdir(f"{BASE_DIR}/results")
 
-            eval.eval(config, dataset_config, f"{BASE_DIR}", device=args.device)
+            eval.eval(config, dataset_config, f"{BASE_DIR}", inference_model=inference_model, device=args.device)
 
     end = time.time()
     print(f"End time: {datetime.datetime.now()}")

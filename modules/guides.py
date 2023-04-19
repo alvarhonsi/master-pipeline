@@ -5,7 +5,7 @@ import pyro.distributions as dist
 import pyro.distributions.constraints as constraints
 from pyro.contrib.easyguide.easyguide import EasyGuide
 from pyro.nn import PyroSample, PyroModule, PyroParam
-from pyro.infer.autoguide import AutoDiagonalNormal
+from pyro.infer.autoguide import AutoDiagonalNormal, AutoDelta, AutoGaussian, AutoNormal
 from pyro.infer.autoguide.initialization import init_to_feasible, init_to_median
 
 def getAutoDiagonalNormal(model, device="cpu"):
@@ -13,6 +13,30 @@ def getAutoDiagonalNormal(model, device="cpu"):
         return init_to_median(*args).to(device)
     
     return AutoDiagonalNormal(model, init_loc_fn=init_func)
+
+def getAutoDelta(model, device="cpu"):
+    def init_func(*args):
+        return init_to_median(*args).to(device)
+    
+    return AutoDelta(model, init_loc_fn=init_func)
+
+def getAutoGaussian(model, device="cpu"):
+    def init_func(*args):
+        return init_to_feasible(*args).to(device)
+    
+    return AutoGaussian(model, init_loc_fn=init_func)
+
+def getAutoNormal(model, device="cpu"):
+    def init_func(*args):
+        return init_to_median(*args).to(device)
+    
+    return AutoNormal(model, init_loc_fn=init_func)
+
+def getAutoNormalGamma(model, device="cpu"):
+    def init_func(*args):
+        return init_to_feasible(*args).to(device)
+    
+    return AutoNormalGamma(model, init_loc_fn=init_func)
 
 class OwnGuide(PyroModule):
     def __init__(self, model, device="cpu"):
@@ -144,7 +168,10 @@ class OwnEasyGuideTest(EasyGuide):
 
 guide_types = {
     "autodiagonalnormal": getAutoDiagonalNormal,
+    "autodelta": getAutoDelta,
+    "autogaussian": getAutoGaussian,
+    "autoNormal": getAutoNormal,
     "ownguide": OwnGuide,
     "ownguidetest": OwnGuideTest,
-    "owneasyguidetest": OwnEasyGuideTest
+    "owneasyguidetest": OwnEasyGuideTest,
 }

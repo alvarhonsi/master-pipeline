@@ -36,7 +36,7 @@ def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
 def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
 
-    return 0*x1 + np.sin(x2 + x3) + np.sin(x4 * x5) + np.sin(x6 + x7) + np.sin(x8 * x9) + 0*x10 + noise
+    return np.sin(x1 * x2) + np.sin(x3 * x4) + np.sin(x5 * x6) + np.sin(x7 * x8) + np.sin(x9 * x10) + noise
 
 def tendim_sinusoidal_weighted(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
@@ -56,6 +56,10 @@ def tendim_sinusoidal_linear(xs, noise=0) -> np.array:
 
     return np.sin(x1)*x2 + np.sin(x3)*x4 + x5 + x6 + x7 + x8 + x9 + x10 + noise
 
+def onedim_linear_product(xs, noise=0) -> np.array:
+    x = xs[:, 0]
+    return 0.5*x - x*0.003*np.power(x, 2) + 0.0003*np.power(x, 2) + 0.000003*np.power(x, 3) - 0.000003*np.power(x, 2)*np.power(x, 3) + 0.000003*x*np.power(x, 3) + 2.5*np.sin(0.3* x * np.pi) + noise
+
 '''
     Dictionary of functions that can be used in data_gen
     functions should take a numpy array [n, x_dim] and return a numpy array [n] - the output of the function
@@ -71,7 +75,8 @@ data_functions = {
     "tendim_sinusoidal_weighted": tendim_sinusoidal_weighted,
     "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
     "tendim_pairwise_product": tendim_pairwise_product,
-    "tendim_sinusoidal_linear": tendim_sinusoidal_linear
+    "tendim_sinusoidal_linear": tendim_sinusoidal_linear,
+    "onedim_linear_product": onedim_linear_product
 } 
     
 '''
