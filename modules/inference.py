@@ -123,6 +123,8 @@ class MCMCInferenceModel(BayesianInferenceModel):
 
         if self.mcmc is None:
             self.initialize()
+
+        X, y = X.to(self.device), y.to(self.device) 
         
         self.mcmc.run(X, y)
         self.samples = self.mcmc.get_samples()
