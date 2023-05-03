@@ -7,6 +7,8 @@ from modules.metrics import difference_mean, difference_std, KL_divergance_norma
 from modules.distributions import PredictivePosterior, DataDistribution, NormalPosterior
 from modules.context import set_default_tensor_type
 from modules.priors import prior_types
+from modules.guides import guide_types
+from modules.loss import loss_types
 import pandas as pd
 import numpy as np
 import torch
@@ -83,20 +85,37 @@ def load_model(dir, config):
     BIAS_SCALE = config.getfloat("BIAS_SCALE")
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
+    SVI_GUIDE = config["SVI_GUIDE"]
+    SVI_LOSS = config["SVI_LOSS"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
     MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
 
+    try:
+        PRIOR = prior_types[PRIOR_TYPE]
+    except KeyError:
+        raise ValueError(f"Prior type {PRIOR_TYPE} not supported. Supported types: {prior_types.keys()}")
+    try:
+        BNN = model_types[MODEL_TYPE]
+    except KeyError:
+        raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
+    try:
+        GUIDE = guide_types[SVI_GUIDE]
+    except KeyError:
+        raise ValueError(f"Guide type {SVI_GUIDE} not supported. Supported types: {guide_types.keys()}")
+    try:
+        LOSS = loss_types[SVI_LOSS]
+    except KeyError:
+        raise ValueError(f"Loss type {SVI_LOSS} not supported. Supported types: {loss_types.keys()}")
 
-    PRIOR = prior_types[PRIOR_TYPE]
-    BNN = model_types[MODEL_TYPE]
     prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE)
     model = BNN(X_DIM, Y_DIM, prior, hidden_features = HIDDEN_FEATURES, device=DEVICE)
 
     if INFERENCE_TYPE == "svi":
-        guide = AutoDiagonalNormal(model)
+        guide = GUIDE(model, device=DEVICE)
+        loss = LOSS()
         optim = pyro.optim.Adam({"lr": 1e-3})
-        inference_model = SVIInferenceModel(model, prior, guide, optim, device=DEVICE)
+        inference_model = SVIInferenceModel(model, prior, guide, optim, loss=loss, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         mcmc_kernel = NUTS(model)
         inference_model = MCMCInferenceModel(model, prior, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)

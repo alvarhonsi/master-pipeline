@@ -208,7 +208,7 @@ class SVIInferenceModel(BayesianInferenceModel):
         for epoch in bar:
             elbo = 0
             for X, y in dataloader:
-                X, y = X.to(self.device), y.to(self.device)
+                X, y = X.to(self.device), y.squeeze().to(self.device)
                 loss = self.svi.step(X, y)
                 elbo += loss
 
@@ -243,7 +243,7 @@ class SVIInferenceModel(BayesianInferenceModel):
     def get_predictive(self, num_predictions=1):
         if self.svi is None:
             raise RuntimeError("Call .fit to run SVI and obtain samples from the posterior first.")
-        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", "_RETURN", "sigma"))
+        predictive = Predictive(self.model, guide=self.guide, num_samples=num_predictions, return_sites=("obs", "_RETURN"))
         return predictive
 
     def save(self, path):

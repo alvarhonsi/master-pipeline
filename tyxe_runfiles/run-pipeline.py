@@ -1,11 +1,9 @@
 import argparse
 from modules.config import read_config
-import generate
-import train
-import eval
 import os
 import time
 import datetime
+from runfiles import generate, train, eval
 
 
 
@@ -86,14 +84,14 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/results"):
                 os.mkdir(f"{BASE_DIR}/results")
 
-            inference_model = train.train(config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print)
+            bnn = train.train(config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print)
 
         # Evaluate model
         if EVAL:
             if not os.path.exists(f"{BASE_DIR}/results"):
                 os.mkdir(f"{BASE_DIR}/results")
 
-            eval.eval(config, dataset_config, f"{BASE_DIR}", inference_model=inference_model, device=args.device)
+            eval.eval(config, dataset_config, f"{BASE_DIR}", bnn=bnn, device=args.device)
 
     end = time.time()
     print(f"End time: {datetime.datetime.now()}")

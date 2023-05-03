@@ -59,19 +59,20 @@ class BayesianFixedLinear(PyroModule):
         return self.linear(x)
 
 
-class BayesianRegressor(PyroModule):
+class BayesianRegressorV1(PyroModule):
     def __init__(self, in_features, out_features, prior=NormalPrior(), hidden_features=[], device="cpu"):
         super().__init__()
         self.device = device
         self.prior = prior
         self.in_features = in_features
         self.out_features = out_features
+        self.hidden_features = hidden_features
 
         def make_layer(in_features, out_features):
             return PyroModule[nn.Sequential](
                 BayesianLinear(in_features, out_features, self.prior, device=self.device),
-                #nn.ReLU()
-                nn.LeakyReLU(0.1)
+                nn.ReLU()
+                #nn.LeakyReLU(0.1)
             )
 
         if len(hidden_features) == 0:
@@ -92,6 +93,56 @@ class BayesianRegressor(PyroModule):
         sigma = pyro.sample("sigma", dist.Uniform(torch.tensor(0., device=self.device), torch.tensor(10., device=self.device)))
         #sigma = pyro.sample("sigma", dist.Uniform(0., 10.))
         #sigma = pyro.sample("sigma", dist.LogNormal(0., 1.))
+        with pyro.plate("data", out.shape[0], device=self.device):
+            obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
+        return mu
+    
+class BayesianRegressorV2(PyroModule):
+    def __init__(self, in_features, out_features, prior=NormalPrior(), hidden_features=[], device="cpu"):
+        super().__init__()
+        self.device = device
+        self.prior = prior
+        self.in_features = in_features
+        self.out_features = out_features
+        self.hidden_features = hidden_features
+
+        if len(hidden_features) == 0:
+            self.fc0 = PyroModule[nn.Linear](in_features, out_features)
+            self.fc0.weight = PyroSample(dist.Normal(torch.full_like(self.linear.weight, prior.weight_loc, device=self.device), torch.full_like(self.linear.weight, prior.weight_scale, device=self.device)).to_event(2))
+            self.fc0.bias = PyroSample(dist.Normal(torch.full_like(self.linear.bias, prior.bias_loc, device=self.device), prior_scale_b = torch.full_like(self.linear.bias, 0.1, device=self.device)).to_event(1))
+        else:
+            for i in range(len(hidden_features)):
+                if i == 0:
+                    setattr(self, "fc{}".format(i), PyroModule[nn.Linear](in_features, hidden_features[i]))
+                    getattr(self, "fc{}".format(i)).weight = PyroSample(dist.Normal(torch.full_like(getattr(self, "fc{}".format(i)).weight, prior.weight_loc, device=self.device), torch.full_like(getattr(self, "fc{}".format(i)).weight, prior.weight_scale, device=self.device)).to_event(2))
+                    getattr(self, "fc{}".format(i)).bias = PyroSample(dist.Normal(torch.full_like(getattr(self, "fc{}".format(i)).bias, prior.bias_loc, device=self.device), torch.full_like(getattr(self, "fc{}".format(i)).bias, prior.bias_scale, device=self.device)).to_event(1))
+                else:
+                    setattr(self, "fc{}".format(i), PyroModule[nn.Linear](hidden_features[i-1], hidden_features[i]))
+                    getattr(self, "fc{}".format(i)).weight = PyroSample(dist.Normal(torch.full_like(getattr(self, "fc{}".format(i)).weight, prior.weight_loc, device=self.device), torch.full_like(getattr(self, "fc{}".format(i)).weight, prior.weight_scale, device=self.device)).to_event(2))
+                    getattr(self, "fc{}".format(i)).bias = PyroSample(dist.Normal(torch.full_like(getattr(self, "fc{}".format(i)).bias, prior.bias_loc, device=self.device), torch.full_like(getattr(self, "fc{}".format(i)).bias, prior.bias_scale, device=self.device)).to_event(1))
+            setattr(self, "fc{}".format(len(hidden_features)), PyroModule[nn.Linear](hidden_features[-1], out_features))
+            getattr(self, "fc{}".format(len(hidden_features))).weight = PyroSample(dist.Normal(torch.full_like(getattr(self, "fc{}".format(len(hidden_features))).weight, prior.weight_loc, device=self.device), torch.full_like(getattr(self, "fc{}".format(len(hidden_features))).weight, prior.weight_scale, device=self.device)).to_event(2))
+            getattr(self, "fc{}".format(len(hidden_features))).bias = PyroSample(dist.Normal(torch.full_like(getattr(self, "fc{}".format(len(hidden_features))).bias, prior.bias_loc, device=self.device), torch.full_like(getattr(self, "fc{}".format(len(hidden_features))).bias, prior.bias_scale, device=self.device)).to_event(1))
+
+        self.A = nn.ReLU()
+
+    def forward(self, x, y=None):
+        if len(self.hidden_features) == 0:
+            out = self.fc0(x)
+        else:
+            out = x
+            for i in range(len(self.hidden_features)):
+                out = getattr(self, "fc{}".format(i))(out)
+                out = self.A(out)
+            out = getattr(self, "fc{}".format(len(self.hidden_features)))(out)
+ 
+        mu = out.squeeze().to(self.device)
+
+        #sigma = pyro.sample("sigma", dist.LogNormal(torch.tensor(0., device=self.device), torch.tensor(1.0, device=self.device)))
+        #sigma = pyro.sample("sigma", dist.Uniform(0., 10.))
+        #sigma = pyro.sample("sigma", dist.LogNormal(0., 1.))
+
+        sigma = pyro.sample("sigma", dist.Uniform(torch.tensor(0., device=self.device), torch.tensor(1.0, device=self.device)))
         with pyro.plate("data", out.shape[0], device=self.device):
             obs = pyro.sample("obs", dist.Normal(mu, sigma), obs=y)
         return mu
@@ -167,7 +218,8 @@ class Regressor(nn.Module):
     
 
 model_types = {
-    "BR": BayesianRegressor,
+    "BR": BayesianRegressorV1,
+    "BR2": BayesianRegressorV2,
     "R": Regressor,
     "BRF": BayesianRegressorFixed
 }

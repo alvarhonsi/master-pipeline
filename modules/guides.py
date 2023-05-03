@@ -5,8 +5,8 @@ import pyro.distributions as dist
 import pyro.distributions.constraints as constraints
 from pyro.contrib.easyguide.easyguide import EasyGuide
 from pyro.nn import PyroSample, PyroModule, PyroParam
-from pyro.infer.autoguide import AutoDiagonalNormal, AutoDelta, AutoGaussian, AutoNormal
-from pyro.infer.autoguide.initialization import init_to_feasible, init_to_median
+from pyro.infer.autoguide import AutoDiagonalNormal, AutoDelta, AutoGaussian, AutoNormal, AutoLowRankMultivariateNormal, AutoGuideList
+from pyro.infer.autoguide.initialization import init_to_feasible, init_to_median, init_to_sample
 
 def getAutoDiagonalNormal(model, device="cpu"):
     def init_func(*args):
@@ -32,11 +32,51 @@ def getAutoNormal(model, device="cpu"):
     
     return AutoNormal(model, init_loc_fn=init_func)
 
+def getAutoLowRankMultivariateNormal(model, device="cpu"):
+    def init_func(*args):
+        return init_to_feasible(*args).to(device)
+    
+    return AutoLowRankMultivariateNormal(model, init_loc_fn=init_func)
+
+def getAutoNormalDelta(model, device="cpu"):
+    def init_func(*args):
+        return init_to_median(*args).to(device)
+    
+    def my_init_fn(site):
+        if "weight" in site["name"] or "bias" in site["name"]:
+            value = site["fn"].sample().detach()
+            return torch.full_like(value, 0., device=device)
+        return init_to_sample(site)
+    
+    guide = AutoGuideList(model)
+    guide.append(AutoNormal(poutine.block(model, hide=["sigma"]), init_loc_fn=my_init_fn, init_scale=0.01))
+    guide.append(AutoDelta(poutine.block(model, expose=["sigma"]), init_loc_fn=init_func))
+    
+    return guide
+
 def getAutoNormalGamma(model, device="cpu"):
     def init_func(*args):
         return init_to_feasible(*args).to(device)
     
-    return AutoNormalGamma(model, init_loc_fn=init_func)
+    def sigma_guide(x, y=None):
+        sigma_loc = pyro.param("sigma_loc", torch.tensor(0.01, device=device), constraint=constraints.interval(0., 10.))
+        pyro.sample("sigma", dist.Delta(sigma_loc))
+    
+    guide = AutoGuideList(model)
+    guide.append(AutoDelta(poutine.block(model, hide=["sigma"]), init_loc_fn=init_func))
+    guide.append(sigma_guide)
+    
+    return guide
+
+def getAutoDelta2(model, device="cpu"):
+    def init_func(*args):
+        return init_to_median(*args).to(device)
+    
+    guide = AutoGuideList(model)
+    guide.append(AutoDelta(poutine.block(model, hide=["sigma"]), init_loc_fn=init_func))
+    guide.append(AutoDelta(poutine.block(model, expose=["sigma"]), init_loc_fn=init_func))
+    
+    return guide
 
 class OwnGuide(PyroModule):
     def __init__(self, model, device="cpu"):
@@ -171,6 +211,10 @@ guide_types = {
     "autodelta": getAutoDelta,
     "autogaussian": getAutoGaussian,
     "autonormal": getAutoNormal,
+    "autolowrankmultivariatenormal": getAutoLowRankMultivariateNormal,
+    "autonormaldelta": getAutoNormalDelta,
+    "autonormalgamma": getAutoNormalGamma,
+    "autodelta2": getAutoDelta2,
     "ownguide": OwnGuide,
     "ownguidetest": OwnGuideTest,
     "owneasyguidetest": OwnEasyGuideTest,
