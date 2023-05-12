@@ -132,29 +132,29 @@ def generate_dataset(sample_shape, func, mu, sigma, sample_space=(-10, 10), void
 def load_data(path, load_train=True, load_val=True, load_test=True):
     if load_train:
         train = genfromtxt(f"{path}/train.csv", delimiter=',')
-        x_train, y_train = train[:,0].reshape(-1, 1), train[:,1].reshape(-1, 1)
+        x_train, y_train = train[:,:-1], train[:,-1].reshape(-1, 1)
         x_train, y_train = torch.Tensor(x_train), torch.Tensor(y_train)
 
     if load_val:
         val = genfromtxt(f"{path}/val.csv", delimiter=',')
-        x_val, y_val = val[:,0].reshape(-1, 1), val[:,1].reshape(-1, 1)
+        x_val, y_val = val[:,:-1], val[:,-1].reshape(-1, 1)
         x_val, y_val = torch.Tensor(x_val), torch.Tensor(y_val)
 
     if load_test:
         test = genfromtxt(f"{path}/test.csv", delimiter=',')
-        x_test, y_test = test[:,0].reshape(-1, 1), test[:,1].reshape(-1, 1)
-        #x_test, y_test = test[:,:-1], test[:,-1]
+        #x_test, y_test = test[:,0].reshape(-1, 1), test[:,1].reshape(-1, 1)
+        x_test, y_test = test[:,:-1], test[:,-1].reshape(-1, 1)
         x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
 
-        print(test.shape)
+        print("test-shape: ", test.shape)
         print(x_test.shape, y_test.shape)
 
         test_in_domain = genfromtxt(f"{path}/test_in_domain.csv", delimiter=',')
-        x_test_in_domain, y_test_in_domain = test_in_domain[:,0].reshape(-1, 1), test_in_domain[:,1].reshape(-1, 1)
+        x_test_in_domain, y_test_in_domain = test_in_domain[:,:-1], test_in_domain[:,-1].reshape(-1, 1)
         x_test_in_domain, y_test_in_domain = torch.Tensor(x_test_in_domain), torch.Tensor(y_test_in_domain)
 
         test_out_domain = genfromtxt(f"{path}/test_out_domain.csv", delimiter=',')
-        x_test_out_domain, y_test_out_domain = test_out_domain[:,0].reshape(-1, 1), test_out_domain[:,1].reshape(-1, 1)
+        x_test_out_domain, y_test_out_domain = test_out_domain[:,:-1], test_out_domain[:,-1].reshape(-1, 1)
         x_test_out_domain, y_test_out_domain = torch.Tensor(x_test_out_domain), torch.Tensor(y_test_out_domain)
 
 

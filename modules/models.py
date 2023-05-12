@@ -216,6 +216,22 @@ class Regressor(nn.Module):
 
         return mu
     
+def get_net(in_features, out_features, hidden_features=[], activation=nn.ReLU()):
+    if len(hidden_features) == 0:
+        return nn.Sequential(
+            nn.Linear(in_features, out_features)
+        )
+    else:
+        return nn.Sequential(
+            nn.Linear(in_features, hidden_features[0]),
+            activation,
+            *[nn.Sequential(
+                nn.Linear(hidden_features[i], hidden_features[i+1]),
+                activation
+            ) for i in range(len(hidden_features)-1)],
+            nn.Linear(hidden_features[-1], out_features)
+        )
+    
 
 model_types = {
     "BR": BayesianRegressorV1,

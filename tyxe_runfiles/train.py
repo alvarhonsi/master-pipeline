@@ -1,4 +1,4 @@
-from modules.models import model_types
+from modules.models import get_net
 from modules.inference import MCMCInferenceModel, SVIInferenceModel
 from modules.datageneration import load_data, data_functions
 from modules.config import read_config
@@ -27,28 +27,26 @@ import time
 import json
 import argparse
 import tyxe
+import tyxe.priors as priors
+import tyxe.likelihoods as likelihoods
 
 import functools
 from typing import Callable, Optional
+
 
 def make_inference_model(config, dataset_config, device=None):
     DEVICE = device if device != None else config["DEVICE"]
     X_DIM = config.getint("X_DIM")
     Y_DIM = config.getint("Y_DIM")
 
-    MODEL_TYPE = config["MODEL_TYPE"]
     HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
 
-    PRIOR_TYPE = config["PRIOR_TYPE"]
-    WEIGHT_LOC = config.getfloat("WEIGHT_LOC")
-    WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
-    BIAS_LOC = config.getfloat("BIAS_LOC")
-    BIAS_SCALE = config.getfloat("BIAS_SCALE")
+    PRIOR_LOC = config.getfloat("PRIOR_LOC")
+    PRIOR_SCALE = config.getfloat("PRIOR_SCALE")
+    LIKELIHOOD_SCALE = config.getfloat("LIKELIHOOD_SCALE")
+    GUIDE_SCALE = config.getfloat("GUIDE_SCALE")
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
-    SVI_GUIDE = config["SVI_GUIDE"]
-    SVI_OPTIMIZER = config["SVI_OPTIMIZER"]
-    SVI_LOSS = config["SVI_LOSS"]
     MCMC_KERNEL = config["MCMC_KERNEL"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
@@ -57,48 +55,24 @@ def make_inference_model(config, dataset_config, device=None):
     EPOCHS = config.getint("EPOCHS")
     LR = config.getfloat("LR")
 
-    TRAIN_SIZE = config.getint("TRAIN_SIZE")
-
-
-    try:
-        PRIOR = prior_types[PRIOR_TYPE]
-    except KeyError:
-        raise ValueError(f"Prior type {PRIOR_TYPE} not supported. Supported types: {prior_types.keys()}")
-    try:
-        BNN = model_types[MODEL_TYPE]
-    except KeyError:
-        raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
-    try:
-        OPTIMIZER = optimizer_types[SVI_OPTIMIZER]
-    except KeyError:
-        raise ValueError(f"Optimizer type {SVI_OPTIMIZER} not supported. Supported types: {optimizer_types.keys()}")
-    try:
-        GUIDE = guide_types[SVI_GUIDE]
-    except KeyError:
-        raise ValueError(f"Guide type {SVI_GUIDE} not supported. Supported types: {guide_types.keys()}")
-    try:
-        LOSS = loss_types[SVI_LOSS]
-    except KeyError:
-        raise ValueError(f"Loss type {SVI_LOSS} not supported. Supported types: {loss_types.keys()}")
+    TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
     
-    
-    #prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE)
-    #model = BNN(X_DIM, Y_DIM, prior, hidden_features=HIDDEN_FEATURES, device=DEVICE)
+    #net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES)
     net = nn.Sequential(nn.Linear(1, 32), nn.ReLU(), nn.Linear(32,32), nn.ReLU(), nn.Linear(32, 1))
+    print(net)
+    #prior_dist = dist.Normal(torch.tensor(PRIOR_LOC), torch.tensor(PRIOR_SCALE))
+    #prior = tyxe.priors.IIDPrior(prior_dist)
+
     prior = tyxe.priors.IIDPrior(dist.Normal(0, 1))
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
+        #guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
+        #obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive))
         guide_builder = partial(tyxe.guides.AutoNormal, init_scale=0.01)
-        #likelihood = tyxe.likelihoods.HomoskedasticGaussian(scale=1., dataset_size=TRAIN_SIZE)
-        likelihood = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(3.)))
-        #likelihood_guide_builder = tyxe.guides.AutoNormal
-        #optim = OPTIMIZER({"lr": LR})
-        #loss = LOSS(num_particles=10)
-        #inference_model = SVIInferenceModel(model, prior, guide, optim, EPOCHS, loss=loss, device=DEVICE)
-        
-        #bnn = tyxe.VariationalBNN(net, prior, likelihood, guide_builder, likelihood_guide_builder)
-        bnn = tyxe.VariationalBNN(net, prior, likelihood, guide_builder)
+        print("train size:", TRAIN_SIZE)
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(TRAIN_SIZE, scale=PyroParam(torch.tensor(5.), constraint=dist.constraints.positive))
+        bnn = tyxe.VariationalBNN(net, prior, obs_model, guide_builder)
         return bnn
     elif INFERENCE_TYPE == "mcmc":
         return None
@@ -120,19 +94,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     SIGMA = dataset_config.getfloat("SIGMA")
     DATA_FUNC = dataset_config["DATA_FUNC"]
 
-    MODEL_TYPE = config["MODEL_TYPE"]
-    HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
-
-    PRIOR_TYPE = config["PRIOR_TYPE"]
-    WEIGHT_LOC = config.getfloat("WEIGHT_LOC")
-    WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
-    BIAS_LOC = config.getfloat("BIAS_LOC")
-    BIAS_SCALE = config.getfloat("BIAS_SCALE")
-    SIGMA_CONCENTRATION = config.getfloat("SIGMA_CONCENTRATION")
-    SIGMA_RATE = config.getfloat("SIGMA_RATE")
-
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
-    SVI_GUIDE = config["SVI_GUIDE"]
     MCMC_KERNEL = config["MCMC_KERNEL"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
@@ -168,27 +130,38 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
-    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE, shuffle=True, num_workers=3)
+    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE)
+    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE)
+
+    x_t, y_t = next(iter(train_dataloader))
+    print(x_t.shape, y_t.shape)
 
     # Create model
     bnn = make_inference_model(config, dataset_config, device=DEVICE)
     
-    pyro.clear_param_store()
-
-    elbos = []
-    def callback(bnn, i, e):
-        if i % 100 == 0:
-            print("epoch: {} | elbo: {}".format(i, e))
-        elbos.append(e)
-
     # RUN TRAINING
     print('Using device: {}'.format(DEVICE))
     print(f'===== Training profile {NAME} =====')
-    optim = pyro.optim.Adam({"lr": 1e-3})
-    with tyxe.poutine.local_reparameterization():
-        bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback)
 
-    #print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
+    pyro.clear_param_store()
 
-    return bnn
+    start = time.time()
+
+    train_stats = {}
+    elbos = []
+    def callback(bnn, i, e):
+        time_elapsed = time.time() - start
+        if i % 100 == 0:
+            print("[{}] epoch: {} | elbo: {}".format(timedelta(seconds=time_elapsed), i, e))
+        elbos.append(e)
+
+    if INFERENCE_TYPE == "svi":
+        optim = pyro.optim.Adam({"lr": LR})
+        with tyxe.poutine.local_reparameterization():
+            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback)
+
+    train_stats["time"] = time.time() - start
+    train_stats["elbos"] = elbos
+    print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
+
+    return bnn, train_stats
