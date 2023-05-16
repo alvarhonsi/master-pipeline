@@ -39,12 +39,21 @@ def draw_data_samples(dataloader, num_samples=10):
     sample_y = y[idx]
     return sample_x, sample_y
 
-def evaluate_error(inference_model, dataloader, num_predictions=100):
+def evaluate_error(bnn, dataloader, num_predictions=100):
     results = {}
     # Evaluate error
-    rmse, mae = inference_model.evaluate(dataloader, num_predictions=num_predictions)
-    results["rmse"] = np.float64(rmse)
-    results["mae"] = np.float64(mae)
+    mse, loglikelihood = 0, 0
+    batch_num = 0
+    for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
+        err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
+        mse += err
+        loglikelihood += ll
+        batch_num = num_batch
+    rmse = (mse / batch_num).sqrt()
+    loglikelihood = loglikelihood / batch_num
+
+    results["rmse"] = rmse.item()
+    results["loglikelihood"] = loglikelihood.item()
 
     return results
 
@@ -237,9 +246,9 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
 
     results = {}
 
-    test_error = evaluate_error(inference_model, test_dataloader, num_predictions=100)
-    in_domain_error = evaluate_error(inference_model, test_in_domain_dataloader, num_predictions=100)
-    out_domain_error = evaluate_error(inference_model, test_out_domain_dataloader, num_predictions=100)
+    test_error = evaluate_error(bnn, test_dataloader, num_predictions=100)
+    in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=100)
+    out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=100)
     results["test_error"] = test_error
     results["in_domain_error"] = in_domain_error
     results["out_domain_error"] = out_domain_error

@@ -43,6 +43,7 @@ def make_inference_model(config, dataset_config, device=None):
 
     PRIOR_LOC = config.getfloat("PRIOR_LOC")
     PRIOR_SCALE = config.getfloat("PRIOR_SCALE")
+    OBS_MODEL = config["OBS_MODEL"]
     LIKELIHOOD_SCALE = config.getfloat("LIKELIHOOD_SCALE")
     GUIDE_SCALE = config.getfloat("GUIDE_SCALE")
 
@@ -62,7 +63,10 @@ def make_inference_model(config, dataset_config, device=None):
     prior_dist = dist.Normal(torch.tensor(PRIOR_LOC), torch.tensor(PRIOR_SCALE))
     prior = tyxe.priors.IIDPrior(prior_dist)
 
-    obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive))
+    if OBS_MODEL == "homoskedastic":
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=LIKELIHOOD_SCALE)
+    elif OBS_MODEL == "homoskedastic_param":
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive))
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
@@ -179,9 +183,9 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     if INFERENCE_TYPE == "svi":
         optim = pyro.optim.Adam({"lr": LR})
         with tyxe.poutine.local_reparameterization():
-            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback)
+            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
-        bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP)
+        bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
 
     train_stats["time"] = time.time() - start
     print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
