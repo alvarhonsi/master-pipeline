@@ -153,8 +153,6 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    pyro.clear_param_store()
-
     # Load data
     (x_train, y_train), _, (x_test, y_test), (x_test_in_domain, y_test_in_domain), (x_test_out_domain, y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_val=False)
 
@@ -171,7 +169,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     test_out_domain_dataloader = DataLoader(test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True, num_workers=3)
     
     # Load model
-    bnn = load_model(DIR, config) if bnn is None else bnn
+    # bnn = load_model(DIR, config) if bnn is None else bnn
 
     # Ready results directory
     if not os.path.exists(f"{DIR}/results/{NAME}"):
@@ -191,10 +189,6 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     test_x_sample, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES)
     test_in_domain_x_sample, _ = draw_data_samples(test_in_domain_dataloader, NUM_X_SAMPLES)
     test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES)
-
-    np.savetxt(f"{DIR}/results/{NAME}/samples/test_x_sample.csv", test_x_sample, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/test_in_domain_x_sample.csv", test_in_domain_x_sample, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/test_out_domain_x_sample.csv", test_out_domain_x_sample, delimiter=",")
     
     #Sample true distribution from data
     # data_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
@@ -206,27 +200,30 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     data_samples = data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
     data_in_domain_samples = data_in_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
     data_out_domain_samples = data_out_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-
-    np.savetxt(f"{DIR}/results/{NAME}/samples/data_samples.csv", data_samples, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/data_in_domain_samples.csv", data_in_domain_samples, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/data_out_domain_samples.csv", data_out_domain_samples, delimiter=",")
+    print("data samples: ", data_samples.shape)
     
 
     #Sample posterior distribution from model
     # pred_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
-    pred_samples = inference_model.predict(test_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
-    pred_in_domain_samples = inference_model.predict(test_in_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
-    pred_out_domain_samples = inference_model.predict(test_out_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+    #pred_samples = inference_model.predict(test_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+    #pred_in_domain_samples = inference_model.predict(test_in_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+    #pred_out_domain_samples = inference_model.predict(test_out_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
 
-    np.savetxt(f"{DIR}/results/{NAME}/samples/predictive_samples.csv", pred_samples, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/predictive_in_domain_samples.csv", pred_in_domain_samples, delimiter=",")
-    np.savetxt(f"{DIR}/results/{NAME}/samples/predictive_out_domain_samples.csv", pred_out_domain_samples, delimiter=",")
+    predictions = bnn.predict(test_x_sample, num_predictions=NUM_DIST_SAMPLES)
+    pred_samples = bnn.likelihood.sample(predictions, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
+
+    predictions_in_domain = bnn.predict(test_in_domain_x_sample, num_predictions=NUM_DIST_SAMPLES)
+    pred_in_domain_samples = bnn.likelihood.sample(predictions_in_domain, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
+
+    predictions_out_domain = bnn.predict(test_out_domain_x_sample, num_predictions=NUM_DIST_SAMPLES)
+    pred_out_domain_samples = bnn.likelihood.sample(predictions_out_domain, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
 
     # Sanity Checks
     train_x_sample, train_y_sample = draw_data_samples(train_dataloader, NUM_X_SAMPLES)
     train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
     train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    train_pred_samples = inference_model.predict(train_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
+    train_preds = bnn.predict(train_x_sample, num_predictions=NUM_DIST_SAMPLES)
+    train_pred_samples = bnn.likelihood.sample(train_preds, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
     plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
 
 

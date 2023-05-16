@@ -57,25 +57,26 @@ def make_inference_model(config, dataset_config, device=None):
 
     TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
     
-    #net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES)
-    net = nn.Sequential(nn.Linear(1, 32), nn.ReLU(), nn.Linear(32,32), nn.ReLU(), nn.Linear(32, 1))
+    net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES, activation=nn.Tanh())
     print(net)
-    #prior_dist = dist.Normal(torch.tensor(PRIOR_LOC), torch.tensor(PRIOR_SCALE))
-    #prior = tyxe.priors.IIDPrior(prior_dist)
+    prior_dist = dist.Normal(torch.tensor(PRIOR_LOC), torch.tensor(PRIOR_SCALE))
+    prior = tyxe.priors.IIDPrior(prior_dist)
 
-    prior = tyxe.priors.IIDPrior(dist.Normal(0, 1))
+    obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive))
 
     # Create inference model
     if INFERENCE_TYPE == "svi":
-        #guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
-        #obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive))
-        guide_builder = partial(tyxe.guides.AutoNormal, init_scale=0.01)
+        guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
+        #guide_builder = partial(tyxe.guides.AutoNormal, init_scale=0.01)
         print("train size:", TRAIN_SIZE)
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(TRAIN_SIZE, scale=PyroParam(torch.tensor(5.), constraint=dist.constraints.positive))
+        #obs_model = tyxe.likelihoods.HomoskedasticGaussian(TRAIN_SIZE, scale=PyroParam(torch.tensor(5.), constraint=dist.constraints.positive))
         bnn = tyxe.VariationalBNN(net, prior, obs_model, guide_builder)
         return bnn
     elif INFERENCE_TYPE == "mcmc":
-        return None
+        kernel_builder = partial(pyro.infer.mcmc.NUTS, step_size=1.)
+        #kernel_builder = partial(tyxe.kernels.HMC, step_size=1.)
+        bnn = tyxe.bnn.MCMC_BNN(net, prior, obs_model, kernel_builder)
+        return bnn
     else:
         raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
     
@@ -147,21 +148,42 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     start = time.time()
 
-    train_stats = {}
-    elbos = []
+    train_stats = {
+        "elbos": [],
+        "time": 0,
+        "rmse_epoch": [],
+        "ll_epoch": [],
+    }
     def callback(bnn, i, e):
         time_elapsed = time.time() - start
+
+        mse, loglikelihood = 0, 0
+        batch_num = 0
+        for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+            err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
+            mse += err
+            loglikelihood += ll
+            batch_num = num_batch
+        rmse = (mse / batch_num).sqrt()
+        loglikelihood = loglikelihood / batch_num
+        
+        train_stats["rmse_epoch"].append(rmse.sqrt().item())
+        train_stats["ll_epoch"].append(loglikelihood.item())
+
+
         if i % 100 == 0:
-            print("[{}] epoch: {} | elbo: {}".format(timedelta(seconds=time_elapsed), i, e))
-        elbos.append(e)
+            print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, mse.sqrt().item(), ll.item()))
+            
+        train_stats["elbos"].append(e)
 
     if INFERENCE_TYPE == "svi":
         optim = pyro.optim.Adam({"lr": LR})
         with tyxe.poutine.local_reparameterization():
             bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback)
+    elif INFERENCE_TYPE == "mcmc":
+        bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP)
 
     train_stats["time"] = time.time() - start
-    train_stats["elbos"] = elbos
     print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
 
     return bnn, train_stats
