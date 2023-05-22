@@ -1,3 +1,29 @@
 {
     "test_error": {
-        "rmse": 
+        "rmse": 46.602176666259766,
+        "loglikelihood": -20517.81640625
+    },
+    "in_domain_error": {
+        "rmse": 9.288902282714844,
+        "loglikelihood": -2125.083740234375
+    },
+    "out_domain_error": {
+        "rmse": 96.8773193359375,
+        "loglikelihood": -59081.96875
+    },
+    "predictive": {
+        "kl_div": 29280.96484375,
+        "mean_diff": 39.336490631103516,
+        "std_diff": 0.04553452879190445
+    },
+    "predictive_in_domain": {
+        "kl_div": 854.6468505859375,
+        "mean_diff": 6.5368266105651855,
+        "std_diff": 0.05267849564552307
+    },
+    "predictive_out_domain": {
+        "kl_div": 132818.84375,
+        "mean_diff": 100.63909912109375,
+        "std_diff": 0.12544718384742737
+    }
+}

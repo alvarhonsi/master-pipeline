@@ -58,23 +58,29 @@ def make_inference_model(config, dataset_config, device=None):
 
     TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
     
-    net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES, activation=nn.Tanh())
+    net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES, activation=nn.ReLU())
     print(net)
     prior_dist = dist.Normal(torch.tensor(PRIOR_LOC), torch.tensor(PRIOR_SCALE))
     prior = tyxe.priors.IIDPrior(prior_dist)
 
     if OBS_MODEL == "homoskedastic":
         obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=LIKELIHOOD_SCALE)
+        likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_param":
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive))
-
+        scale = PyroParam(torch.tensor(LIKELIHOOD_SCALE), constraint=dist.constraints.positive)
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=scale)
+        likelihood_guide_builder = None
+    elif OBS_MODEL == "homoskedastic_gamma":
+        scale = dist.Gamma(torch.tensor(1.), torch.tensor(1.))
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=scale)
+        likelihood_guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
     # Create inference model
     if INFERENCE_TYPE == "svi":
         guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
         #guide_builder = partial(tyxe.guides.AutoNormal, init_scale=0.01)
         print("train size:", TRAIN_SIZE)
         #obs_model = tyxe.likelihoods.HomoskedasticGaussian(TRAIN_SIZE, scale=PyroParam(torch.tensor(5.), constraint=dist.constraints.positive))
-        bnn = tyxe.VariationalBNN(net, prior, obs_model, guide_builder)
+        bnn = tyxe.VariationalBNN(net, prior, obs_model, guide_builder, likelihood_guide_builder=likelihood_guide_builder)
         return bnn
     elif INFERENCE_TYPE == "mcmc":
         kernel_builder = partial(pyro.infer.mcmc.NUTS, step_size=1.)
@@ -182,7 +188,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     if INFERENCE_TYPE == "svi":
         optim = pyro.optim.Adam({"lr": LR})
-        with tyxe.poutine.local_reparameterization():
+        with tyxe.poutine.flipout():
             bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)

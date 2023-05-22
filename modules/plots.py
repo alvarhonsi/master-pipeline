@@ -75,18 +75,23 @@ def plot_distribution(samples, save_path=None, ax=None, figsize=(10,10)):
     if save_path:
         plt.savefig(save_path)
 
-def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10,10), kl_div=False, plot_mean=False):
+def plot_comparison(post_sample, data_sample, x_sample=None, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10,10), kl_div=False, plot_mean=False):
     sns.set_style("darkgrid")
     sns.set_context("paper")
 
     data_std = data_sample.std()
     post_std = post_sample.std()
 
+    title = ""
+
+    if x_sample is not None:
+        title += f"X: {[round(x.item(), 2) for x in x_sample[0]]} \n"
+
     if kl_div:
         kl = KL_divergance_normal(post_sample, data_sample) if data_std > 1e-5 and post_std > 1e-5 else -1
         mean_diff = difference_mean(post_sample, data_sample)
         std_diff = difference_std(post_sample, data_sample)
-        title = f"KL-divergence: {kl:.4f} | Mean diff: {mean_diff:.4f} | Std diff: {std_diff:.4f}"
+        title += f"KL-divergence: {kl:.4f} | Mean diff: {mean_diff:.4f} | Std diff: {std_diff:.4f}"
 
     standalone = False
     if ax is None:
@@ -114,7 +119,7 @@ def plot_comparison(post_sample, data_sample, x_label="y", y_label="Density", ti
         plt.savefig(save_path)
 
 """Plots a grid of comparisons between the posterior and data distributions"""
-def plot_comparison_grid(posterior_samples, data_samples, title=None, grid_size=(2,2), save_path=None, figsize=(10,10), kl_div=False, plot_mean=False):
+def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=None, grid_size=(2,2), save_path=None, figsize=(10,10), kl_div=False, plot_mean=False):
     assert posterior_samples.shape[1] == data_samples.shape[1]
     num_x = data_samples.shape[1]
     assert (grid_size[0] * grid_size[1]) <= num_x
@@ -131,7 +136,7 @@ def plot_comparison_grid(posterior_samples, data_samples, title=None, grid_size=
     fig.text(0.04, 0.5, 'Density', va='center', rotation='vertical', fontsize=15)
 
     for i, ax in enumerate(axs):
-        plot_comparison(posterior_samples[:,i], data_samples[:,i], ax=ax, kl_div=kl_div, plot_mean=plot_mean)   
+        plot_comparison(posterior_samples[:,i], data_samples[:,i], x_sample=x_samples[i],  kl_div=kl_div, plot_mean=plot_mean, ax=ax)   
 
     if save_path:
         plt.savefig(save_path)
