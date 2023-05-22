@@ -85,7 +85,7 @@ def plot_comparison(post_sample, data_sample, x_sample=None, x_label="y", y_labe
     title = ""
 
     if x_sample is not None:
-        title += f"X: {[round(x.item(), 2) for x in x_sample[0]]} \n"
+        title += f"X: {[round(x.item(), 2) for x in x_sample]} \n"
 
     if kl_div:
         kl = KL_divergance_normal(post_sample, data_sample) if data_std > 1e-5 and post_std > 1e-5 else -1
@@ -136,7 +136,8 @@ def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=
     fig.text(0.04, 0.5, 'Density', va='center', rotation='vertical', fontsize=15)
 
     for i, ax in enumerate(axs):
-        plot_comparison(posterior_samples[:,i], data_samples[:,i], x_sample=x_samples[i],  kl_div=kl_div, plot_mean=plot_mean, ax=ax)   
+        x_samp = x_samples[i] if x_samples is not None else None
+        plot_comparison(posterior_samples[:,i], data_samples[:,i], x_sample=x_samp,  kl_div=kl_div, plot_mean=plot_mean, ax=ax)   
 
     if save_path:
         plt.savefig(save_path)

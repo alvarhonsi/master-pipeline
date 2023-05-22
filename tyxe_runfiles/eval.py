@@ -233,15 +233,13 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
     train_preds = bnn.predict(train_x_sample, num_predictions=NUM_DIST_SAMPLES)
     train_pred_samples = bnn.likelihood.sample(train_preds, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
-    print(train_x_sample.shape)
-    print(train_x_sample)
     plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), x_samples=train_x_sample, kl_div=True, title="Posterior samples - Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
 
 
 
-    plot_comparison_grid(pred_samples, data_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Test", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_sanity.png")
-    plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_in_domain_sanity.png")
-    plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_out_domain_sanity.png")
+    plot_comparison_grid(pred_samples, data_samples, x_samples=test_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Test", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_sanity.png")
+    plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, x_samples=test_in_domain_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_in_domain_sanity.png")
+    plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, x_samples=test_out_domain_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_out_domain_sanity.png")
     
 
     # Evaluate
