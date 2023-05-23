@@ -78,7 +78,7 @@ def make_inference_model(config, dataset_config, device=None):
     if INFERENCE_TYPE == "svi":
         def init_fn (*args, **kwargs):
             return ag_init.init_to_median(*args, **kwargs).to(DEVICE) 
-        guide_builder = partial(tyxe.guides.AutoNormal, init_loc_fn, init_scale=GUIDE_SCALE)
+        guide_builder = partial(tyxe.guides.AutoNormal, init_loc_fn=init_fn, init_scale=GUIDE_SCALE)
         #guide_builder = partial(tyxe.guides.AutoNormal, init_scale=0.01)
         print("train size:", TRAIN_SIZE)
         #obs_model = tyxe.likelihoods.HomoskedasticGaussian(TRAIN_SIZE, scale=PyroParam(torch.tensor(5.), constraint=dist.constraints.positive))
