@@ -20,7 +20,7 @@ import pyro
 from pyro.nn import PyroModule, PyroSample, PyroParam
 from pyro.infer.autoguide import AutoDiagonalNormal
 from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive, TraceMeanField_ELBO
-from pyro.infer.autoguide.initialization import init_to_feasible, init_to_median
+import pyro.infer.autoguide.initialization as ag_init
 import pyro.distributions as dist
 from datetime import timedelta
 import time
@@ -64,19 +64,21 @@ def make_inference_model(config, dataset_config, device=None):
     prior = tyxe.priors.IIDPrior(prior_dist)
 
     if OBS_MODEL == "homoskedastic":
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=LIKELIHOOD_SCALE)
         likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_param":
-        scale = PyroParam(torch.tensor(LIKELIHOOD_SCALE, device=DEVICE), constraint=dist.constraints.positive)
+        scale = PyroParam(LIKELIHOOD_SCALE, constraint=dist.constraints.positive)
         obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=scale)
         likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_gamma":
         scale = dist.Gamma(torch.tensor(1., device=DEVICE), torch.tensor(1., device=DEVICE))
         obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=scale)
-        likelihood_guide_builder = partial(tyxe.guides.AutoNormal, init_scale=torch.tensor(GUIDE_SCALE, device=DEVICE))
+        likelihood_guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
     # Create inference model
     if INFERENCE_TYPE == "svi":
-        guide_builder = partial(tyxe.guides.AutoNormal, init_scale=torch.tensor(GUIDE_SCALE, device=DEVICE))
+        def init_fn (*args, **kwargs):
+            return ag_init.init_to_median(*args, **kwargs).to(DEVICE) 
+        guide_builder = partial(tyxe.guides.AutoNormal, init_loc_fn, init_scale=GUIDE_SCALE)
         #guide_builder = partial(tyxe.guides.AutoNormal, init_scale=0.01)
         print("train size:", TRAIN_SIZE)
         #obs_model = tyxe.likelihoods.HomoskedasticGaussian(TRAIN_SIZE, scale=PyroParam(torch.tensor(5.), constraint=dist.constraints.positive))
