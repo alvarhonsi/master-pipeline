@@ -172,6 +172,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
         mse, loglikelihood = 0, 0
         batch_num = 0
         for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+            input_data, observation_data = input_data.to(DEVICE), observation_data.to(DEVICE)
             err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
             mse += err
             loglikelihood += ll
