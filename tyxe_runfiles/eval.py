@@ -165,16 +165,21 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
 
     # Load data
     (x_train, y_train), _, (x_test_in_domain, y_test_in_domain), (x_test_out_domain, y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_val=False)
+    x_test = torch.vstack((x_test_in_domain, x_test_out_domain))
+    y_test = torch.vstack((y_test_in_domain, y_test_out_domain))
+
 
     # Make dataset
     train_dataset = TensorDataset(x_train, y_train)
     test_in_domain_dataset = TensorDataset(x_test_in_domain, y_test_in_domain)
     test_out_domain_dataset = TensorDataset(x_test_out_domain, y_test_out_domain)
+    test_dataset = TensorDataset(x_test, y_test)
 
     # Make dataloader
     train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
     test_in_domain_dataloader = DataLoader(test_in_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
     test_out_domain_dataloader = DataLoader(test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
     
     # Load model
     # bnn = load_model(DIR, config) if bnn is None else bnn
@@ -193,18 +198,37 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     if not os.path.exists(f"{DIR}/results/{NAME}/posterior-samples"):
         os.mkdir(f"{DIR}/results/{NAME}/posterior-samples")
 
+    if not os.path.exists(f"{DIR}/results/{NAME}/data-samples"):
+        os.mkdir(f"{DIR}/results/{NAME}/data-samples")
+
     # samp_x: (NUM_X_SAMPLES, X_DIM), samp_y: (NUM_X_SAMPLES)
+    train_x_sample, _ = draw_data_samples(train_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    test_x_sample, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES, device=DEVICE)
     test_in_domain_x_sample, _ = draw_data_samples(test_in_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
     test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
+
+    np.save(f"{DIR}/results/{NAME}/data-samples/train_x.npy", train_x_sample.cpu().detach().numpy())
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_x.npy", test_in_domain_x_sample.cpu().detach().numpy())
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_x.npy", test_out_domain_x_sample.cpu().detach().numpy())
     
     #Sample true distribution from data
     # data_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
     func = data_functions[DATA_FUNC]
+    data_train_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
+    data_test_dist = DataDistribution(func, MU, SIGMA, test_x_sample)
     data_in_domain_dist = DataDistribution(func, MU, SIGMA, test_in_domain_x_sample)
     data_out_domain_dist = DataDistribution(func, MU, SIGMA, test_out_domain_x_sample)
 
+    data_train_samples = data_train_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+    data_test_samples = data_test_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
     data_in_domain_samples = data_in_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
     data_out_domain_samples = data_out_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+
+    np.save(f"{DIR}/results/{NAME}/data-samples/train_dist_samples.npy", data_train_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_dist_samples.npy", data_test_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_dist_samples.npy", data_in_domain_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_dist_samples.npy", data_out_domain_samples)
+
     print("data samples: ", data_in_domain_samples.shape)
     
 
@@ -214,25 +238,24 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     #pred_in_domain_samples = inference_model.predict(test_in_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
     #pred_out_domain_samples = inference_model.predict(test_out_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
 
+    predictions_train = bnn.predict(train_x_sample, num_predictions=NUM_DIST_SAMPLES)
+    pred_train_samples = bnn.likelihood.sample(predictions_train, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/predictions_train.npy", pred_train_samples)
+
+    predictions_test = bnn.predict(test_x_sample, num_predictions=NUM_DIST_SAMPLES)
+    pred_test_samples = bnn.likelihood.sample(predictions_test, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/predictions_test.npy", pred_test_samples)
+
     predictions_in_domain = bnn.predict(test_in_domain_x_sample, num_predictions=NUM_DIST_SAMPLES)
-    torch.save(predictions_in_domain, f"{DIR}/results/{NAME}/posterior-samples/predictions_in_domain.pt")
     pred_in_domain_samples = bnn.likelihood.sample(predictions_in_domain, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/predictions_in_domain.npy", pred_in_domain_samples)
 
     predictions_out_domain = bnn.predict(test_out_domain_x_sample, num_predictions=NUM_DIST_SAMPLES)
-    torch.save(predictions_out_domain, f"{DIR}/results/{NAME}/posterior-samples/predictions_out_domain.pt")
     pred_out_domain_samples = bnn.likelihood.sample(predictions_out_domain, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/predictions_out_domain.npy", pred_out_domain_samples)
 
     # Sanity Checks
-    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, NUM_X_SAMPLES, device=DEVICE)
-    train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
-    train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    train_preds = bnn.predict(train_x_sample, num_predictions=NUM_DIST_SAMPLES)
-    torch.save(train_preds, f"{DIR}/results/{NAME}/posterior-samples/predictions_train.pt")
-    train_pred_samples = bnn.likelihood.sample(train_preds, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
-    plot_comparison_grid(train_pred_samples, train_data_samples, grid_size=(3,3), figsize=(20,20), x_samples=train_x_sample, kl_div=True, title="Posterior samples - Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
-
-
-
+    plot_comparison_grid(pred_train_samples, data_train_samples, grid_size=(3,3), figsize=(20,20), x_samples=train_x_sample, kl_div=True, title="Posterior samples - Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
     plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, x_samples=test_in_domain_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_in_domain_sanity.png")
     plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, x_samples=test_out_domain_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_out_domain_sanity.png")
     
@@ -241,11 +264,17 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
 
     results = {}
 
+    train_error = evaluate_error(bnn, train_dataloader, num_predictions=100, device=DEVICE)
+    test_error = evaluate_error(bnn, test_dataloader, num_predictions=100, device=DEVICE)
     in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=100, device=DEVICE)
     out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=100, device=DEVICE)
+    results["train_error"] = train_error
+    results["test_error"] = test_error
     results["in_domain_error"] = in_domain_error
     results["out_domain_error"] = out_domain_error
 
+    results["predictive_train"] = evaluate_posterior(pred_train_samples, data_train_samples)
+    results["predictive_test"] = evaluate_posterior(pred_test_samples, data_test_samples)
     results["predictive_in_domain"] = evaluate_posterior(pred_in_domain_samples, data_in_domain_samples)
     results["predictive_out_domain"] = evaluate_posterior(pred_out_domain_samples, data_out_domain_samples)
 
