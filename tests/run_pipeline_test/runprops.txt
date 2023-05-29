@@ -1,3 +1,4 @@
 dir = tests/run_pipeline_test/
+name = run_pipeline_test
 devices = cpu
 profiles = sin-10x-sigma1 sin-10x-sigma05 sin-10x-sigma01 sin-10x-sigma001

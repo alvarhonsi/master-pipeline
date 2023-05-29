@@ -1,6 +1,5 @@
 #!/bin/bash
 PROPSFILE=$1
-NAME=$2
 COUNT=1
 
 # array declaration
@@ -11,6 +10,7 @@ while IFS='= ' read -r key value; do
 done < "$PROPSFILE"
 
 DIR=${props["dir"]}
+NAME=${props["name"]}
 IFS=', ' read -r -a DEVICES <<< "${props["devices"]}"
 IFS=',' read -r -a PROFILES <<< "${props["profiles"]}"
 
