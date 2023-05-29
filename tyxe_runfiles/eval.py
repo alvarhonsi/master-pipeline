@@ -230,13 +230,6 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_dist_samples.npy", data_out_domain_samples)
 
     print("data samples: ", data_in_domain_samples.shape)
-    
-
-    #Sample posterior distribution from model
-    # pred_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
-    #pred_samples = inference_model.predict(test_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
-    #pred_in_domain_samples = inference_model.predict(test_in_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
-    #pred_out_domain_samples = inference_model.predict(test_out_domain_x_sample, NUM_DIST_SAMPLES).cpu().detach().numpy()
 
     predictions_train = bnn.predict(train_x_sample, num_predictions=NUM_DIST_SAMPLES)
     pred_train_samples = bnn.likelihood.sample(predictions_train, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
