@@ -1,2 +1,0 @@
-python run-pipeline.py -dir tests/datafunc-test/product-linear/ -t -e -dev cuda:2 -p prodlin-0layer prodlin-2layer prodlin-5layer prodlin-10layer
-python run-pipeline.py -dir tests/datafunc-test/product-linear/ -t -e -dev cuda:3 -p prodlin-noise-0layer prodlin-noise-2layer prodlin-noise-5layer prodlin-noise-10layer

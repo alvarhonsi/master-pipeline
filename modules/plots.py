@@ -141,5 +141,5 @@ def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=
 
     if save_path:
         plt.savefig(save_path)
-
-    plt.show()
+    
+    plt.close()

@@ -1,0 +1,20 @@
+{
+    "in_domain_error": {
+        "rmse": 13.607976913452148,
+        "loglikelihood": -5546.5234375
+    },
+    "out_domain_error": {
+        "rmse": 29.270967483520508,
+        "loglikelihood": -4585.39501953125
+    },
+    "predictive_in_domain": {
+        "kl_div": 10388.48046875,
+        "mean_diff": 11.954266548156738,
+        "std_diff": 0.03715841472148895
+    },
+    "predictive_out_domain": {
+        "kl_div": 39100.5703125,
+        "mean_diff": 25.27884292602539,
+        "std_diff": 0.19685426354408264
+    }
+}

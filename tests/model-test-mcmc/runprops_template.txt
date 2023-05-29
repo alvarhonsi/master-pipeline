@@ -1,3 +1,0 @@
-dir = tests/model-test-mcmc/
-devices = cuda:2, cuda:3, cuda:4, cuda:6, cuda:7
-profiles = sin-0layer-10x sin-2layer-10x sin-5layer-10x, sin-noise-0layer-10x sin-noise-2layer-10x sin-noise-5layer-10x, sin-weighted-0layer-10x sin-weighted-2layer-10x sin-weighted-5layer-10x, sin-noise-weighted-0layer-10x sin-noise-weighted-2layer-10x sin-noise-weighted-5layer-10x, sum-0layer-10x sum-2layer-10x sum-5layer-10x

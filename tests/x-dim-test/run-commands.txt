@@ -1,2 +1,0 @@
-python run-pipeline.py -dir tests/x-dim-test/ -t -e -dev cuda:3 -p sin-2layer-1x sin-2layer-2x sin-2layer-3x
-python run-pipeline.py -dir tests/x-dim-test/ -t -e -dev cuda:5 -p sin-2layer-5x sin-2layer-10x

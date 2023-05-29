@@ -32,6 +32,7 @@ import tyxe.likelihoods as likelihoods
 
 import functools
 from typing import Callable, Optional
+import pickle
 
 
 def make_inference_model(config, dataset_config, device=None):
@@ -125,7 +126,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     np.random.seed(SEED)
 
     # Load data
-    (x_train, y_train), (x_val, y_val), _, _, _ = load_data(f"{DIR}/datasets/{DATASET}")
+    (x_train, y_train), (x_val, y_val), _, _ = load_data(f"{DIR}/datasets/{DATASET}")
 
     # Ready model directory
     if not os.path.exists(f"{DIR}/models/{NAME}"):
@@ -183,7 +184,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
             train_stats["rmse_epoch"].append(rmse.sqrt().item())
             train_stats["ll_epoch"].append(loglikelihood.item())
-            print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, mse.sqrt().item(), ll.item()))      
+            print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, round(mse.sqrt().item(), 4), round(ll.item(), 4)))      
             
         train_stats["elbos"].append(e)
 
@@ -196,5 +197,8 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     train_stats["time"] = time.time() - start
     print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
+
+    with open(f"{DIR}/results/{NAME}/train_stats.json", "w") as f:
+        json.dump(train_stats, f)
 
     return bnn, train_stats

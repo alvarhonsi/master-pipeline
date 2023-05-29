@@ -42,21 +42,26 @@ def gen(dataset_config, DIR):
     train = generate_dataset((TRAIN_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=IN_DOMAIN_SAMPLE_SPACE)
     val = generate_dataset((VAL_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=IN_DOMAIN_SAMPLE_SPACE)
 
-    test = generate_dataset((TEST_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=OUT_DOMAIN_SAMPLE_SPACE)
     test_in_domain = generate_dataset((TEST_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=IN_DOMAIN_SAMPLE_SPACE)
     test_out_domain = generate_dataset((TEST_SIZE, X_DIM), FUNC, MU, SIGMA, sample_space=OUT_DOMAIN_SAMPLE_SPACE, void_space=IN_DOMAIN_SAMPLE_SPACE)
 
     train_complete = np.hstack((train[0], train[1].reshape(-1, 1)))
     val_complete = np.hstack((val[0], val[1].reshape(-1, 1)))
 
-    test_complete = np.hstack((test[0], test[1].reshape(-1, 1)))
     test_in_domain_complete = np.hstack((test_in_domain[0], test_in_domain[1].reshape(-1, 1)))
     test_out_domain_complete = np.hstack((test_out_domain[0], test_out_domain[1].reshape(-1, 1)))
+
+    # Print dataset ranges
+    print(f"Train: {IN_DOMAIN_SAMPLE_SPACE}")
+    print(f"Y-space: {train[1].min()} - {train[1].max()}")
+    print(f"In Domain: {IN_DOMAIN_SAMPLE_SPACE}")
+    print(f"Y-space: {test_in_domain[1].min()} - {test_in_domain[1].max()}")
+    print(f"Out Domain: {OUT_DOMAIN_SAMPLE_SPACE}")
+    print(f"Y-space: {test_out_domain[1].min()} - {test_out_domain[1].max()}")
 
     # Save datasets
     np.savetxt(f"{DIR}/{NAME}/train.csv", train_complete, delimiter=",") #detach()? numpy()?
     np.savetxt(f"{DIR}/{NAME}/val.csv", val_complete, delimiter=",")
-    np.savetxt(f"{DIR}/{NAME}/test.csv", test_complete, delimiter=",")
     np.savetxt(f"{DIR}/{NAME}/test_in_domain.csv", test_in_domain_complete, delimiter=",")
     np.savetxt(f"{DIR}/{NAME}/test_out_domain.csv", test_out_domain_complete, delimiter=",")
 

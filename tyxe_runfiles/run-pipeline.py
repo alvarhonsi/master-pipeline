@@ -1,9 +1,15 @@
+import os
+import sys
+
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 import argparse
 from modules.config import read_config
 import os
 import time
 import datetime
-from runfiles import generate, train, eval
+import generate, train, eval
 
 
 
@@ -84,7 +90,7 @@ if __name__ == "__main__":
             if not os.path.exists(f"{BASE_DIR}/results"):
                 os.mkdir(f"{BASE_DIR}/results")
 
-            bnn = train.train(config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print)
+            bnn, _ = train.train(config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print)
 
         # Evaluate model
         if EVAL:

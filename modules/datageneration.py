@@ -14,7 +14,7 @@ def polynomial_func(x, noise=0) -> np.array:
     return (0.5*x**2 - 3*x + 1) + noise
 
 def sinusoidal_func(xs, noise=0) -> np.array:
-    return np.squeeze(np.sin(xs.sum(axis=1)) * 2 + 3) + noise
+    return np.squeeze(np.sin(xs.sum(axis=1))) + noise
 
 def sinusoidal_combination(x, noise=0) -> np.array:
     if len(x.shape) == 2 and x.shape[1] > 1:
@@ -141,14 +141,6 @@ def load_data(path, load_train=True, load_val=True, load_test=True):
         x_val, y_val = torch.Tensor(x_val), torch.Tensor(y_val)
 
     if load_test:
-        test = genfromtxt(f"{path}/test.csv", delimiter=',')
-        #x_test, y_test = test[:,0].reshape(-1, 1), test[:,1].reshape(-1, 1)
-        x_test, y_test = test[:,:-1], test[:,-1].reshape(-1, 1)
-        x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
-
-        print("test-shape: ", test.shape)
-        print(x_test.shape, y_test.shape)
-
         test_in_domain = genfromtxt(f"{path}/test_in_domain.csv", delimiter=',')
         x_test_in_domain, y_test_in_domain = test_in_domain[:,:-1], test_in_domain[:,-1].reshape(-1, 1)
         x_test_in_domain, y_test_in_domain = torch.Tensor(x_test_in_domain), torch.Tensor(y_test_in_domain)
@@ -160,8 +152,7 @@ def load_data(path, load_train=True, load_val=True, load_test=True):
 
     ret_train = (x_train, y_train) if load_train else None
     ret_val = (x_val, y_val) if load_val else None
-    ret_test = (x_test, y_test) if load_test else None
     ret_test_in_domain = (x_test_in_domain, y_test_in_domain) if load_test else None
     ret_test_out_domain = (x_test_out_domain, y_test_out_domain) if load_test else None
 
-    return ret_train, ret_val, ret_test, ret_test_in_domain, ret_test_out_domain
+    return ret_train, ret_val, ret_test_in_domain, ret_test_out_domain
