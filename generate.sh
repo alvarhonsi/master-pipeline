@@ -9,4 +9,4 @@ while IFS='= ' read -r key value; do
 done < "$PROPSFILE"
 
 DIR=${props["dir"]}
-exec "python tyxe_runfiles/run-pipeline.py -dir $DIR --generate"
+python tyxe_runfiles/run-pipeline.py -dir $DIR --generate
