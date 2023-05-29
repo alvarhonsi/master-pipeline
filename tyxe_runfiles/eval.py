@@ -25,7 +25,7 @@ import time
 import datetime
 import tyxe
 
-def draw_data_samples(dataloader, num_samples=10):
+def draw_data_samples(dataloader, num_samples=10, device="cpu"):
     xs, ys = [], []
     for x, y in dataloader:
         xs.append(x)
@@ -37,14 +37,15 @@ def draw_data_samples(dataloader, num_samples=10):
     idx = np.random.choice(range(len(x)), num_samples)
     sample_x = x[idx]
     sample_y = y[idx]
-    return sample_x, sample_y
+    return sample_x.to(device), sample_y.to(device)
 
-def evaluate_error(bnn, dataloader, num_predictions=100):
+def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
     results = {}
     # Evaluate error
     mse, loglikelihood = 0, 0
     batch_num = 0
     for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
+        input_data, observation_data = input_data.to(device), observation_data.to(device)
         err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
         mse += err
         loglikelihood += ll
@@ -195,9 +196,9 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
         os.mkdir(f"{DIR}/results/{NAME}/samples")
 
     # samp_x: (NUM_X_SAMPLES, X_DIM), samp_y: (NUM_X_SAMPLES)
-    test_x_sample, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES)
-    test_in_domain_x_sample, _ = draw_data_samples(test_in_domain_dataloader, NUM_X_SAMPLES)
-    test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES)
+    test_x_sample, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    test_in_domain_x_sample, _ = draw_data_samples(test_in_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
     
     #Sample true distribution from data
     # data_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
@@ -228,7 +229,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     pred_out_domain_samples = bnn.likelihood.sample(predictions_out_domain, sample_shape=(NUM_DIST_SAMPLES,)).squeeze(-1).cpu().detach().numpy()
 
     # Sanity Checks
-    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, NUM_X_SAMPLES)
+    train_x_sample, train_y_sample = draw_data_samples(train_dataloader, NUM_X_SAMPLES, device=DEVICE)
     train_data_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
     train_data_samples = train_data_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
     train_preds = bnn.predict(train_x_sample, num_predictions=NUM_DIST_SAMPLES)
@@ -246,9 +247,9 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
 
     results = {}
 
-    test_error = evaluate_error(bnn, test_dataloader, num_predictions=100)
-    in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=100)
-    out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=100)
+    test_error = evaluate_error(bnn, test_dataloader, num_predictions=100, device=DEVICE)
+    in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=100, device=DEVICE)
+    out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=100, device=DEVICE)
     results["test_error"] = test_error
     results["in_domain_error"] = in_domain_error
     results["out_domain_error"] = out_domain_error

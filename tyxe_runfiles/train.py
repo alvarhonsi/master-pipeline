@@ -168,24 +168,22 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     }
     def callback(bnn, i, e):
         time_elapsed = time.time() - start
-
-        mse, loglikelihood = 0, 0
-        batch_num = 0
-        for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
-            input_data, observation_data = input_data.to(DEVICE), observation_data.to(DEVICE)
-            err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
-            mse += err
-            loglikelihood += ll
-            batch_num = num_batch
-        rmse = (mse / batch_num).sqrt()
-        loglikelihood = loglikelihood / batch_num
         
-        train_stats["rmse_epoch"].append(rmse.sqrt().item())
-        train_stats["ll_epoch"].append(loglikelihood.item())
-
-
         if i % 100 == 0:
-            print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, mse.sqrt().item(), ll.item()))
+            mse, loglikelihood = 0, 0
+            batch_num = 0
+            for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+                input_data, observation_data = input_data.to(DEVICE), observation_data.to(DEVICE)
+                err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
+                mse += err
+                loglikelihood += ll
+                batch_num = num_batch
+            rmse = (mse / batch_num).sqrt()
+            loglikelihood = loglikelihood / batch_num
+
+            train_stats["rmse_epoch"].append(rmse.sqrt().item())
+            train_stats["ll_epoch"].append(loglikelihood.item())
+            print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, mse.sqrt().item(), ll.item()))      
             
         train_stats["elbos"].append(e)
 
