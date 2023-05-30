@@ -1,0 +1,4 @@
+dir = experiments/likelihood-sigma2
+name = likelihood-sigma2
+devices = cuda:1, cuda:3
+profiles = sin-10x-sigma1 sin-10x-sigma05, sin-10x-sigma01 sin-10x-sigma001
