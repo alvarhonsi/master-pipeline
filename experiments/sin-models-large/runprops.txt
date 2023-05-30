@@ -1,4 +1,4 @@
 dir = experiments/sin-models-large
 name = sin-models-large
-devices = cuda:4, cuda:5, cuda:6, cuda:7
+devices = cuda:4, cuda:5
 profiles = 1layer-large-s02 2layer-large-s02 3layer-large-s02, 1layer-large-s1 2layer-large-s1 3layer-large-s1
