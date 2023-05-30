@@ -258,10 +258,10 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
 
     results = {}
 
-    train_error = evaluate_error(bnn, train_dataloader, num_predictions=100, device=DEVICE)
-    test_error = evaluate_error(bnn, test_dataloader, num_predictions=100, device=DEVICE)
-    in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=100, device=DEVICE)
-    out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=100, device=DEVICE)
+    train_error = evaluate_error(bnn, train_dataloader, num_predictions=1000, device=DEVICE)
+    test_error = evaluate_error(bnn, test_dataloader, num_predictions=1000, device=DEVICE)
+    in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=1000, device=DEVICE)
+    out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=1000, device=DEVICE)
     results["train_error"] = train_error
     results["test_error"] = test_error
     results["in_domain_error"] = in_domain_error
