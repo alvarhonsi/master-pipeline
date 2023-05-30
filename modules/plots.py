@@ -143,3 +143,61 @@ def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=
         plt.savefig(save_path)
     
     plt.close()
+
+# post_samples: array of samples from different posteriors
+def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10,10), kl_div=False, plot_mean=False):
+    sns.set_style("darkgrid")
+    sns.set_context("paper")
+
+    data_std = data_sample.std()
+
+    title = ""
+
+    if x_sample is not None:
+        title += f"X: {[round(x.item(), 2) for x in x_sample]} \n"
+
+    standalone = False
+    if ax is None:
+        standalone = True   
+
+    if standalone:
+        fig, ax = plt.subplots(figsize=figsize)
+    
+
+    if data_std > 1e-5:
+        sns.kdeplot(data_sample, fill=True, ax=ax, label="Data")
+    
+    for i, post_sample in enumerate(post_samples):
+        post_std = post_sample.std()
+        if post_std > 1e-5:
+            sns.kdeplot(post_sample, fill=False, ax=ax, label=labels[i])
+
+    ax.legend()
+    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label)
+
+    if title:
+        ax.set_title(title)
+    
+    if save_path:
+        plt.savefig(save_path)
+
+# post_samples: array of samples from different posteriors
+def plot_comparisons_grid(posterior_samples, data_samples, x_samples=None, title=None, grid_size=(2,2), save_path=None, figsize=(10,10), kl_div=False, plot_mean=False):
+    sns.set_style("darkgrid")
+    sns.set_context("paper")
+
+    fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=figsize)
+    axs = axs.flatten()
+    fig.tight_layout()
+    fig.suptitle(title, fontsize=15)
+    fig.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9, hspace=0.4, wspace=0.4)
+    fig.text(0.5, 0.04, 'Y', ha='center', fontsize=15)
+    fig.text(0.04, 0.5, 'Density', va='center', rotation='vertical', fontsize=15)
+
+    for i, ax in enumerate(axs):
+        x_samp = x_samples[i] if x_samples is not None else None
+        plot_comparisons(posterior_samples[i], data_samples[:,i], x_sample=x_samp, ax=ax)   
+
+    if save_path:
+        plt.savefig(save_path)

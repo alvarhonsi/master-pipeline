@@ -208,6 +208,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
 
     np.save(f"{DIR}/results/{NAME}/data-samples/train_x.npy", train_x_sample.cpu().detach().numpy())
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_x.npy", test_x_sample.cpu().detach().numpy())
     np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_x.npy", test_in_domain_x_sample.cpu().detach().numpy())
     np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_x.npy", test_out_domain_x_sample.cpu().detach().numpy())
     
