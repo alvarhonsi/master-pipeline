@@ -190,7 +190,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     if INFERENCE_TYPE == "svi":
         optim = pyro.optim.Adam({"lr": LR})
-        with tyxe.poutine.flipout():
+        with tyxe.poutine.local_reparameterization():
             bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
