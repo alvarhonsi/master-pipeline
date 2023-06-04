@@ -279,7 +279,6 @@ class HomoskedasticGaussian(Gaussian):
          of the predictions plus the known variance term."""
         loc = predictions.mean(dim)
         scale = predictions.var(dim).add(self.scale ** 2).sqrt()
-        print("scale: ", self.scale)
         return loc, scale
 
     def _predictive_loc_scale(self, predictions):
