@@ -4,28 +4,8 @@ import torch
 import json
 import scipy
 
-def identity(x, noise=0) -> np.array:
-    return x + noise
-
-def linear_func(x, noise=0) -> np.array:
-    return (2*x + 1) + noise
-
-def polynomial_func(x, noise=0) -> np.array:
-    return (0.5*x**2 - 3*x + 1) + noise
-
 def sinusoidal_func(xs, noise=0) -> np.array:
     return np.squeeze(np.sin(xs.sum(axis=1))) + noise
-
-def sinusoidal_combination(x, noise=0) -> np.array:
-    if len(x.shape) == 2 and x.shape[1] > 1:
-        raise Exception("Function only takes 1D input")
-    if len(x.shape) == 2:
-        x = x.reshape(-1)
-
-    return np.squeeze(x + 0.3 * np.sin(2 * (x + noise*0.6)) + 0.3 * np.sin(4 * (x + noise*0.4)) + noise) 
-
-def normal_percentile(mu, sigma, percentile) -> float:
-    return mu + sigma * scipy.stats.norm.ppf(percentile)
 
 def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
     res = np.zeros(xs.shape[0])
@@ -35,30 +15,10 @@ def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
 
 def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
-
-    return np.sin(x1 * x2) + np.sin(x3 * x4) + np.sin(x5 * x6) + np.sin(x7 * x8) + np.sin(x9 * x10) + noise
-
-def tendim_sinusoidal_weighted(xs, noise=0) -> np.array:
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
-
-    return np.sin(x1) * 6*np.sin(x2) + 8 * np.sin(x3) + 4 * np.sin(x4) * np.sin(x5) + 6*np.sin(x6) + 10 * np.sin(x7) * np.sin(x8) + 5 * np.sin(x9) * np.sin(x10) + noise
+    return 0*x1 + 6 * np.sin(x2 * x3) + 6 * np.sin(x4) + 6 * np.sin(x5 * x6) + 6 * np.sin(x7) + 6 * np.sin(x8 * x9) + 0*x10 + noise
 
 def sum(xs, noise=0) -> np.array:
     return np.sum(xs, axis=1) + noise
-
-def tendim_pairwise_product(xs, noise=0) -> np.array:
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
-
-    return x1 * x2 + x3 * x4 + x5 * x6 + x7 * x8 + x9 * x10 + noise
-
-def tendim_sinusoidal_linear(xs, noise=0) -> np.array:
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:, 2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
-
-    return np.sin(x1)*x2 + np.sin(x3)*x4 + x5 + x6 + x7 + x8 + x9 + x10 + noise
-
-def onedim_linear_product(xs, noise=0) -> np.array:
-    x = xs[:, 0]
-    return 0.5*x - x*0.003*np.power(x, 2) + 0.0003*np.power(x, 2) + 0.000003*np.power(x, 3) - 0.000003*np.power(x, 2)*np.power(x, 3) + 0.000003*x*np.power(x, 3) + 2.5*np.sin(0.3* x * np.pi) + noise
 
 def onedim_non_linear(xs, noise=0) -> np.array:
     x = xs[:, 0]
@@ -69,18 +29,10 @@ def onedim_non_linear(xs, noise=0) -> np.array:
     functions should take a numpy array [n, x_dim] and return a numpy array [n] - the output of the function
 '''
 data_functions = {
-    "identity": identity,
-    "linear": linear_func,
-    "polynomial": polynomial_func,
     "sinusoidal": sinusoidal_func,
-    "sinusoidal_combination": sinusoidal_combination,
     "sum": sum,
-    "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
-    "tendim_sinusoidal_weighted": tendim_sinusoidal_weighted,
     "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
-    "tendim_pairwise_product": tendim_pairwise_product,
-    "tendim_sinusoidal_linear": tendim_sinusoidal_linear,
-    "onedim_linear_product": onedim_linear_product,
+    "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
     "onedim_non_linear": onedim_non_linear
 } 
     
