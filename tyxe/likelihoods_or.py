@@ -240,26 +240,6 @@ class HomoskedasticGaussian(Gaussian):
         self._scale = scale
         self._precision = precision
 
-    def forward(self, predictions, obs=None, aggregate_mode=False):
-        """Executes a pyro sample statement to sample from the distribution corresponding to the likelihood class
-        given some predictions. The values of the sample can set to some optional observations obs.
-
-        :param torch.Tensor predictions: tensor of predictions.
-        :param torch.Tensor obs: optional known values for the samples."""
-        if not aggregate_mode:
-            predictive_distribution = self.predictive_distribution(predictions)
-            if predictive_distribution.batch_shape:
-                dataset_size = self.dataset_size if self.dataset_size is not None else len(predictions)
-                with pyro.plate(self.data_name+"_plate", subsample=predictions, size=dataset_size):
-                    return pyro.sample(self.data_name, predictive_distribution, obs=obs)
-            else:
-                dataset_size = self.dataset_size if self.dataset_size is not None else 1
-                with pyro.poutine.scale(scale=dataset_size):
-                    return pyro.sample(self.data_name, predictive_distribution, obs=obs)
-        else:
-            return self.aggregate_predictions(predictions)
-        
-
     @property
     def scale(self):
         if self._scale is None:

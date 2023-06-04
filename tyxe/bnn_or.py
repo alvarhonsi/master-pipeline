@@ -284,8 +284,7 @@ class MCMC_BNN(_BNN):
                 weights = {name: sample[i] for name, sample in weight_samples.items()}
                 preds.append(poutine.condition(self, weights)(*input_data))
         predictions = torch.stack(preds)
-
-        return poutine.condition(self.likelihood, weights)(predictions, aggregate_mode=True) if aggregate else predictions
+        return self.likelihood.aggregate_predictions(predictions) if aggregate else predictions
     
     def evaluate(self, input_data, y, num_predictions=1, aggregate=True, reduction="sum"):
         predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
