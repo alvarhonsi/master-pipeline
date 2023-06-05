@@ -6,7 +6,7 @@ from torch.distributions import transforms
 
 import pyro
 import pyro.distributions as dist
-from pyro.nn import PyroModule, PyroSample, PyroParam
+from pyro.nn import PyroModule, PyroSample, PyroParam, pyro_method
 from pyro.distributions.constraints import positive
 
 
@@ -240,73 +240,29 @@ class HomoskedasticGaussian(Gaussian):
         self._scale = scale
         self._precision = precision
 
-    def forward(self, predictions, obs=None, aggregate_mode=False):
+    def forward(self, predictions, obs=None):
         """Executes a pyro sample statement to sample from the distribution corresponding to the likelihood class
         given some predictions. The values of the sample can set to some optional observations obs.
 
         :param torch.Tensor predictions: tensor of predictions.
         :param torch.Tensor obs: optional known values for the samples."""
-        if not aggregate_mode:
-            predictive_distribution = self.predictive_distribution(predictions)
-            if predictive_distribution.batch_shape:
-                dataset_size = self.dataset_size if self.dataset_size is not None else len(predictions)
-                with pyro.plate(self.data_name+"_plate", subsample=predictions, size=dataset_size):
-                    return pyro.sample(self.data_name, predictive_distribution, obs=obs)
-            else:
-                dataset_size = self.dataset_size if self.dataset_size is not None else 1
-                with pyro.poutine.scale(scale=dataset_size):
-                    return pyro.sample(self.data_name, predictive_distribution, obs=obs)
+        predictive_distribution = self.predictive_distribution(predictions)
+        if predictive_distribution.batch_shape:
+            dataset_size = self.dataset_size if self.dataset_size is not None else len(predictions)
+            with pyro.plate(self.data_name+"_plate", subsample=predictions, size=dataset_size):
+                return pyro.sample(self.data_name, predictive_distribution, obs=obs)
         else:
-            return self.aggregate_predictions(predictions)
+            dataset_size = self.dataset_size if self.dataset_size is not None else 1
+            with pyro.poutine.scale(scale=dataset_size):
+                return pyro.sample(self.data_name, predictive_distribution, obs=obs)
+
         
-
     @property
     def scale(self):
-        if self._scale is None:
-            return self.precision ** -0.5
-        else:
-            return self._scale
-
-    @property
-    def precision(self):
-        if self._precision is None:
-            return self.scale ** -2
-        else:
-            return self._precision
-
-    def aggregate_predictions(self, predictions, dim=0):
-        """Aggregates multiple predictions for the same data by averaging them. Predictive variance is the variance
-         of the predictions plus the known variance term."""
-        loc = predictions.mean(dim)
-        scale = predictions.var(dim).add(self.scale ** 2).sqrt()
-        return loc, scale
-
-    def _predictive_loc_scale(self, predictions):
-        if isinstance(predictions, tuple):
-            loc, scale = predictions
-        else:
-            loc = predictions
-            scale = self.scale
-
-        return loc, scale
+        return self.get_scale()
     
-class SigmaDistGaussian(Gaussian):
-    """Homeskedastic Gaussian likelihood, i.e. a likelihood that assumes the noise to be data-independent. The scale
-    or precision may be a distribution, i.e. be unknown and have a prior placed on it for it to be inferred or be a
-    PyroParameter in order to be learnable.
-
-    :param scale: tensor, parameter or prior distribution for the scale. Mutually exclusive with precision.
-    :param precision: tensor, parameter or prior distribution for the precision. Mutually exclusive with scale."""
-
-    def __init__(self, dataset_size, scale_loc=0, scale_scale=1, event_dim=1, name="", data_name="data"):
-        super().__init__(dataset_size, event_dim=event_dim, name=name, data_name=data_name)
-
-        scale = dist.LogNormal(scale_loc, scale_scale)
-        self._scale = PyroSample(prior=scale)
-        self._precision = PyroSample(prior=dist.TransformedDistribution(scale, transforms.PowerTransform(-2.)))
-
-    @property
-    def scale(self):
+    @pyro_method
+    def get_scale(self):
         if self._scale is None:
             return self.precision ** -0.5
         else:
@@ -322,54 +278,14 @@ class SigmaDistGaussian(Gaussian):
     def aggregate_predictions(self, predictions, dim=0):
         """Aggregates multiple predictions for the same data by averaging them. Predictive variance is the variance
          of the predictions plus the known variance term."""
-        loc = predictions.mean(dim)
-        scale = predictions.var(dim).add(self.scale ** 2).sqrt()
-        return loc, scale
-
-    def _predictive_loc_scale(self, predictions):
         if isinstance(predictions, tuple):
-            loc, scale = predictions
+            loc, lik_scale = predictions[0].mean(dim), predictions[1].mean(dim)
+            scale = predictions[0].var(dim).add(lik_scale** 2).sqrt()
+            return loc, scale
         else:
-            loc = predictions
-            scale = self.scale
-
-        return loc, scale
-    
-
-class LearnableGaussian(Gaussian):
-    """Homeskedastic Gaussian likelihood, i.e. a likelihood that assumes the noise to be data-independent. The scale
-    or precision may be a distribution, i.e. be unknown and have a prior placed on it for it to be inferred or be a
-    PyroParameter in order to be learnable.
-
-    :param scale: tensor, parameter or prior distribution for the scale. Mutually exclusive with precision.
-    :param precision: tensor, parameter or prior distribution for the precision. Mutually exclusive with scale."""
-
-    def __init__(self, dataset_size, scale=1.0, event_dim=1, name="", data_name="data"):
-        super().__init__(dataset_size, event_dim=event_dim, name=name, data_name=data_name)
-
-        self._scale = PyroParam(torch.tensor(scale), dist.constraints.positive)
-        self._precision = None
-
-    @property
-    def scale(self):
-        if self._scale is None:
-            return self.precision ** -0.5
-        else:
-            return self._scale
-
-    @property
-    def precision(self):
-        if self._precision is None:
-            return self.scale ** -2
-        else:
-            return self._precision
-
-    def aggregate_predictions(self, predictions, dim=0):
-        """Aggregates multiple predictions for the same data by averaging them. Predictive variance is the variance
-         of the predictions plus the known variance term."""
-        loc = predictions.mean(dim)
-        scale = predictions.var(dim).add(self.scale ** 2).sqrt()
-        return loc, scale
+            loc = predictions.mean(dim)
+            scale = predictions.var(dim).add(self.scale ** 2).sqrt()
+            return loc, scale
 
     def _predictive_loc_scale(self, predictions):
         if isinstance(predictions, tuple):

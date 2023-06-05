@@ -1,0 +1,4 @@
+dir = experiments/sin-models-64
+name = sin-models-64
+devices = cuda:2, cuda:3
+profiles = 1layer-64-s01 2layer-64-s01 3layer-64-s01, 1layer-64-s1 2layer-64-s1 3layer-64-s1

@@ -168,8 +168,10 @@ class VariationalBNN(_SupervisedBNN):
         if likelihood_guide_builder is not None:
             self.likelihood_guide = likelihood_guide_builder(poutine.block(
                 self.model, hide=weight_sample_sites + [self.likelihood.data_name]))
+            self.guided_likelihood = True
         else:
             self.likelihood_guide = _empty_guide
+            self.guided_likelihood = False
 
     def guide(self, x, obs=None):
         result = self.net_guide(*_as_tuple(x)) or {}
@@ -212,32 +214,34 @@ class VariationalBNN(_SupervisedBNN):
         self.net.train(old_training_state)
         return svi
 
+    @pynn.pyro_method
     def predict(self, *input_data, num_predictions=1, aggregate=True, guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
 
         preds = []
+        scales = []
         with torch.autograd.no_grad():
-            for i, trace in enumerate(guide_traces):
+            for trace in guide_traces:
                 guide_tr = poutine.trace(self.guide).get_trace(*input_data)
                 preds.append(poutine.replay(self.net, trace=guide_tr)(*input_data))
-                guide_traces[i] = guide_tr
-
-        return guide_traces
-
+                scales.append(poutine.replay(lambda: self.likelihood.scale, trace=guide_tr)())
+        predictions = torch.stack(preds)
+        scales = torch.stack(scales)
+        return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions
         
-        
-        if aggregate:
-            with torch.autograd.no_grad():
-                for i, pred in enumerate(preds):
-                    true_pred = poutine.replay(self.likelihood, trace=guide_traces[i])(pred)
-                    preds[i] = true_pred
-            predictions = torch.stack(preds)
-            return predictions.mean(dim=0), predictions.std(dim=0)
-        else:
-            predictions = torch.stack(preds)
-            return predictions
+    def sample_predictive(self, *input_data, num_predictions=1, guide_traces=None):
+        if guide_traces is None:
+            guide_traces = [None] * num_predictions
 
+        preds = []
+        with torch.autograd.no_grad():
+            for trace in guide_traces:
+                guide_tr = poutine.trace(self.guide).get_trace(*input_data)
+                pred = poutine.replay(self.net, trace=guide_tr)(*input_data)
+                preds.append(poutine.replay(self.likelihood, trace=guide_tr)(pred))
+        predictions = torch.stack(preds)
+        return predictions
 
 # TODO inherit from _SupervisedBNN to unify the class hierarchy. This will require changing the GuidedBNN baseclass to
 #  construct the guide on top of self.model rather than self.net (model of GuidedBNN could just call the net and
@@ -287,8 +291,24 @@ class MCMC_BNN(_BNN):
         self._mcmc.run(input_data, observation_data)
 
         return self._mcmc
-
+    
     def predict(self, *input_data, num_predictions=1, aggregate=True):
+        if self._mcmc is None:
+            raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
+
+        preds = []
+        scales = []
+        weight_samples = self._mcmc.get_samples(num_samples=num_predictions)
+        with torch.no_grad():
+            for i in range(num_predictions):
+                weights = {name: sample[i] for name, sample in weight_samples.items()}
+                preds.append(poutine.condition(self, weights)(*input_data))
+                scales.append(poutine.condition(lambda: self.likelihood.scale, weights)()) # sample scale from distribution
+        predictions = torch.stack(preds)
+        scales = torch.stack(scales)
+        return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions
+    
+    def sample_predictive(self, *input_data, num_predictions=1):
         if self._mcmc is None:
             raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
 
@@ -297,12 +317,11 @@ class MCMC_BNN(_BNN):
         with torch.no_grad():
             for i in range(num_predictions):
                 weights = {name: sample[i] for name, sample in weight_samples.items()}
-                preds.append(poutine.condition(self, weights)(*input_data))
+                pred = poutine.condition(self, weights)(*input_data)
+                preds.append(poutine.condition(self.likelihood, weights)(pred))
         predictions = torch.stack(preds)
+        return predictions
 
-        return weight_samples
-
-        return poutine.condition(self.likelihood, weights)(predictions, aggregate_mode=True) if aggregate else predictions
     
     def evaluate(self, input_data, y, num_predictions=1, aggregate=True, reduction="sum"):
         predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)

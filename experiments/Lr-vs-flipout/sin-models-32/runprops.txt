@@ -1,0 +1,4 @@
+dir = experiments/sin-models-32
+name = sin-models-32
+devices = cuda:0, cuda:1
+profiles = 1layer-32-s01 2layer-32-s01 3layer-32-s01, 1layer-32-s1 2layer-32-s1 3layer-32-s1

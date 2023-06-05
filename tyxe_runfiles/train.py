@@ -65,7 +65,7 @@ def make_inference_model(config, dataset_config, device=None):
     prior = tyxe.priors.IIDPrior(prior_dist)
 
     if OBS_MODEL == "homoskedastic":
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=LIKELIHOOD_SCALE)
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=torch.tensor(LIKELIHOOD_SCALE))
         likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_param":
         scale = PyroParam(LIKELIHOOD_SCALE, constraint=dist.constraints.positive)
@@ -106,6 +106,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     DATA_FUNC = dataset_config["DATA_FUNC"]
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
+    TRAIN_CONTEXT = config["TRAIN_CONTEXT"]
     MCMC_KERNEL = config["MCMC_KERNEL"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
@@ -187,7 +188,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     if INFERENCE_TYPE == "svi":
         optim = pyro.optim.Adam({"lr": LR})
-        with tyxe.poutine.local_reparameterization():
+        with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
             bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
         bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
