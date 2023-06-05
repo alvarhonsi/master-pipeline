@@ -218,10 +218,25 @@ class VariationalBNN(_SupervisedBNN):
 
         preds = []
         with torch.autograd.no_grad():
-            for trace in guide_traces:
-                preds.append(self.guided_forward(*input_data, guide_tr=trace))
-        predictions = torch.stack(preds)
-        return self.likelihood.aggregate_predictions(predictions) if aggregate else predictions
+            for i, trace in enumerate(guide_traces):
+                guide_tr = poutine.trace(self.guide).get_trace(*input_data)
+                preds.append(poutine.replay(self.net, trace=guide_tr)(*input_data))
+                guide_traces[i] = guide_tr
+
+        return guide_traces
+
+        
+        
+        if aggregate:
+            with torch.autograd.no_grad():
+                for i, pred in enumerate(preds):
+                    true_pred = poutine.replay(self.likelihood, trace=guide_traces[i])(pred)
+                    preds[i] = true_pred
+            predictions = torch.stack(preds)
+            return predictions.mean(dim=0), predictions.std(dim=0)
+        else:
+            predictions = torch.stack(preds)
+            return predictions
 
 
 # TODO inherit from _SupervisedBNN to unify the class hierarchy. This will require changing the GuidedBNN baseclass to
@@ -284,6 +299,8 @@ class MCMC_BNN(_BNN):
                 weights = {name: sample[i] for name, sample in weight_samples.items()}
                 preds.append(poutine.condition(self, weights)(*input_data))
         predictions = torch.stack(preds)
+
+        return weight_samples
 
         return poutine.condition(self.likelihood, weights)(predictions, aggregate_mode=True) if aggregate else predictions
     

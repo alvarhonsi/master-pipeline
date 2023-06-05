@@ -24,6 +24,10 @@ def onedim_non_linear(xs, noise=0) -> np.array:
     x = xs[:, 0]
     return x + 2 * x * np.sin(3*x) + noise
 
+def onedim_linear(xs, noise=0) -> np.array:
+    x = xs[:, 0]
+    return 0.5*x + 1 + noise
+
 '''
     Dictionary of functions that can be used in data_gen
     functions should take a numpy array [n, x_dim] and return a numpy array [n] - the output of the function
@@ -33,7 +37,8 @@ data_functions = {
     "sum": sum,
     "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
-    "onedim_non_linear": onedim_non_linear
+    "onedim_non_linear": onedim_non_linear,
+    "onedim_linear": onedim_linear,
 } 
     
 '''
