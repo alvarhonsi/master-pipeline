@@ -190,7 +190,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
         optim = pyro.optim.Adam({"lr": LR})
         with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
-            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE)
+            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)
     elif INFERENCE_TYPE == "mcmc":
         ### MCMC ###
         train_stats = {
