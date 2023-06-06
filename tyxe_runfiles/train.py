@@ -199,8 +199,8 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
         bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
 
-        with open(f"{DIR}/results/{NAME}/mcmc_diagnostics.json", "w") as f:
-            json.dump(bnn._mcmc.diagnostics(), f)
+        with open(f"{DIR}/results/{NAME}/mcmc_diagnostics.pkl", "wb") as f:
+            pickle.dump(bnn._mcmc.diagnostics(), f)
 
     train_stats["time"] = time.time() - start
     print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
