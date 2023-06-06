@@ -65,7 +65,7 @@ def make_inference_model(config, dataset_config, device=None):
     prior = tyxe.priors.IIDPrior(prior_dist)
 
     if OBS_MODEL == "homoskedastic":
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=torch.tensor(LIKELIHOOD_SCALE))
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
         likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_param":
         scale = PyroParam(LIKELIHOOD_SCALE, constraint=dist.constraints.positive)
@@ -83,8 +83,7 @@ def make_inference_model(config, dataset_config, device=None):
         bnn = tyxe.VariationalBNN(net, prior, obs_model, guide_builder, likelihood_guide_builder=likelihood_guide_builder)
         return bnn
     elif INFERENCE_TYPE == "mcmc":
-        kernel_builder = partial(pyro.infer.mcmc.NUTS, step_size=1.)
-        #kernel_builder = partial(tyxe.kernels.HMC, step_size=1.)
+        kernel_builder = pyro.infer.mcmc.NUTS
         bnn = tyxe.bnn.MCMC_BNN(net, prior, obs_model, kernel_builder)
         return bnn
     else:
@@ -107,6 +106,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
     TRAIN_CONTEXT = config["TRAIN_CONTEXT"]
+    SVI_PARTICLES = config.getint("SVI_PARTICLES")
     MCMC_KERNEL = config["MCMC_KERNEL"]
     MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
     MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
