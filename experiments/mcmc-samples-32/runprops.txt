@@ -1,0 +1,4 @@
+dir = experiments/sin-models-32
+name = sin-models-32
+devices = cuda:6, cuda:7
+profiles = 1k-samples-5-chains 10k-samples, 1k-samples 10k-samples-5-chains

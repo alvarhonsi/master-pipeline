@@ -159,39 +159,48 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
 
     start = time.time()
 
-    train_stats = {
-        "elbos": [],
-        "time": 0,
-        "rmse_epoch": [],
-        "ll_epoch": [],
-    }
-    def callback(bnn, i, e):
-        time_elapsed = time.time() - start
-        
-        if i % 100 == 0:
-            mse, loglikelihood = 0, 0
-            batch_num = 0
-            for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
-                input_data, observation_data = input_data.to(DEVICE), observation_data.to(DEVICE)
-                err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
-                mse += err
-                loglikelihood += ll
-                batch_num = num_batch
-            rmse = (mse / batch_num).sqrt()
-            loglikelihood = loglikelihood / batch_num
-
-            train_stats["rmse_epoch"].append(rmse.sqrt().item())
-            train_stats["ll_epoch"].append(loglikelihood.item())
-            print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, round(mse.sqrt().item(), 4), round(ll.item(), 4)))      
-            
-        train_stats["elbos"].append(e)
-
     if INFERENCE_TYPE == "svi":
+        ### SVI ###
+        train_stats = {
+            "elbos": [],
+            "time": 0,
+            "rmse_epoch": [],
+            "ll_epoch": [],
+        }
+        def callback(bnn, i, e):
+            time_elapsed = time.time() - start
+            
+            if i % 100 == 0:
+                mse, loglikelihood = 0, 0
+                batch_num = 0
+                for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+                    input_data, observation_data = input_data.to(DEVICE), observation_data.to(DEVICE)
+                    err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
+                    mse += err
+                    loglikelihood += ll
+                    batch_num = num_batch
+                rmse = (mse / batch_num).sqrt()
+                loglikelihood = loglikelihood / batch_num
+
+                train_stats["rmse_epoch"].append(rmse.sqrt().item())
+                train_stats["ll_epoch"].append(loglikelihood.item())
+                print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, round(mse.sqrt().item(), 4), round(ll.item(), 4)))      
+                
+            train_stats["elbos"].append(e)
+
         optim = pyro.optim.Adam({"lr": LR})
         with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
             bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE)
     elif INFERENCE_TYPE == "mcmc":
+        ### MCMC ###
+        train_stats = {
+            "time": 0,
+        }
+
         bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
+
+        with open(f"{DIR}/results/{NAME}/mcmc_diagnostics.json", "w") as f:
+            json.dump(bnn._mcmc.diagnostics(), f)
 
     train_stats["time"] = time.time() - start
     print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")

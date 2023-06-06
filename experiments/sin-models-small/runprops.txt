@@ -1,4 +1,0 @@
-dir = experiments/sin-models-small
-name = sin-models-small
-devices = cuda:6, cuda:7
-profiles = 1layer-small-s02 2layer-small-s02 3layer-small-s02, 1layer-small-s1 2layer-small-s1 3layer-small-s1

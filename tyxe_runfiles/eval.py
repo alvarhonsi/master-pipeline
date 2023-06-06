@@ -39,35 +39,8 @@ def draw_data_samples(dataloader, num_samples=10, device="cpu"):
     sample_y = y[idx]
     return sample_x.to(device), sample_y.to(device)
 
-def get_predictive_samples(bnn, train_x_sample, test_x_sample, test_in_domain_x_sample, test_out_domain_x_sample, num_samples=100, save_dir=None, guided_prediction=False):
-    pred_train_samples, pred_test_samples, pred_in_domain_samples, pred_out_domain_samples = None, None, None, None
-
-    if guided_prediction:
-        pred_train_samples = bnn.guided_predict(train_x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
-        pred_test_samples = bnn.guided_predict(test_x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
-        pred_in_domain_samples = bnn.guided_predict(test_in_domain_x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
-        pred_out_domain_samples = bnn.guided_predict(test_out_domain_x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
-
-    else:
-        predictions_train = bnn.predict(train_x_sample, num_predictions=num_samples)
-        pred_train_samples = bnn.likelihood.sample(predictions_train, sample_shape=(num_samples,)).squeeze(-1).cpu().detach().numpy()
-
-        predictions_test = bnn.predict(test_x_sample, num_predictions=num_samples)
-        pred_test_samples = bnn.likelihood.sample(predictions_test, sample_shape=(num_samples,)).squeeze(-1).cpu().detach().numpy()
-
-        predictions_in_domain = bnn.predict(test_in_domain_x_sample, num_predictions=num_samples)
-        pred_in_domain_samples = bnn.likelihood.sample(predictions_in_domain, sample_shape=(num_samples,)).squeeze(-1).cpu().detach().numpy()
-
-        predictions_out_domain = bnn.predict(test_out_domain_x_sample, num_predictions=num_samples)
-        pred_out_domain_samples = bnn.likelihood.sample(predictions_out_domain, sample_shape=(num_samples,)).squeeze(-1).cpu().detach().numpy()
-
-    if save_dir:
-        np.save(f"{save_dir}/predictions_train.npy", pred_train_samples)
-        np.save(f"{save_dir}/predictions_test.npy", pred_test_samples)
-        np.save(f"{save_dir}/predictions_in_domain.npy", pred_in_domain_samples)
-        np.save(f"{save_dir}/predictions_out_domain.npy", pred_out_domain_samples)
-
-    return pred_train_samples, pred_test_samples, pred_in_domain_samples, pred_out_domain_samples
+def sample_predictive_posterior(bnn, x_sample, num_samples=100):
+    return bnn.sample_predictive(x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
 
 
 def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
@@ -265,10 +238,15 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
 
     print("data samples: ", data_in_domain_samples.shape)
 
-    pred_train_samples, pred_test_samples, pred_in_domain_samples, pred_out_domain_samples = get_predictive_samples(
-        bnn, train_x_sample, test_x_sample, test_in_domain_x_sample, test_out_domain_x_sample, num_samples=NUM_DIST_SAMPLES,
-        guided_prediction=(OBS_MODEL == "homoskedastic_gamma"), save_dir=f"{DIR}/results/{NAME}/posterior-samples"
-    )
+    pred_train_samples = sample_predictive_posterior(bnn, train_x_sample, num_samples=NUM_DIST_SAMPLES)
+    pred_test_samples = sample_predictive_posterior(bnn, test_x_sample, num_samples=NUM_DIST_SAMPLES)
+    pred_in_domain_samples = sample_predictive_posterior(bnn, test_in_domain_x_sample, num_samples=NUM_DIST_SAMPLES)
+    pred_out_domain_samples = sample_predictive_posterior(bnn, test_out_domain_x_sample, num_samples=NUM_DIST_SAMPLES)
+
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/train_samples.npy", pred_train_samples)
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/test_samples.npy", pred_test_samples)
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/test_in_domain_samples.npy", pred_in_domain_samples)
+    np.save(f"{DIR}/results/{NAME}/posterior-samples/test_out_domain_samples.npy", pred_out_domain_samples)
 
     print("pred samples: ", pred_train_samples.shape)
 
