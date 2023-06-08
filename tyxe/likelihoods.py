@@ -3,11 +3,13 @@ import torch.nn.functional as F
 import torch.distributions.utils as dist_utils
 import torch.distributions as torchdist
 from torch.distributions import transforms
+from sklearn.metrics import r2_score
 
 import pyro
 import pyro.distributions as dist
 from pyro.nn import PyroModule, PyroSample, PyroParam, pyro_method
 from pyro.distributions.constraints import positive
+
 
 
 __all__ = ["Bernoulli", "Categorical", "HomoskedasticGaussian", "HeteroskedasticGaussian"]
@@ -295,3 +297,8 @@ class HomoskedasticGaussian(Gaussian):
             scale = self.scale
 
         return loc, scale
+
+    def absolute_error(self, predictions, data, reduction="none"):
+        error = self._point_predictions(predictions).sub(data)
+        ae = dist.util.sum_rightmost(error.abs(), self.event_dim)
+        return _reduce(ae, reduction)

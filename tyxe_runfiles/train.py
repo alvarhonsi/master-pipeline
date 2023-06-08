@@ -188,7 +188,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
                 
             train_stats["elbos"].append(e)
 
-        optim = pyro.optim.Adam({"lr": LR})
+        optim = pyro.optim.Adam({"lr": LR, "betas": (0.95, 0.999)})
         with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
             bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)
     elif INFERENCE_TYPE == "mcmc":

@@ -46,19 +46,57 @@ def sample_predictive_posterior(bnn, x_sample, num_samples=100):
 def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
     results = {}
     # Evaluate error
-    mse, loglikelihood = 0, 0
+    rmse, loglikelihood, mae = 0, 0, 0
     batch_num = 0
     for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
         input_data, observation_data = input_data.to(device), observation_data.to(device)
-        err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
-        mse += err
+        err, ll, absolute_err  = bnn.get_error_metrics(input_data, observation_data, num_predictions=num_predictions, reduction="mean")
+        rmse += err
         loglikelihood += ll
+        mae += absolute_err
         batch_num = num_batch
-    rmse = (mse / batch_num).sqrt()
+    rmse = (rmse / batch_num).sqrt()
     loglikelihood = loglikelihood / batch_num
+    mae = mae / batch_num
 
     results["rmse"] = rmse.item()
     results["loglikelihood"] = loglikelihood.item()
+    results["mae"] = mae.item()
+
+    return results
+
+def evaluate_uncertainty(bnn, dataloader, num_predictions=100, device="cpu"):
+    results = {}
+    # Evaluate error
+    model_std_loc, model_std_scale = 0, 0
+    likelihood_std_loc, likelihood_std_scale = 0, 0
+    predictive_std_loc, predictive_std_scale = 0, 0
+    batch_num = 0
+    for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
+        input_data, observation_data = input_data.to(device), observation_data.to(device)
+        model_std, likelihood_scale, pred_std = bnn.get_predictive_uncertanty_estimations(input_data, num_predictions=num_predictions)
+
+        model_std_loc += model_std.mean()
+        model_std_scale += model_std.std()
+        likelihood_std_loc += likelihood_scale.mean() #should mabye be done differently??
+        likelihood_std_scale += likelihood_scale.std()
+        predictive_std_loc += pred_std.mean()
+        predictive_std_scale += pred_std.std()
+        batch_num = num_batch
+
+    model_std_loc = model_std_loc / batch_num
+    model_std_scale = model_std_scale / batch_num
+    likelihood_std_loc = likelihood_std_loc / batch_num
+    likelihood_std_scale = likelihood_std_scale / batch_num
+    predictive_std_loc = predictive_std_loc / batch_num
+    predictive_std_scale = predictive_std_scale / batch_num
+
+    results["model_std_loc"] = model_std_loc.item()
+    results["model_std_std"] = model_std_scale.item()
+    results["likelihood_std_loc"] = likelihood_std_loc.item()
+    results["likelihood_std_std"] = likelihood_std_scale.item()
+    results["predictive_std_loc"] = predictive_std_loc.item()
+    results["predictive_std_std"] = predictive_std_scale.item()
 
     return results
 
@@ -72,16 +110,16 @@ def evaluate_posterior(posterior_samples, data_samples):
     # Mean kl divergence
     if not post_std_is_zero and not data_std_is_zero:
         kl_div = np.mean(KL_divergance_normal(posterior_samples, data_samples))
-        results["kl_div"] = np.float64(kl_div)
+        results["kl_div_to_data"] = np.float64(kl_div)
     else:
-        results["kl_div"] = np.float64(-1)
+        results["kl_div_to_data"] = np.float64(-1)
     # Difference in mean
     mean_diff = np.mean(difference_mean(posterior_samples, data_samples))
-    results["mean_diff"] = np.float64(mean_diff)
+    results["mean_diff_to_data"] = np.float64(mean_diff)
 
     # Difference in standard deviation
     std_diff = np.mean(difference_std(posterior_samples, data_samples))
-    results["std_diff"] = np.float64(std_diff)
+    results["std_diff_to_data"] = np.float64(std_diff)
 
     return results
 
@@ -273,6 +311,12 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     results["predictive_test"] = evaluate_posterior(pred_test_samples, data_test_samples)
     results["predictive_in_domain"] = evaluate_posterior(pred_in_domain_samples, data_in_domain_samples)
     results["predictive_out_domain"] = evaluate_posterior(pred_out_domain_samples, data_out_domain_samples)
+
+    # Uncertainty estimates?
+    results["uncertainty_train"] = evaluate_uncertainty(bnn, train_dataloader, num_predictions=1000, device=DEVICE)
+    results["uncertainty_test"] = evaluate_uncertainty(bnn, test_dataloader, num_predictions=1000, device=DEVICE)
+    results["uncertainty_in_domain"] = evaluate_uncertainty(bnn, test_in_domain_dataloader, num_predictions=1000, device=DEVICE)
+    results["uncertainty_out_domain"] = evaluate_uncertainty(bnn, test_out_domain_dataloader, num_predictions=1000, device=DEVICE)
 
     # Save results
     with open(f"{DIR}/results/{NAME}/results.json", "w") as f:

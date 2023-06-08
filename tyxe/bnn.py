@@ -141,6 +141,7 @@ class _SupervisedBNN(GuidedBNN):
         predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
         error = self.likelihood.error(predictions, y, reduction=reduction)
         ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
+
         return error, ll
 
     def predict(self, *input_data, num_predictions=1, aggregate=True):
@@ -242,6 +243,43 @@ class VariationalBNN(_SupervisedBNN):
                 preds.append(poutine.replay(self.likelihood, trace=guide_tr)(pred))
         predictions = torch.stack(preds)
         return predictions
+    
+    def get_error_metrics(self, input_data, y, num_predictions=1, aggregate=True, reduction="mean"):
+        predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
+
+        mse = self.likelihood.error(predictions, y, reduction=reduction)
+        ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
+        mae = self.likelihood.absolute_error(predictions, y, reduction=reduction)
+
+        return mse, ll, mae
+    
+    def get_predictive_uncertanty_estimations(self, *input_data, num_predictions=1):
+        point_preds = []
+        scales = []
+        preds = []
+
+        guide_traces = [None] * num_predictions
+        with torch.autograd.no_grad():
+            for trace in guide_traces:
+                guide_tr = poutine.trace(self.guide).get_trace(*input_data)
+
+                point_pred = poutine.replay(self.net, trace=guide_tr)(*input_data)
+                point_preds.append(point_pred)
+                scales.append(poutine.replay(lambda: self.likelihood.scale, trace=guide_tr)())
+                preds.append(poutine.replay(self.likelihood, trace=guide_tr)(point_pred))
+
+        point_preds = torch.stack(point_preds)
+        scales = torch.stack(scales)
+        preds = torch.stack(preds)
+
+        mean_model_std = point_preds.std(dim=0)
+        mean_likelihood_scale = scales.mean(dim=0)
+        mean_predictive_std = preds.std(dim=0)
+
+        return mean_model_std, mean_likelihood_scale, mean_predictive_std
+
+
+
 
 # TODO inherit from _SupervisedBNN to unify the class hierarchy. This will require changing the GuidedBNN baseclass to
 #  construct the guide on top of self.model rather than self.net (model of GuidedBNN could just call the net and
@@ -328,3 +366,12 @@ class MCMC_BNN(_BNN):
         error = self.likelihood.error(predictions, y, reduction=reduction)
         ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
         return error, ll
+    
+    def get_error_metrics(self, input_data, y, num_predictions=1, aggregate=True, reduction="mean"):
+        predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
+
+        mse = self.likelihood.error(predictions, y, reduction=reduction)
+        ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
+        mae = self.likelihood.absolute_error(predictions, y, reduction=reduction)
+
+        return mse, ll, mae
