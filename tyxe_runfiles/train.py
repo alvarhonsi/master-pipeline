@@ -1,39 +1,40 @@
-from modules.models import get_net
-from modules.inference import MCMCInferenceModel, SVIInferenceModel
-from modules.datageneration import load_data, data_functions
-from modules.config import read_config
-from modules.context import set_default_tensor_type
-from modules.plots import plot_comparison_grid
-from modules.distributions import DataDistribution
-from modules.priors import prior_types
-from modules.optimizers import optimizer_types
-from modules.guides import guide_types
-from modules.loss import loss_types
-from tyxe_runfiles.eval import draw_data_samples
-from functools import partial
-import os
-import numpy as np
-import torch
-import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader
-import pyro
-from pyro.nn import PyroModule, PyroSample, PyroParam
-from pyro.infer.autoguide import AutoDiagonalNormal
-from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive, TraceMeanField_ELBO
-import pyro.infer.autoguide.initialization as ag_init
-import pyro.distributions as dist
-from datetime import timedelta
-import time
-import json
-import argparse
-import tyxe
-import tyxe.priors as priors
-import tyxe.likelihoods as likelihoods
-
-import functools
-from typing import Callable, Optional
-import pickle
 import dill
+import pickle
+from typing import Callable, Optional
+import functools
+import tyxe.likelihoods as likelihoods
+import tyxe.priors as priors
+import tyxe
+import argparse
+import json
+import time
+from datetime import timedelta
+import pyro.distributions as dist
+import pyro.infer.autoguide.initialization as ag_init
+from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive, TraceMeanField_ELBO
+from pyro.infer.autoguide import AutoDiagonalNormal
+from pyro.nn import PyroModule, PyroSample, PyroParam
+import pyro
+from torch.utils.data import TensorDataset, DataLoader
+import torch.nn as nn
+import torch
+import numpy as np
+import os
+from functools import partial
+from tyxe_runfiles.eval import draw_data_samples
+from modules.loss import loss_types
+from modules.guides import guide_types
+from modules.optimizers import optimizer_types
+from modules.priors import prior_types
+from modules.distributions import DataDistribution
+from modules.plots import plot_comparison_grid
+from modules.context import set_default_tensor_type
+from modules.config import read_config
+from modules.datageneration import load_data, data_functions
+from modules.inference import MCMCInferenceModel, SVIInferenceModel
+from modules.models import get_net
+import sys
+sys.path.append("..")
 
 
 def save_bnn(bnn, inference_type, save_path=None):
