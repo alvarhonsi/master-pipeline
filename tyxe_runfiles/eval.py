@@ -7,7 +7,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import torch
 import numpy as np
 import pandas as pd
-from tyxe_runfiles import train
+import train
 from modules.loss import loss_types
 from modules.guides import guide_types
 from modules.priors import prior_types
