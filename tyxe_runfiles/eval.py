@@ -1,28 +1,26 @@
-from modules.config import read_config
-from modules.datageneration import load_data, data_functions
-from modules.models import model_types
-from modules.inference import MCMCInferenceModel, SVIInferenceModel
-from modules.plots import plot_comparison, plot_comparison_grid
-from modules.metrics import difference_mean, difference_std, KL_divergance_normal
-from modules.distributions import PredictivePosterior, DataDistribution, NormalPosterior
-from modules.context import set_default_tensor_type
-from modules.priors import prior_types
-from modules.guides import guide_types
-from modules.loss import loss_types
-from tyxe_runfiles import train
-import pandas as pd
-import numpy as np
-import torch
-from torch.utils.data import TensorDataset, DataLoader
-import pyro
-import os
-import json
-import time
 import datetime
+import time
+import json
+import os
+import pyro
+from torch.utils.data import TensorDataset, DataLoader
+import torch
+import numpy as np
+import pandas as pd
+from tyxe_runfiles import train
+from modules.loss import loss_types
+from modules.guides import guide_types
+from modules.priors import prior_types
+from modules.context import set_default_tensor_type
+from modules.distributions import PredictivePosterior, DataDistribution, NormalPosterior
+from modules.metrics import difference_mean, difference_std, KL_divergance_normal
+from modules.plots import plot_comparison, plot_comparison_grid
+from modules.inference import MCMCInferenceModel, SVIInferenceModel
+from modules.models import model_types
+from modules.datageneration import load_data, data_functions
+from modules.config import read_config
 import sys
-
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
+sys.path.append("..")
 
 
 def draw_data_samples(dataloader, num_samples=10, device="cpu"):
