@@ -1,0 +1,4 @@
+dir = experiments/sin2-mcmc-64
+name = sin2-mcmc-64
+devices = cpu, cpu
+profiles = mcmc-1k-10chains mcmc-5k-1chains, mcmc-1k-1chains mcmc-5k-10chains

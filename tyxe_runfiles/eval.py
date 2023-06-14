@@ -9,6 +9,7 @@ from modules.context import set_default_tensor_type
 from modules.priors import prior_types
 from modules.guides import guide_types
 from modules.loss import loss_types
+from tyxe_runfiles import train
 import pandas as pd
 import numpy as np
 import torch
@@ -25,6 +26,7 @@ import time
 import datetime
 import tyxe
 
+
 def draw_data_samples(dataloader, num_samples=10, device="cpu"):
     xs, ys = [], []
     for x, y in dataloader:
@@ -39,6 +41,7 @@ def draw_data_samples(dataloader, num_samples=10, device="cpu"):
     sample_y = y[idx]
     return sample_x.to(device), sample_y.to(device)
 
+
 def sample_predictive_posterior(bnn, x_sample, num_samples=100):
     return bnn.sample_predictive(x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
 
@@ -49,8 +52,10 @@ def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
     rmse, loglikelihood, mae = 0, 0, 0
     batch_num = 0
     for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
-        input_data, observation_data = input_data.to(device), observation_data.to(device)
-        err, ll, absolute_err  = bnn.get_error_metrics(input_data, observation_data, num_predictions=num_predictions, reduction="mean")
+        input_data, observation_data = input_data.to(
+            device), observation_data.to(device)
+        err, ll, absolute_err = bnn.get_error_metrics(
+            input_data, observation_data, num_predictions=num_predictions, reduction="mean")
         rmse += err
         loglikelihood += ll
         mae += absolute_err
@@ -62,41 +67,6 @@ def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
     results["rmse"] = rmse.item()
     results["loglikelihood"] = loglikelihood.item()
     results["mae"] = mae.item()
-
-    return results
-
-def evaluate_uncertainty(bnn, dataloader, num_predictions=100, device="cpu"):
-    results = {}
-    # Evaluate error
-    model_std_loc, model_std_scale = 0, 0
-    likelihood_std_loc, likelihood_std_scale = 0, 0
-    predictive_std_loc, predictive_std_scale = 0, 0
-    batch_num = 0
-    for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
-        input_data, observation_data = input_data.to(device), observation_data.to(device)
-        model_std, likelihood_scale, pred_std = bnn.get_predictive_uncertanty_estimations(input_data, num_predictions=num_predictions)
-
-        model_std_loc += model_std.mean()
-        model_std_scale += model_std.std()
-        likelihood_std_loc += likelihood_scale.mean() #should mabye be done differently??
-        likelihood_std_scale += likelihood_scale.std()
-        predictive_std_loc += pred_std.mean()
-        predictive_std_scale += pred_std.std()
-        batch_num = num_batch
-
-    model_std_loc = model_std_loc / batch_num
-    model_std_scale = model_std_scale / batch_num
-    likelihood_std_loc = likelihood_std_loc / batch_num
-    likelihood_std_scale = likelihood_std_scale / batch_num
-    predictive_std_loc = predictive_std_loc / batch_num
-    predictive_std_scale = predictive_std_scale / batch_num
-
-    results["model_std_loc"] = model_std_loc.item()
-    results["model_std_std"] = model_std_scale.item()
-    results["likelihood_std_loc"] = likelihood_std_loc.item()
-    results["likelihood_std_std"] = likelihood_std_scale.item()
-    results["predictive_std_loc"] = predictive_std_loc.item()
-    results["predictive_std_std"] = predictive_std_scale.item()
 
     return results
 
@@ -123,64 +93,8 @@ def evaluate_posterior(posterior_samples, data_samples):
 
     return results
 
-def load_model(dir, config):
-    NAME = config["NAME"]
-    X_DIM = config.getint("X_DIM")
-    Y_DIM = config.getint("Y_DIM")
-    DEVICE = config["DEVICE"]
-    MODEL_TYPE = config["MODEL_TYPE"]
-    HIDDEN_FEATURES = config.getlist("HIDDEN_FEATURES")
 
-    PRIOR_TYPE = config["PRIOR_TYPE"]
-    WEIGHT_LOC = config.getfloat("WEIGHT_LOC")
-    WEIGHT_SCALE = config.getfloat("WEIGHT_SCALE")
-    BIAS_LOC = config.getfloat("BIAS_LOC")
-    BIAS_SCALE = config.getfloat("BIAS_SCALE")
-
-    INFERENCE_TYPE = config["INFERENCE_TYPE"]
-    SVI_GUIDE = config["SVI_GUIDE"]
-    SVI_LOSS = config["SVI_LOSS"]
-    MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
-    MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
-    MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
-
-    try:
-        PRIOR = prior_types[PRIOR_TYPE]
-    except KeyError:
-        raise ValueError(f"Prior type {PRIOR_TYPE} not supported. Supported types: {prior_types.keys()}")
-    try:
-        BNN = model_types[MODEL_TYPE]
-    except KeyError:
-        raise ValueError(f"Model type {MODEL_TYPE} not supported. Supported types: {model_types.keys()}")
-    try:
-        GUIDE = guide_types[SVI_GUIDE]
-    except KeyError:
-        raise ValueError(f"Guide type {SVI_GUIDE} not supported. Supported types: {guide_types.keys()}")
-    try:
-        LOSS = loss_types[SVI_LOSS]
-    except KeyError:
-        raise ValueError(f"Loss type {SVI_LOSS} not supported. Supported types: {loss_types.keys()}")
-
-    prior = PRIOR(WEIGHT_LOC, WEIGHT_SCALE, BIAS_LOC, BIAS_SCALE)
-    model = BNN(X_DIM, Y_DIM, prior, hidden_features = HIDDEN_FEATURES, device=DEVICE)
-    nn = nn.Sequential(nn.Linear(1, 32), nn.ReLU(), nn.Linear(32,32), nn.ReLU(), nn.Linear(32, 1))
-
-    if INFERENCE_TYPE == "svi":
-        guide = tyxe.guides.AutoNormal
-        loss = LOSS()
-        optim = pyro.optim.Adam({"lr": 1e-3})
-        inference_model = SVIInferenceModel(model, prior, guide, optim, loss=loss, device=DEVICE)
-    elif INFERENCE_TYPE == "mcmc":
-        mcmc_kernel = NUTS(model)
-        inference_model = MCMCInferenceModel(model, prior, mcmc_kernel, num_samples=MCMC_NUM_SAMPLES, num_warmup=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
-    else:
-        raise ValueError(f"Invalid inference type: {INFERENCE_TYPE}")
-
-    inference_model.load(f"{dir}/models/{NAME}")
-
-    return inference_model
-
-def eval(config, dataset_config, DIR, bnn=None, device=None):
+def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
     NAME = config["NAME"]
     SEED = config.getint("SEED")
     DEVICE = device if device != None else config["DEVICE"]
@@ -189,6 +103,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     DATASET = config["DATASET"]
 
     OBS_MODEL = config["OBS_MODEL"]
+    INFERENCE_TYPE = config["INFERENCE_TYPE"]
 
     DATA_FUNC = dataset_config["DATA_FUNC"]
     MU = dataset_config.getfloat("MU")
@@ -208,36 +123,28 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     np.random.seed(SEED)
 
     # Load data
-    (x_train, y_train), _, (x_test_in_domain, y_test_in_domain), (x_test_out_domain, y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_val=False)
+    (x_train, y_train), _, (x_test_in_domain, y_test_in_domain), (x_test_out_domain,
+                                                                  y_test_out_domain) = load_data(f"{DIR}/datasets/{DATASET}", load_val=False)
     x_test = torch.vstack((x_test_in_domain, x_test_out_domain))
     y_test = torch.vstack((y_test_in_domain, y_test_out_domain))
-
 
     # Make dataset
     train_dataset = TensorDataset(x_train, y_train)
     test_in_domain_dataset = TensorDataset(x_test_in_domain, y_test_in_domain)
-    test_out_domain_dataset = TensorDataset(x_test_out_domain, y_test_out_domain)
+    test_out_domain_dataset = TensorDataset(
+        x_test_out_domain, y_test_out_domain)
     test_dataset = TensorDataset(x_test, y_test)
 
     # Make dataloader
-    train_dataloader = DataLoader(train_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
-    test_in_domain_dataloader = DataLoader(test_in_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
-    test_out_domain_dataloader = DataLoader(test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
-    
-    # Load model
-    # bnn = load_model(DIR, config) if bnn is None else bnn
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
+    test_in_domain_dataloader = DataLoader(
+        test_in_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
+    test_out_domain_dataloader = DataLoader(
+        test_out_domain_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
+    test_dataloader = DataLoader(
+        test_dataset, batch_size=EVAL_BATCH_SIZE, shuffle=True)
 
-    # Ready results directory
-    if not os.path.exists(f"{DIR}/results/{NAME}"):
-        os.mkdir(f"{DIR}/results/{NAME}")
-
-    start = time.time()
-    print(f"using device: {DEVICE}")
-    print(f"====== evaluating profile {NAME} ======")
-
-    # Draw samples from relevant distributions
-    
     # Ready samples directory
     if not os.path.exists(f"{DIR}/results/{NAME}/posterior-samples"):
         os.mkdir(f"{DIR}/results/{NAME}/posterior-samples")
@@ -245,83 +152,135 @@ def eval(config, dataset_config, DIR, bnn=None, device=None):
     if not os.path.exists(f"{DIR}/results/{NAME}/data-samples"):
         os.mkdir(f"{DIR}/results/{NAME}/data-samples")
 
-    # samp_x: (NUM_X_SAMPLES, X_DIM), samp_y: (NUM_X_SAMPLES)
-    train_x_sample, _ = draw_data_samples(train_dataloader, NUM_X_SAMPLES, device=DEVICE)
-    test_x_sample, _ = draw_data_samples(test_dataloader, NUM_X_SAMPLES, device=DEVICE)
-    test_in_domain_x_sample, _ = draw_data_samples(test_in_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
-    test_out_domain_x_sample, _ = draw_data_samples(test_out_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    if not os.path.exists(f"{DIR}/results/{NAME}/sanity-checks"):
+        os.mkdir(f"{DIR}/results/{NAME}/sanity-checks")
 
-    np.save(f"{DIR}/results/{NAME}/data-samples/train_x.npy", train_x_sample.cpu().detach().numpy())
-    np.save(f"{DIR}/results/{NAME}/data-samples/test_x.npy", test_x_sample.cpu().detach().numpy())
-    np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_x.npy", test_in_domain_x_sample.cpu().detach().numpy())
-    np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_x.npy", test_out_domain_x_sample.cpu().detach().numpy())
-    
-    #Sample true distribution from data
+    # samp_x: (NUM_X_SAMPLES, X_DIM), samp_y: (NUM_X_SAMPLES)
+    train_x_sample, _ = draw_data_samples(
+        train_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    test_x_sample, _ = draw_data_samples(
+        test_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    test_in_domain_x_sample, _ = draw_data_samples(
+        test_in_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
+    test_out_domain_x_sample, _ = draw_data_samples(
+        test_out_domain_dataloader, NUM_X_SAMPLES, device=DEVICE)
+
+    np.save(f"{DIR}/results/{NAME}/data-samples/train_x.npy",
+            train_x_sample.cpu().detach().numpy())
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_x.npy",
+            test_x_sample.cpu().detach().numpy())
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_x.npy",
+            test_in_domain_x_sample.cpu().detach().numpy())
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_x.npy",
+            test_out_domain_x_sample.cpu().detach().numpy())
+
+    # Sample true distribution from data
     # data_samp: (NUM_DIST_SAMPLES, NUM_X_SAMPLES)
     func = data_functions[DATA_FUNC]
     data_train_dist = DataDistribution(func, MU, SIGMA, train_x_sample)
     data_test_dist = DataDistribution(func, MU, SIGMA, test_x_sample)
-    data_in_domain_dist = DataDistribution(func, MU, SIGMA, test_in_domain_x_sample)
-    data_out_domain_dist = DataDistribution(func, MU, SIGMA, test_out_domain_x_sample)
+    data_in_domain_dist = DataDistribution(
+        func, MU, SIGMA, test_in_domain_x_sample)
+    data_out_domain_dist = DataDistribution(
+        func, MU, SIGMA, test_out_domain_x_sample)
 
-    data_train_samples = data_train_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    data_test_samples = data_test_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    data_in_domain_samples = data_in_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
-    data_out_domain_samples = data_out_domain_dist.sample(NUM_DIST_SAMPLES).cpu().detach().numpy()
+    data_train_samples = data_train_dist.sample(
+        NUM_DIST_SAMPLES).cpu().detach().numpy()
+    data_test_samples = data_test_dist.sample(
+        NUM_DIST_SAMPLES).cpu().detach().numpy()
+    data_in_domain_samples = data_in_domain_dist.sample(
+        NUM_DIST_SAMPLES).cpu().detach().numpy()
+    data_out_domain_samples = data_out_domain_dist.sample(
+        NUM_DIST_SAMPLES).cpu().detach().numpy()
 
-    np.save(f"{DIR}/results/{NAME}/data-samples/train_dist_samples.npy", data_train_samples)
-    np.save(f"{DIR}/results/{NAME}/data-samples/test_dist_samples.npy", data_test_samples)
-    np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_dist_samples.npy", data_in_domain_samples)
-    np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_dist_samples.npy", data_out_domain_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/train_dist_samples.npy",
+            data_train_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_dist_samples.npy",
+            data_test_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_in_domain_dist_samples.npy",
+            data_in_domain_samples)
+    np.save(f"{DIR}/results/{NAME}/data-samples/test_out_domain_dist_samples.npy",
+            data_out_domain_samples)
 
     print("data samples: ", data_in_domain_samples.shape)
 
-    pred_train_samples = sample_predictive_posterior(bnn, train_x_sample, num_samples=NUM_DIST_SAMPLES)
-    pred_test_samples = sample_predictive_posterior(bnn, test_x_sample, num_samples=NUM_DIST_SAMPLES)
-    pred_in_domain_samples = sample_predictive_posterior(bnn, test_in_domain_x_sample, num_samples=NUM_DIST_SAMPLES)
-    pred_out_domain_samples = sample_predictive_posterior(bnn, test_out_domain_x_sample, num_samples=NUM_DIST_SAMPLES)
+    eval_results = []
 
-    np.save(f"{DIR}/results/{NAME}/posterior-samples/train_samples.npy", pred_train_samples)
-    np.save(f"{DIR}/results/{NAME}/posterior-samples/test_samples.npy", pred_test_samples)
-    np.save(f"{DIR}/results/{NAME}/posterior-samples/test_in_domain_samples.npy", pred_in_domain_samples)
-    np.save(f"{DIR}/results/{NAME}/posterior-samples/test_out_domain_samples.npy", pred_out_domain_samples)
+    for run in range(1, reruns + 1):
+        # Load model
+        if bnn == None:
+            bnn = train.make_inference_model(
+                config, dataset_config, device=DEVICE)
+            bnn = train.load_bnn(bnn, INFERENCE_TYPE,
+                                 load_path=f"{DIR}/models/{NAME}/params.pt" if INFERENCE_TYPE == "svi" else f"{DIR}/models/{NAME}/checkpoint_{run}.pt", device=DEVICE)
 
-    print("pred samples: ", pred_train_samples.shape)
+        # Ready results directory
+        if not os.path.exists(f"{DIR}/results/{NAME}"):
+            os.mkdir(f"{DIR}/results/{NAME}")
 
-    # Sanity Checks
-    plot_comparison_grid(pred_train_samples, data_train_samples, grid_size=(3,3), figsize=(20,20), x_samples=train_x_sample, kl_div=True, title="Posterior samples - Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/train_sanity.png")
-    plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, x_samples=test_in_domain_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - In Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_in_domain_sanity.png")
-    plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, x_samples=test_out_domain_x_sample, grid_size=(3,3), figsize=(20,20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/test_out_domain_sanity.png")
-    
+        start = time.time()
+        print(f"using device: {DEVICE}")
+        print(f"====== evaluating profile {NAME} - {run} ======")
 
-    # Evaluate
+        # Draw samples from relevant distributions
 
-    results = {}
+        pred_train_samples = sample_predictive_posterior(
+            bnn, train_x_sample, num_samples=NUM_DIST_SAMPLES)
+        pred_test_samples = sample_predictive_posterior(
+            bnn, test_x_sample, num_samples=NUM_DIST_SAMPLES)
+        pred_in_domain_samples = sample_predictive_posterior(
+            bnn, test_in_domain_x_sample, num_samples=NUM_DIST_SAMPLES)
+        pred_out_domain_samples = sample_predictive_posterior(
+            bnn, test_out_domain_x_sample, num_samples=NUM_DIST_SAMPLES)
 
-    train_error = evaluate_error(bnn, train_dataloader, num_predictions=1000, device=DEVICE)
-    test_error = evaluate_error(bnn, test_dataloader, num_predictions=1000, device=DEVICE)
-    in_domain_error = evaluate_error(bnn, test_in_domain_dataloader, num_predictions=1000, device=DEVICE)
-    out_domain_error = evaluate_error(bnn, test_out_domain_dataloader, num_predictions=1000, device=DEVICE)
-    results["train_error"] = train_error
-    results["test_error"] = test_error
-    results["in_domain_error"] = in_domain_error
-    results["out_domain_error"] = out_domain_error
+        np.save(f"{DIR}/results/{NAME}/posterior-samples/train_samples_{run}.npy",
+                pred_train_samples)
+        np.save(f"{DIR}/results/{NAME}/posterior-samples/test_samples_{run}.npy",
+                pred_test_samples)
+        np.save(f"{DIR}/results/{NAME}/posterior-samples/test_in_domain_samples_{run}.npy",
+                pred_in_domain_samples)
+        np.save(f"{DIR}/results/{NAME}/posterior-samples/test_out_domain_samples_{run}.npy",
+                pred_out_domain_samples)
 
-    results["predictive_train"] = evaluate_posterior(pred_train_samples, data_train_samples)
-    results["predictive_test"] = evaluate_posterior(pred_test_samples, data_test_samples)
-    results["predictive_in_domain"] = evaluate_posterior(pred_in_domain_samples, data_in_domain_samples)
-    results["predictive_out_domain"] = evaluate_posterior(pred_out_domain_samples, data_out_domain_samples)
+        print("pred samples: ", pred_train_samples.shape)
 
-    # Uncertainty estimates?
-    results["uncertainty_train"] = evaluate_uncertainty(bnn, train_dataloader, num_predictions=1000, device=DEVICE)
-    results["uncertainty_test"] = evaluate_uncertainty(bnn, test_dataloader, num_predictions=1000, device=DEVICE)
-    results["uncertainty_in_domain"] = evaluate_uncertainty(bnn, test_in_domain_dataloader, num_predictions=1000, device=DEVICE)
-    results["uncertainty_out_domain"] = evaluate_uncertainty(bnn, test_out_domain_dataloader, num_predictions=1000, device=DEVICE)
+        # Sanity Checks
+        plot_comparison_grid(pred_train_samples, data_train_samples, grid_size=(3, 3), figsize=(20, 20), x_samples=train_x_sample,
+                             kl_div=True, title="Posterior samples - Train", plot_mean=True, save_path=f"{DIR}/results/{NAME}/sanity-checks/train_sanity_{run}.png")
+        plot_comparison_grid(pred_in_domain_samples, data_in_domain_samples, x_samples=test_in_domain_x_sample, grid_size=(3, 3), figsize=(
+            20, 20), kl_div=True, title="Posterior samples - In Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/sanity-checks/test_in_domain_sanity_{run}.png")
+        plot_comparison_grid(pred_out_domain_samples, data_out_domain_samples, x_samples=test_out_domain_x_sample, grid_size=(3, 3), figsize=(
+            20, 20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/sanity-checks/test_out_domain_sanity_{run}.png")
 
-    # Save results
+        # Evaluate
+
+        results = {}
+        cases = ["train", "test", "in_domain", "out_domain"]
+        dataloaders = [train_dataloader, test_dataloader,
+                       test_in_domain_dataloader, test_out_domain_dataloader]
+        pred_samples = [pred_train_samples, pred_test_samples,
+                        pred_in_domain_samples, pred_out_domain_samples]
+        data_samples = [data_train_samples, data_test_samples,
+                        data_in_domain_samples, data_out_domain_samples]
+        eval_cases = zip(cases, dataloaders, pred_samples, data_samples)
+        for case, dataloader, pred_sample, data_sample in eval_cases:
+            results[case] = {}
+            print(f"Evaluating {case}...")
+            error = evaluate_error(
+                bnn, dataloader, num_predictions=1000, device=DEVICE)
+            results[case]["error"] = error
+
+            eval_posterior = evaluate_posterior(
+                pred_sample, data_sample)
+            results[case]["predictive_eval"] = eval_posterior
+
+        eval_results.append(results)
+
+        # Get time and format to HH:MM:SS
+        elapsed_time = str(datetime.timedelta(seconds=time.time() - start))
+        print(f"Eval done in {elapsed_time}")
+
+
+# Save results
     with open(f"{DIR}/results/{NAME}/results.json", "w") as f:
-        json.dump(results, f, indent=4)
-
-    # Get time and format to HH:MM:SS
-    elapsed_time = str(datetime.timedelta(seconds=time.time() - start))
-    print(f"Eval done in {elapsed_time}")
+        json.dump(eval_results, f, indent=4)

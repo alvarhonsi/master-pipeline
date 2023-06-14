@@ -1,4 +1,0 @@
-dir = experiments/mcmc-samples-32
-name = mcmc-samples-32
-devices = cuda:6, cuda:7
-profiles = 1k-samples-5-chains 10k-samples, 1k-samples 10k-samples-5-chains

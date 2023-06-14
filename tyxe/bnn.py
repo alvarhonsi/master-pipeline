@@ -68,7 +68,8 @@ class GuidedBNN(_BNN):
 
     def __init__(self, net, prior, guide_builder=None, name=""):
         super().__init__(net, prior, name=name)
-        self.net_guide = guide_builder(self.net) if guide_builder is not None else _empty_guide
+        self.net_guide = guide_builder(
+            self.net) if guide_builder is not None else _empty_guide
 
     def guided_forward(self, *args, guide_tr=None, **kwargs):
         if guide_tr is None:
@@ -92,8 +93,10 @@ class PytorchBNN(GuidedBNN):
     def named_pytorch_parameters(self, *input_data):
         """Equivalent of the named_parameters method of an nn.Module. Ensures that prior and guide are run once to
         initialize all pyro parameters. Those are then collected and returned via the trace poutine."""
-        model_trace = poutine.trace(self.net, param_only=True).get_trace(*input_data)
-        guide_trace = poutine.trace(self.net_guide, param_only=True).get_trace(*input_data)
+        model_trace = poutine.trace(
+            self.net, param_only=True).get_trace(*input_data)
+        guide_trace = poutine.trace(
+            self.net_guide, param_only=True).get_trace(*input_data)
         for name, msg in itertools.chain(model_trace.nodes.items(), guide_trace.nodes.items()):
             yield name, msg["value"].unconstrained()
 
@@ -107,7 +110,8 @@ class PytorchBNN(GuidedBNN):
         return self.cached_output
 
     def forward(self, *args, **kwargs):
-        self.cached_kl_loss = self._loss.differentiable_loss(self.cached_forward, self.net_guide, *args, **kwargs)
+        self.cached_kl_loss = self._loss.differentiable_loss(
+            self.cached_forward, self.net_guide, *args, **kwargs)
         return self.cached_output
 
 
@@ -138,9 +142,11 @@ class _SupervisedBNN(GuidedBNN):
         :param bool aggregate: whether to aggregate the outputs of the forward passes before evaluating.
         :param str reduction: "sum", "mean" or "none". How to process the tensor of errors. "sum" adds them up,
             "mean" averages them and "none" simply returns the tensor."""
-        predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
+        predictions = self.predict(
+            *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
         error = self.likelihood.error(predictions, y, reduction=reduction)
-        ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
+        ll = self.likelihood.log_likelihood(
+            predictions, y, reduction=reduction)
 
         return error, ll
 
@@ -163,9 +169,11 @@ class VariationalBNN(_SupervisedBNN):
         parameters.
     :param callable likelihood_guide_builder: optional callable that constructs a guide for the likelihood if it
         contains any unknown variable, such as the precision/scale of a Gaussian."""
+
     def __init__(self, net, prior, likelihood, net_guide_builder=None, likelihood_guide_builder=None, name=""):
         super().__init__(net, prior, likelihood, net_guide_builder, name=name)
-        weight_sample_sites = list(util.pyro_sample_sites(self.net, prefix="net"))
+        weight_sample_sites = list(
+            util.pyro_sample_sites(self.net, prefix="net"))
         if likelihood_guide_builder is not None:
             self.likelihood_guide = likelihood_guide_builder(poutine.block(
                 self.model, hide=weight_sample_sites + [self.likelihood.data_name]))
@@ -199,14 +207,16 @@ class VariationalBNN(_SupervisedBNN):
         old_training_state = self.net.training
         self.net.train(True)
 
-        loss = TraceMeanField_ELBO(num_particles) if closed_form_kl else Trace_ELBO(num_particles)
+        loss = TraceMeanField_ELBO(
+            num_particles) if closed_form_kl else Trace_ELBO(num_particles)
         svi = SVI(self.model, self.guide, optim, loss=loss)
 
         for i in range(num_epochs):
             elbo = 0.
             num_batch = 1
             for num_batch, (input_data, observation_data) in enumerate(iter(data_loader), 1):
-                elbo += svi.step(tuple(_to(input_data, device)), tuple(_to(observation_data, device))[0])
+                elbo += svi.step(tuple(_to(input_data, device)),
+                                 tuple(_to(observation_data, device))[0])
 
             # the callback can stop training by returning True
             if callback is not None and callback(self, i, elbo / num_batch):
@@ -225,12 +235,14 @@ class VariationalBNN(_SupervisedBNN):
         with torch.autograd.no_grad():
             for trace in guide_traces:
                 guide_tr = poutine.trace(self.guide).get_trace(*input_data)
-                preds.append(poutine.replay(self.net, trace=guide_tr)(*input_data))
-                scales.append(poutine.replay(lambda: self.likelihood.scale, trace=guide_tr)())
+                preds.append(poutine.replay(
+                    self.net, trace=guide_tr)(*input_data))
+                scales.append(poutine.replay(
+                    lambda: self.likelihood.scale, trace=guide_tr)())
         predictions = torch.stack(preds)
         scales = torch.stack(scales)
         return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions
-        
+
     def sample_predictive(self, *input_data, num_predictions=1, guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
@@ -240,45 +252,40 @@ class VariationalBNN(_SupervisedBNN):
             for trace in guide_traces:
                 guide_tr = poutine.trace(self.guide).get_trace(*input_data)
                 pred = poutine.replay(self.net, trace=guide_tr)(*input_data)
-                preds.append(poutine.replay(self.likelihood, trace=guide_tr)(pred))
+                preds.append(poutine.replay(
+                    self.likelihood, trace=guide_tr)(pred))
         predictions = torch.stack(preds)
         return predictions
-    
+
     def get_error_metrics(self, input_data, y, num_predictions=1, aggregate=True, reduction="mean"):
-        predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
+        predictions = self.predict(
+            *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
 
         mse = self.likelihood.error(predictions, y, reduction=reduction)
-        ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
-        mae = self.likelihood.absolute_error(predictions, y, reduction=reduction)
+        ll = self.likelihood.log_likelihood(
+            predictions, y, reduction=reduction)
+        mae = self.likelihood.absolute_error(
+            predictions, y, reduction=reduction)
 
         return mse, ll, mae
-    
-    def get_predictive_uncertanty_estimations(self, *input_data, num_predictions=1):
-        point_preds = []
+
+    def get_likelihood_scale(self, *input_data, num_predictions=1):
         scales = []
-        preds = []
 
         guide_traces = [None] * num_predictions
         with torch.autograd.no_grad():
             for trace in guide_traces:
                 guide_tr = poutine.trace(self.guide).get_trace(*input_data)
 
-                point_pred = poutine.replay(self.net, trace=guide_tr)(*input_data)
-                point_preds.append(point_pred)
-                scales.append(poutine.replay(lambda: self.likelihood.scale, trace=guide_tr)())
-                preds.append(poutine.replay(self.likelihood, trace=guide_tr)(point_pred))
+                scales.append(poutine.replay(
+                    lambda: self.likelihood.scale, trace=guide_tr)())
 
-        point_preds = torch.stack(point_preds)
         scales = torch.stack(scales)
-        preds = torch.stack(preds)
 
-        mean_model_std = point_preds.std(dim=0)
         mean_likelihood_scale = scales.mean(dim=0)
-        mean_predictive_std = preds.std(dim=0)
+        std_likelihood_scale = scales.std(dim=0)
 
-        return mean_model_std, mean_likelihood_scale, mean_predictive_std
-
-
+        return mean_likelihood_scale, std_likelihood_scale
 
 
 # TODO inherit from _SupervisedBNN to unify the class hierarchy. This will require changing the GuidedBNN baseclass to
@@ -323,55 +330,83 @@ class MCMC_BNN(_BNN):
                 for i, data in enumerate(_as_tuple(in_data)):
                     input_data_lists[i].append(data.to(device))
                 observation_data_list.append(obs_data.to(device))
-            input_data = tuple(torch.cat(input_data_lists[i]) for i in range(len(input_data_lists)))
+            input_data = tuple(
+                torch.cat(input_data_lists[i]) for i in range(len(input_data_lists)))
             observation_data = torch.cat(observation_data_list)
         self._mcmc = MCMC(self.kernel, num_samples, **mcmc_kwargs)
         self._mcmc.run(input_data, observation_data)
 
         return self._mcmc
-    
+
     def predict(self, *input_data, num_predictions=1, aggregate=True):
         if self._mcmc is None:
-            raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
+            raise RuntimeError(
+                "Call .fit to run MCMC and obtain samples from the posterior first.")
 
         preds = []
         scales = []
         weight_samples = self._mcmc.get_samples(num_samples=num_predictions)
         with torch.no_grad():
             for i in range(num_predictions):
-                weights = {name: sample[i] for name, sample in weight_samples.items()}
+                weights = {name: sample[i]
+                           for name, sample in weight_samples.items()}
                 preds.append(poutine.condition(self, weights)(*input_data))
-                scales.append(poutine.condition(lambda: self.likelihood.scale, weights)()) # sample scale from distribution
+                # sample scale from distribution
+                scales.append(poutine.condition(
+                    lambda: self.likelihood.scale, weights)())
         predictions = torch.stack(preds)
         scales = torch.stack(scales)
         return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions
-    
+
     def sample_predictive(self, *input_data, num_predictions=1):
         if self._mcmc is None:
-            raise RuntimeError("Call .fit to run MCMC and obtain samples from the posterior first.")
+            raise RuntimeError(
+                "Call .fit to run MCMC and obtain samples from the posterior first.")
 
         preds = []
         weight_samples = self._mcmc.get_samples(num_samples=num_predictions)
         with torch.no_grad():
             for i in range(num_predictions):
-                weights = {name: sample[i] for name, sample in weight_samples.items()}
+                weights = {name: sample[i]
+                           for name, sample in weight_samples.items()}
                 pred = poutine.condition(self, weights)(*input_data)
                 preds.append(poutine.condition(self.likelihood, weights)(pred))
         predictions = torch.stack(preds)
         return predictions
 
-    
     def evaluate(self, input_data, y, num_predictions=1, aggregate=True, reduction="sum"):
-        predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
+        predictions = self.predict(
+            *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
         error = self.likelihood.error(predictions, y, reduction=reduction)
-        ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
+        ll = self.likelihood.log_likelihood(
+            predictions, y, reduction=reduction)
         return error, ll
-    
+
     def get_error_metrics(self, input_data, y, num_predictions=1, aggregate=True, reduction="mean"):
-        predictions = self.predict(*_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
+        predictions = self.predict(
+            *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
 
         mse = self.likelihood.error(predictions, y, reduction=reduction)
-        ll = self.likelihood.log_likelihood(predictions, y, reduction=reduction)
-        mae = self.likelihood.absolute_error(predictions, y, reduction=reduction)
+        ll = self.likelihood.log_likelihood(
+            predictions, y, reduction=reduction)
+        mae = self.likelihood.absolute_error(
+            predictions, y, reduction=reduction)
 
         return mse, ll, mae
+
+    def get_likelihood_scale(self, *input_data, num_predictions=1):
+        scales = []
+
+        weight_samples = self._mcmc.get_samples(num_samples=num_predictions)
+        with torch.autograd.no_grad():
+            for i in range(num_predictions):
+                weights = {name: sample[i]
+                           for name, sample in weight_samples.items()}
+                scales.append(poutine.condition(
+                    lambda: self.likelihood.scale, weights)())
+
+        scales = torch.stack(scales)
+        mean_likelihood_scale = scales.mean(dim=0)
+        std_likelihood_scale = scales.std(dim=0)
+
+        return mean_likelihood_scale, std_likelihood_scale

@@ -33,6 +33,51 @@ import tyxe.likelihoods as likelihoods
 import functools
 from typing import Callable, Optional
 import pickle
+import dill
+
+
+def save_bnn(bnn, inference_type, save_path=None):
+    if save_path == None:
+        raise Exception("No save path specified")
+
+    if inference_type == "svi":
+        pyro.get_param_store().save(save_path)
+        print("Saved SVI model to", save_path)
+        file_stats = os.stat(save_path)
+        print(
+            f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
+
+    elif inference_type == "mcmc":
+        bnn._mcmc.kernel = None
+        torch.save({"mcmc": bnn._mcmc},
+                   save_path, pickle_module=dill)
+        print("Saved MCMC model to", save_path)
+        file_stats = os.stat(save_path)
+        print(
+            f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
+
+    else:
+        raise Exception("Unknown inference type")
+
+
+def load_bnn(bnn, inference_type, load_path=None, device=None):
+    if load_path == None:
+        raise Exception("No load path specified")
+
+    if inference_type == "svi":
+        pyro.get_param_store().load(load_path, map_location=device)
+        print("Loaded SVI model from", load_path)
+
+    elif inference_type == "mcmc":
+        checkpoint = torch.load(
+            load_path, map_location=device, pickle_module=dill)
+        bnn._mcmc = checkpoint["mcmc"]
+        print("Loaded MCMC model from", load_path)
+
+    else:
+        raise Exception("Unknown inference type")
+
+    return bnn
 
 
 def make_inference_model(config, dataset_config, device=None):
@@ -45,6 +90,7 @@ def make_inference_model(config, dataset_config, device=None):
     PRIOR_LOC = config.getfloat("PRIOR_LOC")
     PRIOR_SCALE = config.getfloat("PRIOR_SCALE")
     OBS_MODEL = config["OBS_MODEL"]
+    LIKELIHOOD_SCALE_LOC = config.getfloat("LIKELIHOOD_LOC")
     LIKELIHOOD_SCALE = config.getfloat("LIKELIHOOD_SCALE")
     GUIDE_SCALE = config.getfloat("GUIDE_SCALE")
 
@@ -58,40 +104,53 @@ def make_inference_model(config, dataset_config, device=None):
     LR = config.getfloat("LR")
 
     TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
-    
-    net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES, activation=nn.ReLU()).to(DEVICE)
+
+    net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES,
+                  activation=nn.ReLU()).to(DEVICE)
     print(net)
-    prior_dist = dist.Normal(torch.tensor(PRIOR_LOC, device=DEVICE), torch.tensor(PRIOR_SCALE, device=DEVICE))
+    prior_dist = dist.Normal(torch.tensor(
+        PRIOR_LOC, device=DEVICE), torch.tensor(PRIOR_SCALE, device=DEVICE))
     prior = tyxe.priors.IIDPrior(prior_dist)
 
     if OBS_MODEL == "homoskedastic":
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(
+            dataset_size=TRAIN_SIZE, scale=torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
         likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_param":
-        scale = PyroParam(LIKELIHOOD_SCALE, constraint=dist.constraints.positive)
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=scale)
+        scale = PyroParam(LIKELIHOOD_SCALE,
+                          constraint=dist.constraints.positive)
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(
+            dataset_size=TRAIN_SIZE, scale=scale)
         likelihood_guide_builder = None
     elif OBS_MODEL == "homoskedastic_gamma":
-        scale = dist.Gamma(torch.tensor(1., device=DEVICE), torch.tensor(1., device=DEVICE))
-        obs_model = tyxe.likelihoods.HomoskedasticGaussian(dataset_size=TRAIN_SIZE, scale=scale)
-        likelihood_guide_builder = partial(tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
+        scale = dist.Gamma(torch.tensor(LIKELIHOOD_SCALE_LOC, device=DEVICE),
+                           torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
+        obs_model = tyxe.likelihoods.HomoskedasticGaussian(
+            dataset_size=TRAIN_SIZE, scale=scale)
+        likelihood_guide_builder = partial(
+            tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
+    else:
+        raise ValueError(
+            f"Observation model {OBS_MODEL} not supported. Supported models: homoskedastic, homoskedastic_param, homoskedastic_gamma")
     # Create inference model
     if INFERENCE_TYPE == "svi":
-        def init_fn (*args, **kwargs):
-            return ag_init.init_to_median(*args, **kwargs).to(DEVICE) 
-        guide_builder = partial(tyxe.guides.AutoNormal, init_loc_fn=init_fn, init_scale=GUIDE_SCALE)
-        bnn = tyxe.VariationalBNN(net, prior, obs_model, guide_builder, likelihood_guide_builder=likelihood_guide_builder)
+        def init_fn(*args, **kwargs):
+            return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
+        guide_builder = partial(tyxe.guides.AutoNormal,
+                                init_loc_fn=init_fn, init_scale=GUIDE_SCALE)
+        bnn = tyxe.VariationalBNN(
+            net, prior, obs_model, guide_builder, likelihood_guide_builder=likelihood_guide_builder)
         return bnn
     elif INFERENCE_TYPE == "mcmc":
         kernel_builder = pyro.infer.mcmc.NUTS
         bnn = tyxe.bnn.MCMC_BNN(net, prior, obs_model, kernel_builder)
         return bnn
     else:
-        raise ValueError(f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
-    
+        raise ValueError(
+            f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
 
 
-def train(config, dataset_config, DIR, device=None, print_train=False):
+def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1):
 
     NAME = config["NAME"]
     DEVICE = device if device != None else config["DEVICE"]
@@ -124,7 +183,8 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     np.random.seed(SEED)
 
     # Load data
-    (x_train, y_train), (x_val, y_val), _, _ = load_data(f"{DIR}/datasets/{DATASET}")
+    (x_train, y_train), (x_val, y_val), _, _ = load_data(
+        f"{DIR}/datasets/{DATASET}")
 
     # Ready model directory
     if not os.path.exists(f"{DIR}/models/{NAME}"):
@@ -148,64 +208,88 @@ def train(config, dataset_config, DIR, device=None, print_train=False):
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
 
-    # Create model
-    bnn = make_inference_model(config, dataset_config, device=DEVICE)
-    
-    # RUN TRAINING
-    print('Using device: {}'.format(DEVICE))
-    print(f'===== Training profile {NAME} =====')
+    stats = []
 
-    pyro.clear_param_store()
+    for run in range(1, reruns + 1):
+        # Create model
+        bnn = make_inference_model(config, dataset_config, device=DEVICE)
 
-    start = time.time()
+        # RUN TRAINING
+        print('Using device: {}'.format(DEVICE))
+        print(f'===== Training profile {NAME} - {run} =====')
 
-    if INFERENCE_TYPE == "svi":
-        ### SVI ###
-        train_stats = {
-            "elbos": [],
-            "time": 0,
-            "rmse_epoch": [],
-            "ll_epoch": [],
-        }
-        def callback(bnn, i, e):
-            time_elapsed = time.time() - start
-            
-            if i % 100 == 0:
-                mse, loglikelihood = 0, 0
-                batch_num = 0
-                for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
-                    input_data, observation_data = input_data.to(DEVICE), observation_data.to(DEVICE)
-                    err, ll = bnn.evaluate(input_data, observation_data, num_predictions=20, reduction="mean")
-                    mse += err
-                    loglikelihood += ll
-                    batch_num = num_batch
-                rmse = (mse / batch_num).sqrt()
-                loglikelihood = loglikelihood / batch_num
+        pyro.clear_param_store()
 
-                train_stats["rmse_epoch"].append(rmse.sqrt().item())
-                train_stats["ll_epoch"].append(loglikelihood.item())
-                print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(seconds=time_elapsed), i, e, round(mse.sqrt().item(), 4), round(ll.item(), 4)))      
-                
-            train_stats["elbos"].append(e)
+        start = time.time()
 
-        optim = pyro.optim.Adam({"lr": LR, "betas": (0.95, 0.999)})
-        with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
-            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS, callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)
-    elif INFERENCE_TYPE == "mcmc":
-        ### MCMC ###
-        train_stats = {
-            "time": 0,
-        }
+        if INFERENCE_TYPE == "svi":
+            ### SVI ###
+            train_stats = {
+                "elbos": [],
+                "time": 0,
+                "rmse_epoch": [],
+                "ll_epoch": [],
+            }
 
-        bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES, warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
+            def callback(bnn, i, e):
+                time_elapsed = time.time() - start
 
-        with open(f"{DIR}/results/{NAME}/mcmc_diagnostics.pkl", "wb") as f:
-            pickle.dump(bnn._mcmc.diagnostics(), f)
+                if i % 50 == 0:
+                    mse, loglikelihood = 0, 0
+                    batch_num = 0
+                    for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+                        input_data, observation_data = input_data.to(
+                            DEVICE), observation_data.to(DEVICE)
+                        err, ll = bnn.evaluate(
+                            input_data, observation_data, num_predictions=100, reduction="mean")
+                        mse += err
+                        loglikelihood += ll
+                        batch_num = num_batch
+                    rmse = (mse / batch_num).sqrt()
+                    loglikelihood = loglikelihood / batch_num
 
-    train_stats["time"] = time.time() - start
-    print(f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
+                    train_stats["rmse_epoch"].append(rmse.sqrt().item())
+                    train_stats["ll_epoch"].append(loglikelihood.item())
+                    print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(
+                        seconds=time_elapsed), i, e, round(mse.sqrt().item(), 4), round(ll.item(), 4)))
+
+                train_stats["elbos"].append(e)
+
+            optim = pyro.optim.Adam({"lr": LR, "betas": (0.95, 0.999)})
+            with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
+                bnn.fit(train_dataloader, optim, num_epochs=EPOCHS,
+                        callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)
+        elif INFERENCE_TYPE == "mcmc":
+            ### MCMC ###
+            train_stats = {
+                "time": 0,
+            }
+
+            bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
+                    warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
+
+            with open(f"{DIR}/results/{NAME}/mcmc_diagnostics.pkl", "wb") as f:
+                pickle.dump(bnn._mcmc.diagnostics(), f)
+
+        # Sample likelihood scale
+        dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
+                       torch.zeros(1, Y_DIM).to(DEVICE))
+        lik_scale = bnn.get_likelihood_scale(
+            dummy_input, num_predictions=50)
+        print(lik_scale)
+        train_stats["likelihood"] = {
+            "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
+
+        train_stats["time"] = time.time() - start
+        print(
+            f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
+
+        if SAVE_MODEL:
+            path = f"{DIR}/models/{NAME}/checkpoint_{run}.pt" if INFERENCE_TYPE == "mcmc" else f"{DIR}/models/{NAME}/params_{run}.pt"
+            save_bnn(bnn, INFERENCE_TYPE,
+                     f"{DIR}/models/{NAME}/checkpoint_{run}.pt")
+
+        stats.append(train_stats)
 
     with open(f"{DIR}/results/{NAME}/train_stats.json", "w") as f:
-        json.dump(train_stats, f)
-
-    return bnn, train_stats
+        json.dump(stats, f, indent=4)
