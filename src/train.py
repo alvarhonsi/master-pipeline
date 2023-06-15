@@ -153,8 +153,10 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=TRAIN_BATCH_SIZE)
-    val_dataloader = DataLoader(val_dataset, batch_size=TRAIN_BATCH_SIZE)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4)
+    val_dataloader = DataLoader(
+        val_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4)
 
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
@@ -185,7 +187,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
             def callback(bnn, i, e):
                 time_elapsed = time.time() - start
 
-                if i % 50 == 0:
+                if i % 100 == 0:
                     mse, loglikelihood = 0, 0
                     batch_num = 0
                     for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
