@@ -3,7 +3,6 @@ import torch.nn.functional as F
 import torch.distributions.utils as dist_utils
 import torch.distributions as torchdist
 from torch.distributions import transforms
-from sklearn.metrics import r2_score
 
 import pyro
 import pyro.distributions as dist
@@ -11,8 +10,8 @@ from pyro.nn import PyroModule, PyroSample, PyroParam, pyro_method
 from pyro.distributions.constraints import positive
 
 
-
-__all__ = ["Bernoulli", "Categorical", "HomoskedasticGaussian", "HeteroskedasticGaussian"]
+__all__ = ["Bernoulli", "Categorical",
+           "HomoskedasticGaussian", "HeteroskedasticGaussian"]
 
 
 def inverse_softplus(t):
@@ -27,7 +26,8 @@ def _reduce(tensor, reduction):
     elif reduction == "mean":
         return tensor.mean()
     else:
-        raise ValueError("Invalid reduction: '{}'. Must be one of ('none', 'sum', 'mean').".format(reduction))
+        raise ValueError(
+            "Invalid reduction: '{}'. Must be one of ('none', 'sum', 'mean').".format(reduction))
 
 
 def _make_name(prefix, suffix):
@@ -66,7 +66,8 @@ class Likelihood(PyroModule):
         :param torch.Tensor obs: optional known values for the samples."""
         predictive_distribution = self.predictive_distribution(predictions)
         if predictive_distribution.batch_shape:
-            dataset_size = self.dataset_size if self.dataset_size is not None else len(predictions)
+            dataset_size = self.dataset_size if self.dataset_size is not None else len(
+                predictions)
             with pyro.plate(self.data_name+"_plate", subsample=predictions, size=dataset_size):
                 return pyro.sample(self.data_name, predictive_distribution, obs=obs)
         else:
@@ -76,14 +77,17 @@ class Likelihood(PyroModule):
 
     def log_likelihood(self, predictions, data, aggregation_dim=None, reduction="none"):
         if aggregation_dim is not None:
-            predictions = self.aggregate_predictions(predictions, aggregation_dim)
+            predictions = self.aggregate_predictions(
+                predictions, aggregation_dim)
         log_probs = self.predictive_distribution(predictions).log_prob(data)
         return _reduce(log_probs, reduction)
 
     def error(self, predictions, data, aggregation_dim=None, reduction="none"):
         if aggregation_dim is not None:
-            predictions = self.aggregate_predictions(predictions, aggregation_dim)
-        errors = dist.util.sum_rightmost(self._calc_error(self._point_predictions(predictions), data), self.event_dim)
+            predictions = self.aggregate_predictions(
+                predictions, aggregation_dim)
+        errors = dist.util.sum_rightmost(self._calc_error(
+            self._point_predictions(predictions), data), self.event_dim)
         return _reduce(errors, reduction)
 
     def sample(self, predictions, sample_shape=torch.Size()):
@@ -126,7 +130,8 @@ class _Discrete(Likelihood):
         return point_predictions.ne(data).float()
 
     def aggregate_predictions(self, predictions, dim=0):
-        probs = dist_utils.logits_to_probs(predictions, is_binary=self.is_binary) if self.logit_predictions else predictions
+        probs = dist_utils.logits_to_probs(
+            predictions, is_binary=self.is_binary) if self.logit_predictions else predictions
         avg_probs = probs.mean(dim)
         return dist_utils.probs_to_logits(avg_probs, is_binary=self.is_binary) if self.logit_predictions else avg_probs
 
@@ -225,16 +230,19 @@ class HomoskedasticGaussian(Gaussian):
     def __init__(self, dataset_size, scale=None, precision=None, event_dim=1, name="", data_name="data"):
         super().__init__(dataset_size, event_dim=event_dim, name=name, data_name=data_name)
         if int(scale is None) + int(precision is None) != 1:
-            raise ValueError("Exactly one of scale and precision must be specified")
+            raise ValueError(
+                "Exactly one of scale and precision must be specified")
         elif isinstance(scale, (dist.Distribution, torchdist.Distribution)):
             # if the scale or precision is a distribution, that is used as the prior for a PyroSample. I'm not
             # completely sure if it is a good idea to allow regular pytorch distributions, since they might not have the
             # correct event_dim, so perhaps it's safer to check e.g. if the batch shape is empty and raise an error
             # otherwise
-            precision = PyroSample(prior=dist.TransformedDistribution(scale, transforms.PowerTransform(-2.)))
+            precision = PyroSample(prior=dist.TransformedDistribution(
+                scale, transforms.PowerTransform(-2.)))
             scale = PyroSample(prior=scale)
         elif isinstance(precision, (dist.Distribution, torchdist.Distribution)):
-            scale = PyroSample(prior=dist.TransformedDistribution(precision, transforms.PowerTransform(-0.5)))
+            scale = PyroSample(prior=dist.TransformedDistribution(
+                precision, transforms.PowerTransform(-0.5)))
             precision = PyroSample(prior=precision)
         else:
             # nothing to do, precision or scale is a number/tensor/parameter
@@ -250,7 +258,8 @@ class HomoskedasticGaussian(Gaussian):
         :param torch.Tensor obs: optional known values for the samples."""
         predictive_distribution = self.predictive_distribution(predictions)
         if predictive_distribution.batch_shape:
-            dataset_size = self.dataset_size if self.dataset_size is not None else len(predictions)
+            dataset_size = self.dataset_size if self.dataset_size is not None else len(
+                predictions)
             with pyro.plate(self.data_name+"_plate", subsample=predictions, size=dataset_size):
                 return pyro.sample(self.data_name, predictive_distribution, obs=obs)
         else:
@@ -258,11 +267,10 @@ class HomoskedasticGaussian(Gaussian):
             with pyro.poutine.scale(scale=dataset_size):
                 return pyro.sample(self.data_name, predictive_distribution, obs=obs)
 
-        
     @property
     def scale(self):
         return self.get_scale()
-    
+
     @pyro_method
     def get_scale(self):
         if self._scale is None:
@@ -282,7 +290,7 @@ class HomoskedasticGaussian(Gaussian):
          of the predictions plus the known variance term."""
         if isinstance(predictions, tuple):
             loc, lik_scale = predictions[0].mean(dim), predictions[1].mean(dim)
-            scale = predictions[0].var(dim).add(lik_scale** 2).sqrt()
+            scale = predictions[0].var(dim).add(lik_scale ** 2).sqrt()
             return loc, scale
         else:
             loc = predictions.mean(dim)
