@@ -1,0 +1,64 @@
+import torch
+import os
+import pyro
+import dill
+import numpy as np
+
+
+def draw_data_samples(dataloader, num_samples=10, device="cpu"):
+    xs, ys = [], []
+    for x, y in dataloader:
+        xs.append(x)
+        ys.append(y)
+
+    x = torch.cat(xs, dim=0)
+    y = torch.cat(ys, dim=0)
+
+    idx = np.random.choice(range(len(x)), num_samples)
+    sample_x = x[idx]
+    sample_y = y[idx]
+    return sample_x.to(device), sample_y.to(device)
+
+
+def save_bnn(bnn, inference_type, save_path=None):
+    if save_path == None:
+        raise Exception("No save path specified")
+
+    if inference_type == "svi":
+        pyro.get_param_store().save(save_path)
+        print("Saved SVI model to", save_path)
+        file_stats = os.stat(save_path)
+        print(
+            f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
+
+    elif inference_type == "mcmc":
+        bnn._mcmc.kernel = None
+        torch.save({"mcmc": bnn._mcmc},
+                   save_path, pickle_module=dill)
+        print("Saved MCMC model to", save_path)
+        file_stats = os.stat(save_path)
+        print(
+            f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
+
+    else:
+        raise Exception("Unknown inference type")
+
+
+def load_bnn(bnn, inference_type, load_path=None, device=None):
+    if load_path == None:
+        raise Exception("No load path specified")
+
+    if inference_type == "svi":
+        pyro.get_param_store().load(load_path, map_location=device)
+        print("Loaded SVI model from", load_path)
+
+    elif inference_type == "mcmc":
+        checkpoint = torch.load(
+            load_path, map_location=device, pickle_module=dill)
+        bnn._mcmc = checkpoint["mcmc"]
+        print("Loaded MCMC model from", load_path)
+
+    else:
+        raise Exception("Unknown inference type")
+
+    return bnn

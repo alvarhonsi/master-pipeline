@@ -9,4 +9,4 @@ while IFS='= ' read -r key value; do
 done < "$PROPSFILE"
 
 DIR=${props["dir"]}
-conda run -n master python tyxe_runfiles/run-pipeline.py -dir $DIR --generate
+conda run -n master python src/run-pipeline.py -dir $DIR --generate

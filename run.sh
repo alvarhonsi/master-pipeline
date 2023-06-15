@@ -18,7 +18,7 @@ for i in "${!PROFILES[@]}"
 do
     DEV=${DEVICES[$i]}
     PROF=${PROFILES[$i]}
-    RUNCMD="python tyxe_runfiles/run-pipeline.py -dir $DIR --train --eval -p $PROF --device $DEV"
+    RUNCMD="python src/run-pipeline.py -dir $DIR --train --eval -p $PROF --device $DEV"
 
 
     SESH="$NAME-$COUNT"
@@ -27,6 +27,6 @@ do
     tmux new-session -d -s $SESH
     tmux send-keys -t $SESH "conda activate master" Enter
     sleep 2
-    tmux send-keys -t $SESH "python" Space "tyxe_runfiles/run-pipeline.py" Space "-dir" Space "$DIR" Space "--train" Space "--eval" Space "-p" Space "$PROF" Space "--device" Space "$DEV" Enter
+    tmux send-keys -t $SESH "python" Space "src/run-pipeline.py" Space "-dir" Space "$DIR" Space "--train" Space "--eval" Space "-p" Space "$PROF" Space "--device" Space "$DEV" Enter
     COUNT=$((COUNT + 1))
 done

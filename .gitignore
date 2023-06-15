@@ -3,6 +3,9 @@
 **/datasets/*
 **/samples/*
 
+# Tests
+**/tests/**/results/data-samples/*
+
 slurm-*.out
 
 # Byte-compiled / optimized / DLL files
