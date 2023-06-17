@@ -269,7 +269,11 @@ class HomoskedasticGaussian(Gaussian):
 
     @property
     def scale(self):
-        return self.get_scale()
+        s = self.get_scale()
+        if isinstance(s, torch.Tensor):
+            return s
+        else:
+            return torch.tensor(s)
 
     @pyro_method
     def get_scale(self):
