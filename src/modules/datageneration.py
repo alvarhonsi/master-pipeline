@@ -28,6 +28,12 @@ def tendim_sinusoidal_combination2(xs, noise=0) -> np.array:
     return 0*x1 + 5 * np.sin(0.2 * x2 * x3) + 5 * np.sin(0.8 * x4) - 5 * np.sin(0.2 * x5 * x6) + 5 * np.sin(0.8 * x7) + 0*x8 + 5 * np.sin(0.2 * x9 * x10) + noise
 
 
+def tendim_polynomial_combination(xs, noise=0) -> np.array:
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,
+                                                                     2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
+    return 0.3*np.pow(x1, 2) + 0.1*np.pow((x2 * x3)/x4, 3) + 2*x4 + 0*x5 - 0.08*np.pow(x6*x7, 3) + 0*x8 - 2*x9 + 0.15*np.pow(x10, 2) + noise
+
+
 def tendim_non_linear_combination(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,
                                                                      2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
@@ -58,6 +64,7 @@ data_functions = {
     "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
     "tendim_sinusoidal_combination2": tendim_sinusoidal_combination2,
+    "tendim_polynomial_combination": tendim_polynomial_combination,
     "onedim_non_linear": onedim_non_linear,
     "onedim_linear": onedim_linear,
 }
