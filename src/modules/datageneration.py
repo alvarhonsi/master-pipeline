@@ -29,8 +29,7 @@ def tendim_sinusoidal_combination2(xs, noise=0) -> np.array:
 
 
 def tendim_non_linear_combination(xs, noise=0) -> np.array:
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,
-                                                                     2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
+    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
     return 2*x1 + np.abs(x1*x2 - 3*x3) + 3*x2 + np.pow((x1*x3)/4, 2) + 0*x4 - 1.2*np.pow(x5, 2) + 2*x6*x7 + 2*x8 + 0*x9 - np.pow(x10/3, 2) + noise
 
 
