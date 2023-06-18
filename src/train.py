@@ -161,8 +161,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
 
-    stats = []
-
     for run in range(1, reruns + 1):
         # Create model
         bnn = make_inference_model(config, dataset_config, device=DEVICE)
@@ -209,7 +207,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
                 train_stats["elbos"].append(e)
 
             optim = pyro.optim.Adam({"lr": LR, "betas": (0.95, 0.999)})
-            with tyxe.poutine.local_reparameterization() if TRAIN_CONTEXT == "lr" else tyxe.poutine.flipout():
+            with tyxe.poutine.local_reparameterization():
                 bnn.fit(train_dataloader, optim, num_epochs=EPOCHS,
                         callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)
         elif INFERENCE_TYPE == "mcmc":
@@ -221,7 +219,9 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
                     warmup_steps=MCMC_NUM_WARMUP, device=DEVICE)
 
-            with open(f"{DIR}/results/{NAME}/mcmc_diagnostics.pkl", "wb") as f:
+            # Move mcmc to cpu before diagnostics to avoid memory issues
+
+            with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
                 pickle.dump(bnn._mcmc.diagnostics(), f)
 
         # Sample likelihood scale
@@ -241,7 +241,5 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
             save_bnn(bnn, INFERENCE_TYPE,
                      f"{DIR}/models/{NAME}/checkpoint_{run}.pt")
 
-        stats.append(train_stats)
-
-    with open(f"{DIR}/results/{NAME}/train_stats.json", "w") as f:
-        json.dump(stats, f, indent=4)
+        with open(f"{DIR}/results/{NAME}/train_stats_{run}.json", "w") as f:
+            json.dump(train_stats, f, indent=4)
