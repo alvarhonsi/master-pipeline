@@ -46,8 +46,6 @@ data_functions = {
     "sum": sum,
     "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
-    "tendim_sinusoidal_combination2": tendim_sinusoidal_combination2,
-    "tendim_polynomial_combination": tendim_polynomial_combination,
     "onedim_non_linear": onedim_non_linear,
     "onedim_linear": onedim_linear,
 }
