@@ -154,9 +154,9 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
     val_dataset = TensorDataset(x_val, y_val)
 
     train_dataloader = DataLoader(
-        train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4)
+        train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4, shuffle=True)
     val_dataloader = DataLoader(
-        val_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4)
+        val_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4, shuffle=True)
 
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
@@ -178,33 +178,50 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
             train_stats = {
                 "elbos": [],
                 "time": 0,
-                "rmse_epoch": [],
-                "ll_epoch": [],
+                "val_rmse": [],
+                "val_ll": [],
+                "train_rmse": [],
+                "train_ll": [],
             }
 
             def callback(bnn, i, e):
                 time_elapsed = time.time() - start
+                train_stats["elbos"].append(e)
 
                 if i % 100 == 0:
-                    mse, loglikelihood = 0, 0
+                    val_mse, val_loglikelihood = 0, 0
                     batch_num = 0
                     for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
                         input_data, observation_data = input_data.to(
                             DEVICE), observation_data.to(DEVICE)
-                        err, ll = bnn.evaluate(
+                        val_err, val_ll = bnn.evaluate(
                             input_data, observation_data, num_predictions=100, reduction="mean")
-                        mse += err
-                        loglikelihood += ll
+                        val_mse += val_err
+                        val_loglikelihood += val_ll
                         batch_num = num_batch
-                    rmse = (mse / batch_num).sqrt()
-                    loglikelihood = loglikelihood / batch_num
+                    val_rmse = (val_mse / batch_num).sqrt()
+                    val_loglikelihood = val_loglikelihood / batch_num
 
-                    train_stats["rmse_epoch"].append(rmse.sqrt().item())
-                    train_stats["ll_epoch"].append(loglikelihood.item())
-                    print("[{}] epoch: {} | elbo: {} | val_rmse: {} | val_ll: {}".format(timedelta(
-                        seconds=time_elapsed), i, e, round(mse.sqrt().item(), 4), round(ll.item(), 4)))
+                    train_mse, train_loglikelihood = 0, 0
+                    batch_num = 0
+                    for num_batch, (input_data, observation_data) in enumerate(iter(train_dataloader), 1):
+                        input_data, observation_data = input_data.to(
+                            DEVICE), observation_data.to(DEVICE)
+                        train_err, train_ll = bnn.evaluate(
+                            input_data, observation_data, num_predictions=100, reduction="mean")
+                        train_mse += train_err
+                        train_loglikelihood += train_ll
+                        batch_num = num_batch
+                    train_rmse = (train_mse / batch_num).sqrt()
+                    train_loglikelihood = train_loglikelihood / batch_num
 
-                train_stats["elbos"].append(e)
+                    train_stats["val_rmse"].append(val_rmse.item())
+                    train_stats["val_ll"].append(val_loglikelihood.item())
+                    train_stats["train_rmse"].append(train_rmse.item())
+                    train_stats["train_ll"].append(train_loglikelihood.item())
+
+                    print("[{}] epoch: {} | elbo: {} | train_rmse: {} | val_rmse: {} | val_ll: {}".format(timedelta(
+                        seconds=time_elapsed), i, e, round(train_mse.sqrt().item(), 4), round(val_mse.sqrt().item(), 4), round(val_ll.item(), 4)))
 
             optim = pyro.optim.Adam({"lr": LR, "betas": (0.95, 0.999)})
             with tyxe.poutine.local_reparameterization():
@@ -229,7 +246,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
                        torch.zeros(1, Y_DIM).to(DEVICE))
         lik_scale = bnn.get_likelihood_scale(
             dummy_input, num_predictions=50)
-        print(lik_scale)
         train_stats["likelihood"] = {
             "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
 

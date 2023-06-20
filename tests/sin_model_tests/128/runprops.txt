@@ -1,0 +1,4 @@
+dir = tests/sin_model_tests/128/
+name = sin-128
+devices = cuda:0, cuda:1
+profiles =  3layer-128-s03 4layer-128-s03, 2layer-128-s03 5layer-128-s03

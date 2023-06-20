@@ -184,8 +184,6 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
 
     print("data samples: ", data_in_domain_samples.shape)
 
-    eval_results = []
-
     for run in range(1, reruns + 1):
         # Load model
         if bnn == None:
@@ -254,13 +252,9 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
                 pred_sample, data_sample)
             results[case]["predictive_eval"] = eval_posterior
 
-        eval_results.append(results)
+        with open(f"{DIR}/results/{NAME}/results_{run}.json", "w") as f:
+            json.dump(results, f, indent=4)
 
         # Get time and format to HH:MM:SS
         elapsed_time = str(datetime.timedelta(seconds=time.time() - start))
         print(f"Eval done in {elapsed_time}")
-
-
-# Save results
-    with open(f"{DIR}/results/{NAME}/results.json", "w") as f:
-        json.dump(eval_results, f, indent=4)

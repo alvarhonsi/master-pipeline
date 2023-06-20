@@ -9,29 +9,18 @@ def sinusoidal_func(xs, noise=0) -> np.array:
     return np.squeeze(np.sin(xs.sum(axis=1))) + noise
 
 
-def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
-    res = np.zeros(xs.shape[0])
-    for i in range(xs.shape[1]):
-        res += 6 * np.sin(xs[:, i])
-    return res + noise
-
-
 def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
     x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,
                                                                      2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
     return 0*x1 + 6 * np.sin(x2 * x3) + 6 * np.sin(x4) + 6 * np.sin(x5 * x6) + 6 * np.sin(x7) + 6 * np.sin(x8 * x9) + 0*x10 + noise
 
 
-def tendim_sinusoidal_combination2(xs, noise=0) -> np.array:
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,
-                                                                     2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
-    return 0*x1 + 5 * np.sin(0.2 * x2 * x3) + 5 * np.sin(0.8 * x4) - 5 * np.sin(0.2 * x5 * x6) + 5 * np.sin(0.8 * x7) + 0*x8 + 5 * np.sin(0.2 * x9 * x10) + noise
-
-
-def tendim_polynomial_combination(xs, noise=0) -> np.array:
-    x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 = xs[:, 0], xs[:, 1], xs[:,
-                                                                     2], xs[:, 3], xs[:, 4], xs[:, 5], xs[:, 6], xs[:, 7], xs[:, 8], xs[:, 9]
-    return 0.1*x1 + np.abs((x1*x2)/10 - x3/10) - x2 + np.power((x1*x3)/14, 2) + 0*x4 - np.power(x5/2, 2) + 0.2*x6*x7 - 0.5*x8 + 0*x9 - np.power(x10/5, 2) + noise
+def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
+    res = 0
+    def filter(i): return 0 if i % 10 == 0 or i+1 % 10 == 0 else 1
+    for i in range(xs.shape[1] - 1):
+        res += filter(i)*10*np.sin(0.5*xs[:, i]*xs[:, i+1])
+    return res + noise
 
 
 def sum(xs, noise=0) -> np.array:
