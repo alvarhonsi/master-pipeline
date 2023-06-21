@@ -1,6 +1,13 @@
 #!/bin/bash
 PROPSFILE=$1
-COUNT=1
+START_COUNT=$2
+
+if [ -z "$START_COUNT" ]
+then
+    COUNT=1
+else
+    COUNT=$START_COUNT
+fi
 
 # array declaration
 declare -A props
