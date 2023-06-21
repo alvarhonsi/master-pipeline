@@ -46,13 +46,6 @@ def make_inference_model(config, dataset_config, device=None):
     GUIDE_SCALE = config.getfloat("GUIDE_SCALE")
 
     INFERENCE_TYPE = config["INFERENCE_TYPE"]
-    MCMC_KERNEL = config["MCMC_KERNEL"]
-    MCMC_NUM_SAMPLES = config.getint("MCMC_NUM_SAMPLES")
-    MCMC_NUM_WARMUP = config.getint("MCMC_NUM_WARMUP")
-    MCMC_NUM_CHAINS = config.getint("MCMC_NUM_CHAINS")
-
-    EPOCHS = config.getint("EPOCHS")
-    LR = config.getfloat("LR")
 
     TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
 
@@ -125,6 +118,8 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
     SAVE_MODEL = config.getboolean("SAVE_MODEL")
     EPOCHS = config.getint("EPOCHS")
     LR = config.getfloat("LR")
+    LRD_GAMMA = config.getfloat("LRD_GAMMA")
+    LRD_STEPS = config.getint("LRD_STEPS")
     TRAIN_BATCH_SIZE = config.getint("TRAIN_BATCH_SIZE")
     NUM_DIST_SAMPLES = config.getint("NUM_DIST_SAMPLES")
 
@@ -223,7 +218,15 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
                     print("[{}] epoch: {} | elbo: {} | train_rmse: {} | val_rmse: {} | val_ll: {}".format(timedelta(
                         seconds=time_elapsed), i, e, round(train_mse.sqrt().item(), 4), round(val_mse.sqrt().item(), 4), round(val_ll.item(), 4)))
 
-            optim = pyro.optim.Adam({"lr": LR, "betas": (0.95, 0.999)})
+            # optim
+            if LRD_GAMMA == 0:
+                optim = pyro.optim.Adam(
+                    {"lr": LR, "betas": (0.95, 0.999)})
+            else:
+                # final learning rate will be gamma * initial_lr
+                lrd = LRD_GAMMA ** (1 / LRD_STEPS)
+                optim = pyro.optim.ClippedAdam(
+                    {"lr": LR, "betas": (0.95, 0.999), "lrd": lrd})
             with tyxe.poutine.local_reparameterization():
                 bnn.fit(train_dataloader, optim, num_epochs=EPOCHS,
                         callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)

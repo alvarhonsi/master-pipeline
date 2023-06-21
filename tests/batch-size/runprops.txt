@@ -1,0 +1,4 @@
+dir = tests/batch-size
+name = batch-size
+devices = cuda:2, cuda:3
+profiles = large-batch, small-batch
