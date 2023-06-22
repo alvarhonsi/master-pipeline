@@ -21,6 +21,8 @@ NAME=${props["name"]}
 IFS=', ' read -r -a DEVICES <<< "${props["devices"]}"
 IFS=',' read -r -a PROFILES <<< "${props["profiles"]}"
 
+mkdir -p $DIR/logs
+
 for i in "${!PROFILES[@]}"
 do
     DEV=${DEVICES[$i]}
@@ -34,6 +36,6 @@ do
     tmux new-session -d -s $SESH
     tmux send-keys -t $SESH "conda activate master" Enter
     sleep 2
-    tmux send-keys -t $SESH "python" Space "src/run-pipeline.py" Space "-dir" Space "$DIR" Space "--train" Space "--eval" Space "-p" Space "$PROF" Space "--device" Space "$DEV" Enter
+    tmux send-keys -t $SESH "python" Space "src/run-pipeline.py" Space "-dir" Space "$DIR" Space "--train" Space "--eval" Space "-p" Space "$PROF" Space "--device" Space "$DEV" Space ">" Space "$DIR/logs/$SESH.log" Space "2>&1" Enter
     COUNT=$((COUNT + 1))
 done

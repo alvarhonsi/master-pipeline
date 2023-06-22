@@ -8,6 +8,7 @@ import torch
 import numpy as np
 import pandas as pd
 import train
+import random
 from modules.loss import loss_types
 from modules.guides import guide_types
 from modules.priors import prior_types
@@ -101,6 +102,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
     pyro.set_rng_seed(SEED)
     torch.manual_seed(SEED)
     np.random.seed(SEED)
+    random.seed(SEED)
 
     # Load data
     (x_train, y_train), _, (x_test_in_domain, y_test_in_domain), (x_test_out_domain,

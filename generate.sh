@@ -9,4 +9,5 @@ while IFS='= ' read -r key value; do
 done < "$PROPSFILE"
 
 DIR=${props["dir"]}
-conda run -n master python src/run-pipeline.py -dir $DIR --generate
+mkdir -p $DIR/logs
+conda run -n master python src/run-pipeline.py -dir $DIR --generate > $DIR/logs/generate.log 2>&1

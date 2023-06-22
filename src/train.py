@@ -29,6 +29,7 @@ import pickle
 import dill
 import sys
 import os
+import random
 
 
 def make_inference_model(config, dataset_config, device=None):
@@ -121,12 +122,16 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
     LRD_GAMMA = config.getfloat("LRD_GAMMA")
     LRD_STEPS = config.getint("LRD_STEPS")
     TRAIN_BATCH_SIZE = config.getint("TRAIN_BATCH_SIZE")
+    EVAL_BATCH_SIZE = config.getint("EVAL_BATCH_SIZE")
     NUM_DIST_SAMPLES = config.getint("NUM_DIST_SAMPLES")
+
+    VAL_SIZE = dataset_config.getint("VAL_SIZE")
 
     # Reproducibility
     pyro.set_rng_seed(SEED)
     torch.manual_seed(SEED)
     np.random.seed(SEED)
+    random.seed(SEED)
 
     # Load data
     (x_train, y_train), (x_val, y_val), _, _ = load_data(
@@ -146,12 +151,17 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
 
     # Create datasets and dataloaders
     train_dataset = TensorDataset(x_train, y_train)
+    subset = list(range(np.random.choice(len(train_dataset), size=VAL_SIZE)))
+    train_subset = torch.utils.data.Subset(
+        train_dataset, subset)
     val_dataset = TensorDataset(x_val, y_val)
 
     train_dataloader = DataLoader(
         train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4, shuffle=True)
+    train_subset_dataloader = DataLoader(
+        train_subset, batch_size=EVAL_BATCH_SIZE, num_workers=4)
     val_dataloader = DataLoader(
-        val_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4, shuffle=True)
+        val_dataset, batch_size=EVAL_BATCH_SIZE, num_workers=4)
 
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
@@ -183,40 +193,40 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
                 time_elapsed = time.time() - start
                 train_stats["elbos"].append(e)
 
-                if i % 100 == 0:
-                    val_mse, val_loglikelihood = 0, 0
-                    batch_num = 0
-                    for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
-                        input_data, observation_data = input_data.to(
-                            DEVICE), observation_data.to(DEVICE)
-                        val_err, val_ll = bnn.evaluate(
-                            input_data, observation_data, num_predictions=100, reduction="mean")
-                        val_mse += val_err
-                        val_loglikelihood += val_ll
-                        batch_num = num_batch
-                    val_rmse = (val_mse / batch_num).sqrt()
-                    val_loglikelihood = val_loglikelihood / batch_num
+                val_mse, val_loglikelihood = 0, 0
+                batch_num = 0
+                for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+                    input_data, observation_data = input_data.to(
+                        DEVICE), observation_data.to(DEVICE)
+                    val_err, val_ll = bnn.evaluate(
+                        input_data, observation_data, num_predictions=100, reduction="mean")
+                    val_mse += val_err
+                    val_loglikelihood += val_ll
+                    batch_num = num_batch
+                val_rmse = (val_mse / batch_num).sqrt()
+                val_loglikelihood = val_loglikelihood / batch_num
 
-                    train_mse, train_loglikelihood = 0, 0
-                    batch_num = 0
-                    for num_batch, (input_data, observation_data) in enumerate(iter(train_dataloader), 1):
-                        input_data, observation_data = input_data.to(
-                            DEVICE), observation_data.to(DEVICE)
-                        train_err, train_ll = bnn.evaluate(
-                            input_data, observation_data, num_predictions=100, reduction="mean")
-                        train_mse += train_err
-                        train_loglikelihood += train_ll
-                        batch_num = num_batch
-                    train_rmse = (train_mse / batch_num).sqrt()
-                    train_loglikelihood = train_loglikelihood / batch_num
+                train_mse, train_loglikelihood = 0, 0
+                batch_num = 0
+                for num_batch, (input_data, observation_data) in enumerate(iter(train_subset_dataloader), 1):
+                    input_data, observation_data = input_data.to(
+                        DEVICE), observation_data.to(DEVICE)
+                    train_err, train_ll = bnn.evaluate(
+                        input_data, observation_data, num_predictions=100, reduction="mean")
+                    train_mse += train_err
+                    train_loglikelihood += train_ll
+                    batch_num = num_batch
+                train_rmse = (train_mse / batch_num).sqrt()
+                train_loglikelihood = train_loglikelihood / batch_num
 
-                    train_stats["val_rmse"].append(val_rmse.item())
-                    train_stats["val_ll"].append(val_loglikelihood.item())
-                    train_stats["train_rmse"].append(train_rmse.item())
-                    train_stats["train_ll"].append(train_loglikelihood.item())
+                train_stats["val_rmse"].append(val_rmse.item())
+                train_stats["val_ll"].append(val_loglikelihood.item())
+                train_stats["train_rmse"].append(train_rmse.item())
+                train_stats["train_ll"].append(train_loglikelihood.item())
 
+                if i % 50 == 0:
                     print("[{}] epoch: {} | elbo: {} | train_rmse: {} | val_rmse: {} | val_ll: {}".format(timedelta(
-                        seconds=time_elapsed), i, e, round(train_mse.sqrt().item(), 4), round(val_mse.sqrt().item(), 4), round(val_ll.item(), 4)))
+                        seconds=time_elapsed), i, e, round(train_rmse.item(), 4), round(val_rmse.item(), 4), round(val_ll.item(), 4)))
 
             # optim
             if LRD_GAMMA == 0:
