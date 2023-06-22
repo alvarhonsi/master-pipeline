@@ -10,4 +10,4 @@ done < "$PROPSFILE"
 
 DIR=${props["dir"]}
 mkdir -p $DIR/logs
-conda run -n master python src/run-pipeline.py -dir $DIR --generate > $DIR/logs/generate.log 2>&1
+conda run -n master python src/run-pipeline.py -dir $DIR --generate 2>&1 | tee $DIR/logs/generate.log
