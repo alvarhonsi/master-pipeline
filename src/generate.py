@@ -89,7 +89,7 @@ def gen(dataset_config, DIR):
                label=f"f(x) = {sample_train_y.item():.2f}")
     ax.legend()
     ax.set_title(
-        f"Posterior distribution of y for sample x = {[round(x.item(), 2) for x in sample_train_x[0]]}")
+        f"Posterior distribution of y for sample x = {[round(x.item(), 2) for x in sample_train_x[0]]}", wrap=True)
     ax.set_xlabel("y")
     ax.set_ylabel("Density")
     plt.savefig(f"{DIR}/{NAME}/sample_posterior.png")

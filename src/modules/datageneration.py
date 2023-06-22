@@ -75,11 +75,12 @@ def data_gen(sample_size, func, mu, sigma, sample_space, void_space=None):
 
     if void_space is not None:
         lower_stop, upper_start = void_space
-        x1 = np.random.uniform(
-            lower, lower_stop, (sample_size[0]//2, sample_size[1]))
-        x2 = np.random.uniform(
-            upper_start, upper, (sample_size[0]//2, sample_size[1]))
-        x = np.concatenate((x1, x2))
+        x = []
+        while len(x) < sample_size[0]:
+            x_i = [np.random.choice([np.random.uniform(lower, lower_stop), np.random.uniform(
+                upper_start, upper)]) for _ in range(sample_size[1])]
+            x.append(x_i)
+        x = np.array(x)
     else:
         x = np.random.uniform(lower, upper, sample_size)
 
