@@ -151,7 +151,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
 
     # Create datasets and dataloaders
     train_dataset = TensorDataset(x_train, y_train)
-    subset = list(range(np.random.choice(len(train_dataset), size=VAL_SIZE)))
+    subset = np.random.choice(len(train_dataset), size=VAL_SIZE)
     train_subset = torch.utils.data.Subset(
         train_dataset, subset)
     val_dataset = TensorDataset(x_val, y_val)
