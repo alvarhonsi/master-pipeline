@@ -1,0 +1,4 @@
+dir = tests/dataset-tests/sin50-20k-s03
+name = sin50
+devices = cuda:4, cuda:5, cuda:6, cuda:7
+profiles = sin50-3x128-s03, sin50-3x256-s03, sin50-3x512-s03, sin50-3x1024-s03
