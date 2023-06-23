@@ -193,38 +193,38 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
                 time_elapsed = time.time() - start
                 train_stats["elbos"].append(e)
 
-                val_mse, val_loglikelihood = 0, 0
-                batch_num = 0
-                for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
-                    input_data, observation_data = input_data.to(
-                        DEVICE), observation_data.to(DEVICE)
-                    val_err, val_ll = bnn.evaluate(
-                        input_data, observation_data, num_predictions=100, reduction="mean")
-                    val_mse += val_err
-                    val_loglikelihood += val_ll
-                    batch_num = num_batch
-                val_rmse = (val_mse / batch_num).sqrt()
-                val_loglikelihood = val_loglikelihood / batch_num
+                if i % 10 == 0:
+                    val_mse, val_loglikelihood = 0, 0
+                    batch_num = 0
+                    for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+                        input_data, observation_data = input_data.to(
+                            DEVICE), observation_data.to(DEVICE)
+                        val_err, val_ll = bnn.evaluate(
+                            input_data, observation_data, num_predictions=100, reduction="mean")
+                        val_mse += val_err
+                        val_loglikelihood += val_ll
+                        batch_num = num_batch
+                    val_rmse = (val_mse / batch_num).sqrt()
+                    val_loglikelihood = val_loglikelihood / batch_num
 
-                train_mse, train_loglikelihood = 0, 0
-                batch_num = 0
-                for num_batch, (input_data, observation_data) in enumerate(iter(train_subset_dataloader), 1):
-                    input_data, observation_data = input_data.to(
-                        DEVICE), observation_data.to(DEVICE)
-                    train_err, train_ll = bnn.evaluate(
-                        input_data, observation_data, num_predictions=100, reduction="mean")
-                    train_mse += train_err
-                    train_loglikelihood += train_ll
-                    batch_num = num_batch
-                train_rmse = (train_mse / batch_num).sqrt()
-                train_loglikelihood = train_loglikelihood / batch_num
+                    train_mse, train_loglikelihood = 0, 0
+                    batch_num = 0
+                    for num_batch, (input_data, observation_data) in enumerate(iter(train_subset_dataloader), 1):
+                        input_data, observation_data = input_data.to(
+                            DEVICE), observation_data.to(DEVICE)
+                        train_err, train_ll = bnn.evaluate(
+                            input_data, observation_data, num_predictions=100, reduction="mean")
+                        train_mse += train_err
+                        train_loglikelihood += train_ll
+                        batch_num = num_batch
+                    train_rmse = (train_mse / batch_num).sqrt()
+                    train_loglikelihood = train_loglikelihood / batch_num
 
-                train_stats["val_rmse"].append(val_rmse.item())
-                train_stats["val_ll"].append(val_loglikelihood.item())
-                train_stats["train_rmse"].append(train_rmse.item())
-                train_stats["train_ll"].append(train_loglikelihood.item())
+                    train_stats["val_rmse"].append(val_rmse.item())
+                    train_stats["val_ll"].append(val_loglikelihood.item())
+                    train_stats["train_rmse"].append(train_rmse.item())
+                    train_stats["train_ll"].append(train_loglikelihood.item())
 
-                if i % 50 == 0:
                     print("[{}] epoch: {} | elbo: {} | train_rmse: {} | val_rmse: {} | val_ll: {}".format(timedelta(
                         seconds=time_elapsed), i, e, round(train_rmse.item(), 4), round(val_rmse.item(), 4), round(val_ll.item(), 4)))
 
