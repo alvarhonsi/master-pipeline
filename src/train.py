@@ -193,7 +193,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
                 time_elapsed = time.time() - start
                 train_stats["elbos"].append(e)
 
-                if i % 10 == 0:
+                if i % 50 == 0:
                     val_mse, val_loglikelihood = 0, 0
                     batch_num = 0
                     for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
