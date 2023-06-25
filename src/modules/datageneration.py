@@ -19,7 +19,7 @@ def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
     res = 0
     def filter(i): return 0 if i % 10 == 0 or i+1 % 10 == 0 else 1
     for i in range(xs.shape[1] - 1):
-        res += filter(i)*10*np.sin(0.1*xs[:, i]*xs[:, i+1])
+        res += filter(i)*10*np.sin(0.2*xs[:, i]*xs[:, i+1])
     return res + noise
 
 
