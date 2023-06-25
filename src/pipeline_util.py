@@ -40,6 +40,13 @@ def save_bnn(bnn, inference_type, save_path=None):
         print(
             f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
 
+    elif inference_type == "nn":
+        torch.save(bnn.net.state_dict(), save_path)
+        print("Saved Baseline_nn model to", save_path)
+        file_stats = os.stat(save_path)
+        print(
+            f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
+
     else:
         raise Exception("Unknown inference type")
 
@@ -57,6 +64,11 @@ def load_bnn(bnn, inference_type, load_path=None, device=None):
             load_path, map_location=device, pickle_module=dill)
         bnn._mcmc = checkpoint["mcmc"]
         print("Loaded MCMC model from", load_path)
+
+    elif inference_type == "nn":
+        bnn.net.load_state_dict(torch.load(
+            load_path, map_location=device))
+        print("Loaded Baseline_nn model from", load_path)
 
     else:
         raise Exception("Unknown inference type")

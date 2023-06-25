@@ -3,6 +3,12 @@ import torch.nn as nn
 from collections import OrderedDict
 
 
+def _as_tuple(x):
+    if isinstance(x, (list, tuple)):
+        return x
+    return x,
+
+
 class FFNN(nn.Module):
     def __init__(self, in_features, out_features, hidden_features=[], device="cpu"):
         super().__init__()
@@ -73,7 +79,7 @@ class BaselineNN(nn.Module):
 
         return loss.item()
 
-    def predict(self, *input_data, aggregate=False):
+    def predict(self, *input_data, num_predictions=1, aggregate=False):
         old_training_state = self.net.training
         self.net.train(False)
         with torch.autograd.no_grad():
@@ -83,7 +89,7 @@ class BaselineNN(nn.Module):
         self.net.train(old_training_state)
         return preds, scales if aggregate else preds
 
-    def evaluate(self, input_data, y, num_predictions=1, aggregate=True, reduction="sum"):
+    def evaluate(self, input_data, obs_data, num_predictions=1, reduction="sum"):
         """"Utility method for evaluation. Calculates a likelihood-dependent errors measure, e.g. squared errors or
         mis-classifications and
 
@@ -93,10 +99,38 @@ class BaselineNN(nn.Module):
         :param bool aggregate: whether to aggregate the outputs of the forward passes before evaluating.
         :param str reduction: "sum", "mean" or "none". How to process the tensor of errors. "sum" adds them up,
             "mean" averages them and "none" simply returns the tensor."""
-        predictions = self.predict(
-            *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
-        error = self.likelihood.error(predictions, y, reduction=reduction)
-        ll = self.likelihood.log_likelihood(
-            predictions, y, reduction=reduction)
 
-        return error, ll
+        preds = self.predict(*_as_tuple(input_data), aggregate=True)[0]
+        mse = torch.mean((preds - obs_data)**2, dim=0)
+
+        return mse
+
+    def get_likelihood_scale(self, *input_data, num_predictions=1):
+        x = input_data[0][0]
+
+        scales = torch.zeros(
+            num_predictions, x.shape[0], device=self.device)
+
+        mean = scales.mean(dim=0)
+        std = scales.std(dim=0)
+        return mean, std
+
+    def sample_predictive(self, *input_data, num_predictions=1, guide_traces=None):
+        if guide_traces is None:
+            guide_traces = [None] * num_predictions
+
+        preds = []
+        with torch.autograd.no_grad():
+            for trace in guide_traces:
+                pred = self.predict(*input_data, aggregate=True)[0]
+                preds.append(pred)
+        predictions = torch.stack(preds)
+        return predictions
+
+    def get_error_metrics(self, input_data, y, num_predictions=1, aggregate=True, reduction="mean"):
+
+        preds = self.predict(*_as_tuple(input_data), aggregate=True)[0]
+        mse = torch.mean((preds - y)**2, dim=0)
+        mae = torch.mean(torch.abs(preds - y), dim=0)
+
+        return mse, torch.tensor(0), mae

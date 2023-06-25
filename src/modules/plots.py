@@ -183,6 +183,9 @@ def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="
         post_std = post_sample.std()
         if post_std > 1e-5:
             sns.kdeplot(post_sample, fill=False, ax=ax, label=labels[i])
+        else:
+            ax.axvline(post_sample.mean(), color="green",
+                        label=labels[i], alpha=0.4)
 
     ax.legend()
     ax.set_ylabel(y_label)

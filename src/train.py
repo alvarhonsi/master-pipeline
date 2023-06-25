@@ -9,6 +9,7 @@ from modules.priors import prior_types
 from modules.optimizers import optimizer_types
 from modules.guides import guide_types
 from modules.loss import loss_types
+from modules.baseline_nn import BaselineNN
 from pipeline_util import draw_data_samples, save_bnn, load_bnn
 from functools import partial
 import numpy as np
@@ -89,6 +90,9 @@ def make_inference_model(config, dataset_config, device=None):
     elif INFERENCE_TYPE == "mcmc":
         kernel_builder = pyro.infer.mcmc.NUTS
         bnn = tyxe.bnn.MCMC_BNN(net, prior, obs_model, kernel_builder)
+        return bnn
+    elif INFERENCE_TYPE == "nn":
+        bnn = BaselineNN(net, device=DEVICE)
         return bnn
     else:
         raise ValueError(
@@ -253,6 +257,54 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
 
             with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
                 pickle.dump(bnn._mcmc.diagnostics(), f)
+
+        elif INFERENCE_TYPE == "nn":
+            ### BASELINE ###
+            train_stats = {
+                "time": 0,
+                "loss": [],
+                "val_rmse": [],
+                "train_rmse": [],
+            }
+
+            def callback(bnn, i, e):
+                time_elapsed = time.time() - start
+                train_stats["loss"].append(e)
+
+                if i % 50 == 0:
+                    val_mse = 0
+                    batch_num = 0
+                    for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
+                        input_data, observation_data = input_data.to(
+                            DEVICE), observation_data.to(DEVICE)
+                        val_err = bnn.evaluate(
+                            input_data, observation_data, num_predictions=100, reduction="mean")
+                        val_mse += val_err
+                        batch_num = num_batch
+                    val_rmse = (val_mse / batch_num).sqrt()
+
+                    train_mse = 0
+                    batch_num = 0
+                    for num_batch, (input_data, observation_data) in enumerate(iter(train_subset_dataloader), 1):
+                        input_data, observation_data = input_data.to(
+                            DEVICE), observation_data.to(DEVICE)
+                        train_err = bnn.evaluate(
+                            input_data, observation_data, num_predictions=100, reduction="mean")
+                        train_mse += train_err
+                        batch_num = num_batch
+                    train_rmse = (train_mse / batch_num).sqrt()
+
+                    train_stats["val_rmse"].append(val_rmse.item())
+                    train_stats["train_rmse"].append(train_rmse.item())
+
+                    print("[{}] epoch: {} | loss: {} | train rmse: {} | val rmse: {}".format(timedelta(
+                        seconds=time_elapsed), i, e, train_rmse.item(), val_rmse.item()))
+
+            optim = torch.optim.Adam(bnn.net.parameters(), lr=LR)
+            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS,
+                    callback=callback, device=DEVICE)
+
+        ### Cleanup ###
 
         # Sample likelihood scale
         dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
