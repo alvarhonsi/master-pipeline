@@ -307,7 +307,7 @@ class MCMC_BNN(_BNN):
         self._mcmc = None
 
     def model(self, x, obs=None):
-        predictions = self(*_as_tuple(x))
+        predictions = self.net(x)
         self.likelihood(predictions, obs)
         return predictions
 

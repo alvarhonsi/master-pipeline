@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import torch.nn.init as nn_init
 
-import pyro.distributions as dist                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+import pyro.distributions as dist
 from pyro.nn.module import PyroSample, PyroParam
 
 
@@ -108,14 +108,24 @@ class Prior(metaclass=ABCMeta):
         * hide/expose: list of full parameter names, e.g. "0.weight" for a nn.Sequential net where the first layer is a
             a nn.Conv or nn.Linear module that has a weight attribute.
         * fn: function that returns True or False given a module and param_name string."""
+
+        def hide_all_expose_fn(module, name):
+            return False
+
+        def hide_fn_expose_fn(module, name):
+            return not hide_fn(module, name)
+
+        def expose_all_expose_fn(module, name):
+            return True
+
         if hide_all:
-            self.expose_fn = lambda module, name: False
+            self.expose_fn = hide_all_expose_fn
         elif expose_fn is not None:
             self.expose_fn = expose_fn
         elif hide_fn is not None:
-            self.expose_fn = lambda module, name: not hide_fn(module, name)
+            self.expose_fn = hide_fn_expose_fn
         elif expose_all:
-            self.expose_fn = lambda module, name: True
+            self.expose_fn = expose_all_expose_fn
         else:
             self.expose_fn = _make_expose_fn(
                 hide_modules, expose_modules, hide_module_types, expose_module_types,
@@ -128,7 +138,8 @@ class Prior(metaclass=ABCMeta):
             for param_name, param in list(module.named_parameters(recurse=False)):
                 full_name = module_name + "." + param_name
                 if self.expose_fn(module, full_name):
-                    prior_dist = self.prior_dist(full_name, module, param).expand(param.shape).to_event(param.dim())
+                    prior_dist = self.prior_dist(full_name, module, param).expand(
+                        param.shape).to_event(param.dim())
                     setattr(module, param_name, PyroSample(prior_dist))
                 else:
                     setattr(module, param_name, PyroParam(param.data.detach()))
@@ -140,7 +151,7 @@ class Prior(metaclass=ABCMeta):
             for site_name, site in list(util.named_pyro_samples(module, recurse=False)):
                 full_name = module_name + "." + site_name
                 # See change in DictPrior as an alternative
-                # if type(self)== DictPrior: 
+                # if type(self)== DictPrior:
                 #     full_name = 'net.' + full_name
                 if self.expose_fn(module, full_name):
                     prior_dist = self.prior_dist(full_name, module, site)
@@ -172,13 +183,16 @@ class LayerwiseNormalPrior(Prior):
     def __init__(self, method="radford", nonlinearity="relu", *args, **kwargs):
         super().__init__(*args, **kwargs)
         if method not in ("radford", "xavier", "kaiming"):
-            raise ValueError(f"variance must be one of ('radford', 'xavier', 'kaiming'), but is {method}")
+            raise ValueError(
+                f"variance must be one of ('radford', 'xavier', 'kaiming'), but is {method}")
         self.method = method
         self.nonlinearity = nonlinearity
 
     def prior_dist(self, name, module, param):
-        module_nonl = self.nonlinearity if isinstance(self.nonlinearity, str) else self.nonlinearity.get(module)
-        gain = nn_init.calculate_gain(module_nonl) if module_nonl is not None else 1.
+        module_nonl = self.nonlinearity if isinstance(
+            self.nonlinearity, str) else self.nonlinearity.get(module)
+        gain = nn_init.calculate_gain(
+            module_nonl) if module_nonl is not None else 1.
         std = util.calculate_prior_std(self.method, param, gain)
         return dist.Normal(0., std)
 
@@ -193,6 +207,7 @@ class DictPrior(Prior):
 
     def prior_dist(self, name, module, param):
         return self.prior_dict[name]
+
 
 class LambdaPrior(Prior):
     """Utility class to avoid implementing a prior class for a given function."""
