@@ -5,6 +5,8 @@ import torch.nn.init as nn_init
 import pyro.distributions as dist
 from pyro.nn.module import PyroSample, PyroParam
 
+from functools import partial
+
 
 from . import util
 
@@ -87,6 +89,18 @@ def _make_expose_fn(hide_modules, expose_modules, hide_module_types, expose_modu
     return expose_fn
 
 
+def hide_all_expose_fn(module, name):
+    return False
+
+
+def hide_fn_expose_fn(module, name, hide_fn=None):
+    return not hide_fn(module, name)
+
+
+def expose_all_expose_fn(module, name):
+    return True
+
+
 class Prior(metaclass=ABCMeta):
     """Base class for TyXe's BNN priors that helps with replacing nn.Parameter attributes on PyroModule objects
     with PyroSamples via its apply_ method or updating them via update_ and handles logic for excluding some parameters
@@ -109,21 +123,12 @@ class Prior(metaclass=ABCMeta):
             a nn.Conv or nn.Linear module that has a weight attribute.
         * fn: function that returns True or False given a module and param_name string."""
 
-        def hide_all_expose_fn(module, name):
-            return False
-
-        def hide_fn_expose_fn(module, name):
-            return not hide_fn(module, name)
-
-        def expose_all_expose_fn(module, name):
-            return True
-
         if hide_all:
             self.expose_fn = hide_all_expose_fn
         elif expose_fn is not None:
             self.expose_fn = expose_fn
         elif hide_fn is not None:
-            self.expose_fn = hide_fn_expose_fn
+            self.expose_fn = partial(hide_fn_expose_fn, hide_fn=hide_fn)
         elif expose_all:
             self.expose_fn = expose_all_expose_fn
         else:
