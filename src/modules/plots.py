@@ -21,8 +21,6 @@ def lineplot(data, x_label=None, y_label=None, figsize=(10, 5), ax=None, save_pa
 
 
 def plot_elbo(train_stats, save_path=None, figsize=(20, 8)):
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
 
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=figsize)
     fig.suptitle("ELBO for epochs and pr. minibatch", fontsize=15)
@@ -40,8 +38,6 @@ def plot_elbo(train_stats, save_path=None, figsize=(20, 8)):
 
 
 def plot_rmse(train_stats, save_path=None, figsize=(20, 8)):
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
 
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=figsize)
     fig.suptitle("RMSE for epochs and pr. minibatch", fontsize=15)
@@ -59,8 +55,6 @@ def plot_rmse(train_stats, save_path=None, figsize=(20, 8)):
 
 
 def plot_distribution(samples, save_path=None, ax=None, figsize=(10, 10)):
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -79,8 +73,6 @@ def plot_distribution(samples, save_path=None, ax=None, figsize=(10, 10)):
 
 
 def plot_comparison(post_sample, data_sample, x_sample=None, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10, 10), kl_div=False, plot_mean=False):
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
 
     data_std = data_sample.std()
     post_std = post_sample.std()
@@ -132,9 +124,6 @@ def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=
     num_x = data_samples.shape[1]
     assert (grid_size[0] * grid_size[1]) <= num_x
 
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
-
     fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=figsize)
     axs = axs.flatten()
     fig.tight_layout()
@@ -159,8 +148,6 @@ def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=
 
 
 def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10, 10), kl_div=False, plot_mean=False):
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
 
     data_std = data_sample.std()
 
@@ -185,7 +172,7 @@ def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="
             sns.kdeplot(post_sample, fill=False, ax=ax, label=labels[i])
         else:
             ax.axvline(post_sample.mean(), color="green",
-                        label=labels[i], alpha=0.4)
+                       label=labels[i], alpha=0.4)
 
     ax.legend()
     ax.set_ylabel(y_label)
@@ -201,8 +188,6 @@ def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="
 
 
 def plot_comparisons_grid(posterior_samples, data_samples, x_samples=None, title=None, grid_size=(2, 2), save_path=None, figsize=(10, 10), kl_div=False, plot_mean=False):
-    sns.set_style("darkgrid")
-    sns.set_context("paper")
 
     fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=figsize)
     axs = axs.flatten()
