@@ -99,7 +99,7 @@ def make_inference_model(config, dataset_config, device=None):
             f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
 
 
-def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1):
+def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1, num_workers=4):
 
     NAME = config["NAME"]
     DEVICE = device if device != None else config["DEVICE"]
@@ -161,11 +161,11 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
     val_dataset = TensorDataset(x_val, y_val)
 
     train_dataloader = DataLoader(
-        train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=4, shuffle=True)
+        train_dataset, batch_size=TRAIN_BATCH_SIZE, num_workers=num_workers, shuffle=True)
     train_subset_dataloader = DataLoader(
-        train_subset, batch_size=EVAL_BATCH_SIZE, num_workers=4)
+        train_subset, batch_size=EVAL_BATCH_SIZE, num_workers=num_workers)
     val_dataloader = DataLoader(
-        val_dataset, batch_size=EVAL_BATCH_SIZE, num_workers=4)
+        val_dataset, batch_size=EVAL_BATCH_SIZE, num_workers=num_workers)
 
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
@@ -249,6 +249,11 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1)
             train_stats = {
                 "time": 0,
             }
+            
+            k = bnn.kernel
+            print(k)
+            with open(f"{DIR}/results/{NAME}/test.pkl", "wb") as f:
+                pickle.dump(k, f)
 
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
                     warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
