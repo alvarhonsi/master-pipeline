@@ -149,10 +149,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
     if not os.path.exists(f"{DIR}/results/{NAME}"):
         os.mkdir(f"{DIR}/results/{NAME}")
 
-    # Check if GPU is available
-    if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
-        raise ValueError("GPU not available")
-
     # Create datasets and dataloaders
     train_dataset = TensorDataset(x_train, y_train)
     subset = np.random.choice(len(train_dataset), size=VAL_SIZE)
@@ -249,7 +245,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
             train_stats = {
                 "time": 0,
             }
-            
 
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
                     warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)
@@ -320,8 +315,10 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
             f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
 
         if SAVE_MODEL:
-            save_bnn(bnn, INFERENCE_TYPE,
+            save_bnn(bnn, config,
                      f"{DIR}/models/{NAME}/checkpoint_{run}.pt")
 
         with open(f"{DIR}/results/{NAME}/train_stats_{run}.json", "w") as f:
             json.dump(train_stats, f, indent=4)
+
+        return bnn

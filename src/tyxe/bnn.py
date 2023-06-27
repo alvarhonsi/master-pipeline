@@ -227,20 +227,43 @@ class VariationalBNN(_SupervisedBNN):
         self.net.train(old_training_state)
         return svi
 
-    @pynn.pyro_method
-    def predict(self, *input_data, num_predictions=1, aggregate=True, guide_traces=None):
+    '''def guided_forward(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
+        if guide_tr is None:
+            guide_tr = poutine.trace(self.net_guide).get_trace(*args, **kwargs)
+
+        if likelihood_guide_tr is None:
+            likelihood_guide_tr = poutine.trace(
+                self.likelihood_guide).get_trace(*args, **kwargs)
+
+        pred = poutine.replay(self.net, trace=guide_tr)(*args, **kwargs)
+        scale = poutine.replay(self.likelihood.get_scale,
+                               trace=likelihood_guide_tr)()
+        return pred, scale '''
+
+    def guided_forward(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
+        if guide_tr is None:
+            guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
+
+        pred = poutine.replay(self.net, trace=guide_tr)(*args, **kwargs)
+        scale = poutine.replay(self.likelihood.get_scale,
+                               trace=guide_tr)()
+        return pred, scale
+
+    def predict(self, *input_data, num_predictions=1, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
+
+        if likelihood_guide_traces is None:
+            likelihood_guide_traces = [None] * num_predictions
 
         preds = []
         scales = []
         with torch.autograd.no_grad():
-            for trace in guide_traces:
-                guide_tr = poutine.trace(self.guide).get_trace(*input_data)
-                preds.append(poutine.replay(
-                    self.net, trace=guide_tr)(*input_data))
-                scales.append(poutine.replay(
-                    lambda: self.likelihood.scale, trace=guide_tr)())
+            for trace, likelihood_trace in zip(guide_traces, likelihood_guide_traces):
+                pred, scale = self.guided_forward(
+                    *input_data, guide_tr=trace, likelihood_guide_tr=likelihood_trace)
+                preds.append(pred)
+                scales.append(scale)
         predictions = torch.stack(preds)
         scales = torch.stack(scales)
         return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions
@@ -309,7 +332,7 @@ class MCMC_BNN(_BNN):
         self._mcmc = None
 
     def model(self, x, obs=None):
-        predictions = self.net(*_as_tuple(x))
+        predictions = self(*_as_tuple(x))
         self.likelihood(predictions, obs)
         return predictions
 

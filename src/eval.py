@@ -191,7 +191,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
         if bnn == None:
             bnn = train.make_inference_model(
                 config, dataset_config, device=DEVICE)
-            bnn = train.load_bnn(bnn, INFERENCE_TYPE,
+            bnn = train.load_bnn(bnn, config,
                                  load_path=f"{DIR}/models/{NAME}/checkpoint_{run}.pt", device=DEVICE)
 
         # Ready results directory

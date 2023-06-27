@@ -124,13 +124,13 @@ class Prior(metaclass=ABCMeta):
         * fn: function that returns True or False given a module and param_name string."""
 
         if hide_all:
-            self.expose_fn = hide_all_expose_fn
+            self.expose_fn = lambda module, name: False
         elif expose_fn is not None:
             self.expose_fn = expose_fn
         elif hide_fn is not None:
-            self.expose_fn = partial(hide_fn_expose_fn, hide_fn=hide_fn)
+            self.expose_fn = lambda module, name: not hide_fn(module, name)
         elif expose_all:
-            self.expose_fn = expose_all_expose_fn
+            self.expose_fn = lambda module, name: True
         else:
             self.expose_fn = _make_expose_fn(
                 hide_modules, expose_modules, hide_module_types, expose_module_types,

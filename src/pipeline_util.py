@@ -20,9 +20,11 @@ def draw_data_samples(dataloader, num_samples=10, device="cpu"):
     return sample_x.to(device), sample_y.to(device)
 
 
-def save_bnn(bnn, inference_type, save_path=None):
+def save_bnn(bnn, config, save_path=None):
     if save_path == None:
         raise Exception("No save path specified")
+
+    inference_type = config["INFERENCE_TYPE"]
 
     if inference_type == "svi":
         pyro.get_param_store().save(save_path)
@@ -51,12 +53,19 @@ def save_bnn(bnn, inference_type, save_path=None):
         raise Exception("Unknown inference type")
 
 
-def load_bnn(bnn, inference_type, load_path=None, device=None):
+def load_bnn(bnn, config, load_path=None, device=None):
     if load_path == None:
         raise Exception("No load path specified")
 
+    inference_type = config["INFERENCE_TYPE"]
+    input_dim = config.getint("X_DIM")
+
     if inference_type == "svi":
         pyro.get_param_store().load(load_path, map_location=device)
+
+        # Run a prediction to initialize the model using dummy data
+        dummy_x = torch.zeros(1, input_dim).to(device)
+        bnn.predict(dummy_x)
         print("Loaded SVI model from", load_path)
 
     elif inference_type == "mcmc":
