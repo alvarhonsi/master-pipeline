@@ -250,10 +250,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
                 "time": 0,
             }
             
-            k = bnn.kernel
-            print(k)
-            with open(f"{DIR}/results/{NAME}/test.pkl", "wb") as f:
-                pickle.dump(k, f)
 
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
                     warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, device=DEVICE)

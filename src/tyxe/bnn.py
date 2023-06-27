@@ -10,6 +10,8 @@ from pyro.infer import SVI, Trace_ELBO, TraceMeanField_ELBO, MCMC
 
 from . import util
 
+import pickle
+
 
 __all__ = ["PytorchBNN", "VariationalBNN", "MCMC_BNN"]
 
@@ -307,7 +309,7 @@ class MCMC_BNN(_BNN):
         self._mcmc = None
 
     def model(self, x, obs=None):
-        predictions = self.net(x)
+        predictions = self.net(*_as_tuple(x))
         self.likelihood(predictions, obs)
         return predictions
 
