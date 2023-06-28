@@ -320,5 +320,3 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
 
         with open(f"{DIR}/results/{NAME}/train_stats_{run}.json", "w") as f:
             json.dump(train_stats, f, indent=4)
-
-        return bnn

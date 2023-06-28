@@ -89,7 +89,7 @@ if __name__ == "__main__":
         NAME = config["NAME"]
         dataset_config = dataset_configs[config["DATASET"]]
 
-        RERUNS = int(config["RERUNS"])
+        RERUNS = config.getint("RERUNS")
 
         # Train model
         if TRAIN:
