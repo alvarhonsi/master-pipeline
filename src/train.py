@@ -52,7 +52,7 @@ def make_inference_model(config, dataset_config, device=None):
     TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
 
     net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES,
-                  activation=nn.ReLU()).to(DEVICE)
+                  activation=nn.LeakyReLU(negative_slope=0.05)).to(DEVICE)
     print(net)
     prior_dist = dist.Normal(torch.tensor(
         PRIOR_LOC, device=DEVICE), torch.tensor(PRIOR_SCALE, device=DEVICE))
