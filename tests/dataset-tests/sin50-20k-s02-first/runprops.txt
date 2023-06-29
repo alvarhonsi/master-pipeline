@@ -1,4 +1,0 @@
-dir = tests/dataset-tests/sin50-20k-s02
-name = sin50
-devices = cuda:4, cuda:5, cuda:6, cuda:7
-profiles = sin50-2x128-s02, sin50-2x256-s02, sin50-2x512-s02, sin50-2x1024-s02

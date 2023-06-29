@@ -18,8 +18,23 @@ def tendim_sinusoidal_combination(xs, noise=0) -> np.array:
 def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
     res = 0
     def filter(i): return 0 if i % 10 == 0 or i+1 % 10 == 0 else 1
+    if xs.shape[1] < 2:
+        return 5*np.sin(xs[:, 0] + xs[:, 0]) + noise
     for i in range(xs.shape[1] - 1):
-        res += filter(i)*10*np.sin(0.2*xs[:, i]*xs[:, i+1])
+        res += filter(i)*5*np.sin(xs[:, i] + xs[:, i+1])
+    return res + noise
+
+
+def multidim_exponential_combination(xs, noise=0) -> np.array:
+    res = 0
+    def filter(i): return 0 if i % 10 == 0 or i+1 % 10 == 0 else 1
+    if xs.shape[1] < 2:
+        xi = xs[:, 0]
+        return 4 * np.exp((-(xi)**2)) * xi + noise
+    for i in range(xs.shape[1] - 1):
+        xi = xs[:, i]
+        xj = xs[:, i+1]
+        return 4 * np.exp((-(xi)**2)) * xj + noise
     return res + noise
 
 
@@ -46,6 +61,7 @@ data_functions = {
     "sum": sum,
     "multidim_sinusoidal_combination": multidim_sinusoidal_combination,
     "tendim_sinusoidal_combination": tendim_sinusoidal_combination,
+    "multidim_exponential_combination": multidim_exponential_combination,
     "onedim_non_linear": onedim_non_linear,
     "onedim_linear": onedim_linear,
 }

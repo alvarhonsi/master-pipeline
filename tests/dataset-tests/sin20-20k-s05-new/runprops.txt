@@ -1,4 +1,0 @@
-dir = tests/dataset-tests/sin20-20k-s05-new
-name = sin20
-devices = cuda:4, cuda:5, cuda:6, cuda:7
-profiles = sin20-4x512-s05, sin20-5x512-s05, sin20-4x1024-s05, sin20-5x1024-s05
