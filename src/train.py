@@ -81,7 +81,8 @@ def make_inference_model(config, dataset_config, device=None):
     # Create inference model
     if INFERENCE_TYPE == "svi":
         def init_fn(*args, **kwargs):
-            return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
+            # return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
+            return ag_init.init_to_uniform(*args, **kwargs, radius=0.1).to(DEVICE)
         guide_builder = partial(tyxe.guides.AutoNormal,
                                 init_loc_fn=init_fn, init_scale=GUIDE_SCALE)
         bnn = tyxe.VariationalBNN(
