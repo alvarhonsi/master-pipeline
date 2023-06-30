@@ -88,7 +88,7 @@ def make_inference_model(config, dataset_config, device=None):
             net, prior, obs_model, guide_builder, likelihood_guide_builder=likelihood_guide_builder)
         return bnn
     elif INFERENCE_TYPE == "mcmc":
-        kernel_builder = pyro.infer.mcmc.NUTS
+        kernel_builder = partial(pyro.infer.mcmc.NUTS, jit_compile=True)
         bnn = tyxe.bnn.MCMC_BNN(net, prior, obs_model, kernel_builder)
         return bnn
     elif INFERENCE_TYPE == "nn":
