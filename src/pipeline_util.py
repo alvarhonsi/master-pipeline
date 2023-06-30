@@ -74,7 +74,7 @@ def load_bnn(bnn, config, load_path=None, device=None):
         dummy_x, dummy_y = torch.zeros(1, input_dim).to(
             device), torch.zeros(1, 1).to(device)
         print("init mcmc")
-        bnn.fit((dummy_x, dummy_y), num_samples=1)
+        bnn.fit((dummy_x, dummy_y), num_samples=1, batch_data=True)
 
         bnn._mcmc._samples = checkpoint["samples"]
         print("Loaded MCMC model from", load_path)
