@@ -35,9 +35,9 @@ def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
     for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
         input_data, observation_data = input_data.to(
             device), observation_data.to(device)
-        err, ll, absolute_err = bnn.get_error_metrics(
+        mse, ll, absolute_err = bnn.get_error_metrics(
             input_data, observation_data, num_predictions=num_predictions, reduction="mean")
-        rmse += err
+        rmse += mse
         loglikelihood += ll
         mae += absolute_err
         batch_num = num_batch

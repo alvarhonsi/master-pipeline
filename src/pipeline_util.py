@@ -34,10 +34,9 @@ def save_bnn(bnn, config, save_path=None):
             f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
 
     elif inference_type == "mcmc":
-        bnn._mcmc.kernel = None
-        torch.save({"mcmc": bnn._mcmc},
+        torch.save({"samples": bnn._mcmc._samples},
                    save_path, pickle_module=dill)
-        print("Saved MCMC model to", save_path)
+        print("Saved MCMC samples to", save_path)
         file_stats = os.stat(save_path)
         print(
             f'File Size is {file_stats.st_size / (1024 * 1024)} MB')
@@ -71,7 +70,11 @@ def load_bnn(bnn, config, load_path=None, device=None):
     elif inference_type == "mcmc":
         checkpoint = torch.load(
             load_path, map_location=device, pickle_module=dill)
-        bnn._mcmc = checkpoint["mcmc"]
+        ## init mcmc
+        dummy_x, dummy_y = torch.zeros(1, input_dim).to(device), torch.zeros(1, 1).to(device)
+        bnn.fit(dummy_x, dummy_y)
+
+        bnn._mcmc._samples = checkpoint["samples"]
         print("Loaded MCMC model from", load_path)
 
     elif inference_type == "nn":
