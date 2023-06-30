@@ -75,9 +75,9 @@ def load_bnn(bnn, config, load_path=None, device=None):
             device), torch.zeros(1, 1).to(device)
         print("init mcmc")
         bnn.fit((dummy_x, dummy_y), num_samples=1, batch_data=True)
-
+        
         bnn._mcmc._samples = checkpoint["samples"]
-        print("Loaded MCMC model from", load_path)
+        print("Loaded MCMC samples from", load_path)
 
     elif inference_type == "nn":
         bnn.net.load_state_dict(torch.load(
