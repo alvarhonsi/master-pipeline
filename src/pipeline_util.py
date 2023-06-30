@@ -70,9 +70,11 @@ def load_bnn(bnn, config, load_path=None, device=None):
     elif inference_type == "mcmc":
         checkpoint = torch.load(
             load_path, map_location=device, pickle_module=dill)
-        ## init mcmc
-        dummy_x, dummy_y = torch.zeros(1, input_dim).to(device), torch.zeros(1, 1).to(device)
-        bnn.fit(dummy_x, dummy_y)
+        # init mcmc
+        dummy_x, dummy_y = torch.zeros(1, input_dim).to(
+            device), torch.zeros(1, 1).to(device)
+        print("init mcmc")
+        bnn.fit((dummy_x, dummy_y))
 
         bnn._mcmc._samples = checkpoint["samples"]
         print("Loaded MCMC model from", load_path)
