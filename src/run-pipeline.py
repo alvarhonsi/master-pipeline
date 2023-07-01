@@ -36,6 +36,9 @@ if __name__ == "__main__":
         parser.error(
             "at least one of --generate or --train or --eval is required")
 
+    if args.device == "cpu":
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
     start = time.time()
     print(f"Start time: {datetime.datetime.now()}")
 
@@ -100,7 +103,7 @@ if __name__ == "__main__":
                 os.mkdir(f"{BASE_DIR}/results")
 
             train.train(
-                config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print, reruns=RERUNS)
+                config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print, reruns=RERUNS, num_workers=3)
 
         # Evaluate model
         if EVAL:

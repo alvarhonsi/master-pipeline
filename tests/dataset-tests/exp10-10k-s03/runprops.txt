@@ -1,4 +1,4 @@
 dir = tests/dataset-tests/exp10-10k-s03
 name = exp
-devices = cuda:4, cuda:5
-profiles = exp10-2x64-s03 exp50-3x512-s03, exp10-3x128-s03 exp50-3x256-s03
+devices = cuda:4, cuda:5, cuda:6, cuda:7
+profiles = exp10-2x64-s03 exp50-3x512-s03, exp10-3x128-s03 exp50-3x256-s03, expold10-2x64-s03 expold50-3x512-s03, expold10-3x128-s03 expold50-3x256-s03
