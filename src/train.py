@@ -22,6 +22,7 @@ from pyro.infer.autoguide import AutoDiagonalNormal
 from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive, TraceMeanField_ELBO
 import pyro.infer.autoguide.initialization as ag_init
 import pyro.distributions as dist
+import pyro.poutine as poutine
 from datetime import timedelta
 import time
 import json
@@ -52,8 +53,13 @@ def make_inference_model(config, dataset_config, device=None):
     TRAIN_SIZE = dataset_config.getint("TRAIN_SIZE")
 
     net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES,
-                  activation=nn.LeakyReLU(negative_slope=0.05)).to(DEVICE)
+                  activation=nn.ReLU().to(DEVICE))
     print(net)
+
+    print("Settings:")
+    print("DEVICE:", DEVICE, "INFERENCE_TYPE:", INFERENCE_TYPE, "OBS_MODEL:", OBS_MODEL, "PRIOR_LOC:",
+          PRIOR_LOC, "PRIOR_SCALE:", PRIOR_SCALE, "LIKELIHOOD_SCALE_LOC:", LIKELIHOOD_SCALE_LOC, "LIKELIHOOD_SCALE:", LIKELIHOOD_SCALE, "GUIDE_SCALE:", GUIDE_SCALE, "TRAIN_SIZE:", TRAIN_SIZE)
+    
     prior_dist = dist.Normal(torch.tensor(
         PRIOR_LOC, device=DEVICE), torch.tensor(PRIOR_SCALE, device=DEVICE))
     prior = tyxe.priors.IIDPrior(prior_dist)
@@ -73,20 +79,24 @@ def make_inference_model(config, dataset_config, device=None):
                            torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
         obs_model = tyxe.likelihoods.HomoskedasticGaussian(
             dataset_size=TRAIN_SIZE, scale=scale)
+        
+        def init_fn(*args, **kwargs):
+            return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
         likelihood_guide_builder = partial(
-            tyxe.guides.AutoNormal, init_scale=GUIDE_SCALE)
+            tyxe.guides.AutoNormal, init_loc_fn=init_fn, init_scale=GUIDE_SCALE)
     else:
         raise ValueError(
             f"Observation model {OBS_MODEL} not supported. Supported models: homoskedastic, homoskedastic_param, homoskedastic_gamma")
     # Create inference model
     if INFERENCE_TYPE == "svi":
         def init_fn(*args, **kwargs):
-            # return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
-            return ag_init.init_to_uniform(*args, **kwargs, radius=0.1).to(DEVICE)
+            return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
+            # return ag_init.init_to_uniform(*args, **kwargs, radius=0.1).to(DEVICE)
         guide_builder = partial(tyxe.guides.AutoNormal,
                                 init_loc_fn=init_fn, init_scale=GUIDE_SCALE)
         bnn = tyxe.VariationalBNN(
             net, prior, obs_model, guide_builder, likelihood_guide_builder=likelihood_guide_builder)
+
         return bnn
     elif INFERENCE_TYPE == "mcmc":
         kernel_builder = partial(pyro.infer.mcmc.NUTS, jit_compile=True)
@@ -170,6 +180,16 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
     for run in range(1, reruns + 1):
         # Create model
         bnn = make_inference_model(config, dataset_config, device=DEVICE)
+
+        dummy_data = (torch.zeros(1, X_DIM), torch.zeros(1, Y_DIM))
+        guide_tr = poutine.trace(bnn.guide).get_trace(*dummy_data)
+        guide_tr.nodes.keys()
+
+
+        params = pyro.get_param_store()
+        print("Initial parameters:")
+        for name, value in params.items():
+            print(name, pyro.param(name).shape, value)
 
         # RUN TRAINING
         print('Using device: {}'.format(DEVICE))

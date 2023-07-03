@@ -1,0 +1,4 @@
+dir = tests/sigma-over-underfit-test
+name = sou-test
+devices = cuda:0, cuda:1, cuda:2, cuda:3
+profiles =  tensin-3x512-sl-1, tensin-3x512-sl-2, tensin-3x512-sl-3, tensin-3x512-sl-4
