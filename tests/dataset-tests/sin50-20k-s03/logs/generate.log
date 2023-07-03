@@ -1,0 +1,8 @@
+ERROR conda.cli.main_run:execute(34): Subprocess for 'conda run ['python', 'src/run-pipeline.py', '-dir', 'tests/dataset-tests/sin50-20k-s03', '--generate']' command failed.  (See above for error)
+Traceback (most recent call last):
+  File "/Home/siv31/tak011/master-pipeline/src/run-pipeline.py", line 53, in <module>
+    raise ValueError(f"Config file {BASE_DIR}/config.ini not found")
+ValueError: Config file tests/dataset-tests/sin50-20k-s03/config.ini not found
+
+Start time: 2023-06-23 12:02:29.441976
+

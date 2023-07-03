@@ -1,0 +1,23 @@
+Start time: 2023-06-23 11:22:17.041707
+torch.Size([512, 10]) torch.Size([512, 1])
+Sequential(
+  (0): Linear(in_features=10, out_features=512, bias=True)
+  (1): ReLU()
+  (2): Sequential(
+    (0): Linear(in_features=512, out_features=512, bias=True)
+    (1): ReLU()
+  )
+  (3): Sequential(
+    (0): Linear(in_features=512, out_features=512, bias=True)
+    (1): ReLU()
+  )
+  (4): Linear(in_features=512, out_features=1, bias=True)
+)
+Using device: cuda:0
+===== Training profile tensin-3x512-s003 - 1 =====
+[0:00:02.886315] epoch: 0 | elbo: 44824501370.88 | train_rmse: 61.8008 | val_rmse: 64.4802 | val_ll: -39812.9961
+[0:00:25.968720] epoch: 10 | elbo: 4008896450.56 | train_rmse: 27.296 | val_rmse: 27.3399 | val_ll: -13708.0107
+[0:00:48.146037] epoch: 20 | elbo: 2608517486.0800004 | train_rmse: 20.8204 | val_rmse: 23.7331 | val_ll: -10860.0684
+[0:01:10.537673] epoch: 30 | elbo: 1926335662.0800004 | train_rmse: 17.9258 | val_rmse: 20.9398 | val_ll: -8419.332
+[0:01:33.250337] epoch: 40 | elbo: 1541736774.4 | train_rmse: 16.7339 | val_rmse: 20.121 | val_ll: -7113.4746
+[0:01:55.608819] epoch: 50 | elbo: 1273346225.9199998 | train_rmse: 15.5686 | val_rmse: 19.1047 | val_ll: -6676.9019

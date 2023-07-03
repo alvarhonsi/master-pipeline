@@ -1,0 +1,36 @@
+Start time: 2023-06-23 12:03:57.281509
+torch.Size([512, 50]) torch.Size([512, 1])
+Sequential(
+  (0): Linear(in_features=50, out_features=128, bias=True)
+  (1): ReLU()
+  (2): Sequential(
+    (0): Linear(in_features=128, out_features=128, bias=True)
+    (1): ReLU()
+  )
+  (3): Sequential(
+    (0): Linear(in_features=128, out_features=128, bias=True)
+    (1): ReLU()
+  )
+  (4): Linear(in_features=128, out_features=1, bias=True)
+)
+Using device: cuda:4
+===== Training profile sin50-3x128-s03 - 1 =====
+[0:00:09.115640] epoch: 0 | elbo: 998083705.4040817 | train_rmse: 44.5844 | val_rmse: 44.7171 | val_ll: -6732.5796
+[0:07:02.698959] epoch: 50 | elbo: 125566700.8816327 | train_rmse: 21.4482 | val_rmse: 22.7064 | val_ll: -1535.4034
+[0:13:57.967772] epoch: 100 | elbo: 51840104.54693879 | train_rmse: 13.7029 | val_rmse: 15.7167 | val_ll: -762.4985
+[0:20:54.349717] epoch: 150 | elbo: 32712404.746938772 | train_rmse: 10.8923 | val_rmse: 13.2393 | val_ll: -548.7784
+[0:27:42.240411] epoch: 200 | elbo: 24791415.963265307 | train_rmse: 9.3744 | val_rmse: 12.0088 | val_ll: -538.3796
+[0:34:28.852790] epoch: 250 | elbo: 20334902.69795918 | train_rmse: 8.534 | val_rmse: 11.3827 | val_ll: -552.7235
+[0:41:17.523434] epoch: 300 | elbo: 17577290.365306113 | train_rmse: 7.8712 | val_rmse: 11.0945 | val_ll: -535.2833
+[0:48:04.655814] epoch: 350 | elbo: 15633520.436734699 | train_rmse: 7.4252 | val_rmse: 10.9342 | val_ll: -551.784
+[0:54:51.093036] epoch: 400 | elbo: 14114205.208163269 | train_rmse: 7.0377 | val_rmse: 10.8717 | val_ll: -556.5246
+[1:01:39.625042] epoch: 450 | elbo: 12943350.783673476 | train_rmse: 6.7518 | val_rmse: 10.8523 | val_ll: -589.9455
+[1:08:26.405193] epoch: 500 | elbo: 11986288.995918367 | train_rmse: 6.4816 | val_rmse: 10.8338 | val_ll: -580.713
+[1:15:15.031750] epoch: 550 | elbo: 11205246.946938772 | train_rmse: 6.2817 | val_rmse: 10.8793 | val_ll: -588.671
+[1:22:03.031631] epoch: 600 | elbo: 10532294.281632656 | train_rmse: 6.082 | val_rmse: 10.9342 | val_ll: -609.6655
+[1:28:51.128321] epoch: 650 | elbo: 9942337.520408165 | train_rmse: 5.9342 | val_rmse: 10.9203 | val_ll: -611.0605
+[1:35:35.430269] epoch: 700 | elbo: 9423776.624489794 | train_rmse: 5.7856 | val_rmse: 10.9674 | val_ll: -610.7584
+[1:42:21.221876] epoch: 750 | elbo: 8973957.07142857 | train_rmse: 5.6576 | val_rmse: 10.9928 | val_ll: -625.2577
+[1:49:02.880185] epoch: 800 | elbo: 8560385.302040817 | train_rmse: 5.4901 | val_rmse: 11.0448 | val_ll: -636.0083
+[1:55:41.838792] epoch: 850 | elbo: 8199492.061224486 | train_rmse: 5.386 | val_rmse: 11.0985 | val_ll: -646.5152
+[2:02:23.676164] epoch: 900 | elbo: 7866998.389795916 | train_rmse: 5.2792 | val_rmse: 11.1281 | val_ll: -654.5491

@@ -1,0 +1,245 @@
+Start time: 2023-06-23 14:17:32.147519
+torch.Size([512, 20]) torch.Size([512, 1])
+Sequential(
+  (0): Linear(in_features=20, out_features=1024, bias=True)
+  (1): ReLU()
+  (2): Sequential(
+    (0): Linear(in_features=1024, out_features=1024, bias=True)
+    (1): ReLU()
+  )
+  (3): Sequential(
+    (0): Linear(in_features=1024, out_features=1024, bias=True)
+    (1): ReLU()
+  )
+  (4): Linear(in_features=1024, out_features=1, bias=True)
+)
+Using device: cuda:7
+===== Training profile sin20-3x1024-s03 - 1 =====
+[0:00:02.712861] epoch: 0 | elbo: 5591458536.96 | train_rmse: 254.9781 | val_rmse: 258.0261 | val_ll: -22757.5977
+[0:01:42.379552] epoch: 50 | elbo: 175277834.56 | train_rmse: 54.1784 | val_rmse: 111.5722 | val_ll: -4321.3506
+[0:03:22.394918] epoch: 100 | elbo: 73113607.76 | train_rmse: 35.4158 | val_rmse: 102.6645 | val_ll: -4193.1597
+[0:05:02.907580] epoch: 150 | elbo: 53264961.28 | train_rmse: 25.8646 | val_rmse: 98.2366 | val_ll: -4365.7051
+[0:06:43.699345] epoch: 200 | elbo: 44934242.36 | train_rmse: 28.3735 | val_rmse: 95.1472 | val_ll: -5093.4473
+[0:08:24.216629] epoch: 250 | elbo: 38943497.92 | train_rmse: 21.4335 | val_rmse: 90.7781 | val_ll: -4038.0967
+[0:10:03.731590] epoch: 300 | elbo: 33428244.160000004 | train_rmse: 19.9429 | val_rmse: 86.2258 | val_ll: -4961.5977
+[0:11:43.355128] epoch: 350 | elbo: 29253438.080000002 | train_rmse: 21.4046 | val_rmse: 81.6124 | val_ll: -5017.3091
+[0:13:23.123860] epoch: 400 | elbo: 25728995.82 | train_rmse: 16.5122 | val_rmse: 77.1294 | val_ll: -4895.8262
+[0:15:02.165684] epoch: 450 | elbo: 22603378.479999997 | train_rmse: 14.5882 | val_rmse: 72.641 | val_ll: -4610.084
+[0:16:42.220281] epoch: 500 | elbo: 20144919.46 | train_rmse: 14.2121 | val_rmse: 68.5548 | val_ll: -3953.7341
+[0:18:21.897610] epoch: 550 | elbo: 18424192.159999996 | train_rmse: 13.6652 | val_rmse: 65.0011 | val_ll: -4555.3711
+[0:20:01.769099] epoch: 600 | elbo: 16680320.0 | train_rmse: 11.2089 | val_rmse: 61.837 | val_ll: -3756.7527
+[0:21:41.379728] epoch: 650 | elbo: 15566154.580000002 | train_rmse: 10.6264 | val_rmse: 58.1593 | val_ll: -4538.6069
+[0:23:22.180095] epoch: 700 | elbo: 14466866.55 | train_rmse: 9.295 | val_rmse: 55.3379 | val_ll: -4279.7529
+[0:25:01.692954] epoch: 750 | elbo: 13734677.879999999 | train_rmse: 8.6623 | val_rmse: 52.6463 | val_ll: -3789.1165
+[0:26:41.004923] epoch: 800 | elbo: 12929492.979999999 | train_rmse: 8.341 | val_rmse: 49.9156 | val_ll: -3639.9446
+[0:28:20.705973] epoch: 850 | elbo: 12446171.060000002 | train_rmse: 7.3902 | val_rmse: 47.2101 | val_ll: -3430.1638
+[0:30:00.206806] epoch: 900 | elbo: 11899206.620000001 | train_rmse: 7.0266 | val_rmse: 45.0684 | val_ll: -3412.8452
+[0:31:41.118006] epoch: 950 | elbo: 11524159.89 | train_rmse: 6.3733 | val_rmse: 42.8355 | val_ll: -3565.7986
+[0:33:23.199057] epoch: 1000 | elbo: 11173538.59 | train_rmse: 6.0745 | val_rmse: 40.567 | val_ll: -3270.7769
+[0:35:03.823353] epoch: 1050 | elbo: 10857035.100000003 | train_rmse: 5.5411 | val_rmse: 38.5595 | val_ll: -3162.5457
+[0:36:43.127638] epoch: 1100 | elbo: 10614687.5 | train_rmse: 5.2927 | val_rmse: 36.6723 | val_ll: -2958.3389
+[0:38:23.721724] epoch: 1150 | elbo: 10337011.55 | train_rmse: 4.7981 | val_rmse: 34.8742 | val_ll: -2982.7339
+[0:40:05.522999] epoch: 1200 | elbo: 10123828.629999999 | train_rmse: 4.598 | val_rmse: 33.1449 | val_ll: -2559.5166
+[0:41:47.486117] epoch: 1250 | elbo: 9941832.34 | train_rmse: 4.3876 | val_rmse: 31.5472 | val_ll: -2540.2322
+[0:43:28.534926] epoch: 1300 | elbo: 9765294.57 | train_rmse: 4.0876 | val_rmse: 30.1033 | val_ll: -2473.2058
+[0:45:08.464793] epoch: 1350 | elbo: 9612538.700000001 | train_rmse: 3.9691 | val_rmse: 28.6436 | val_ll: -2207.2903
+[0:46:49.208858] epoch: 1400 | elbo: 9428182.879999999 | train_rmse: 3.5779 | val_rmse: 27.1698 | val_ll: -1958.5675
+[0:48:29.865431] epoch: 1450 | elbo: 9281887.120000001 | train_rmse: 3.4298 | val_rmse: 25.8385 | val_ll: -1874.542
+[0:50:08.379602] epoch: 1500 | elbo: 9160557.3 | train_rmse: 3.3293 | val_rmse: 24.6135 | val_ll: -1746.5394
+[0:51:47.176116] epoch: 1550 | elbo: 8992080.680000002 | train_rmse: 3.2122 | val_rmse: 23.4379 | val_ll: -1612.1562
+[0:53:30.165821] epoch: 1600 | elbo: 8831920.79 | train_rmse: 3.1569 | val_rmse: 22.2442 | val_ll: -1527.8043
+[0:55:12.316775] epoch: 1650 | elbo: 8704895.250000002 | train_rmse: 2.8822 | val_rmse: 21.2406 | val_ll: -1353.639
+[0:56:54.563924] epoch: 1700 | elbo: 8545818.69 | train_rmse: 2.772 | val_rmse: 20.3611 | val_ll: -1322.8796
+[0:58:37.400846] epoch: 1750 | elbo: 8400934.14 | train_rmse: 2.6889 | val_rmse: 19.3913 | val_ll: -1246.3562
+[1:00:19.598334] epoch: 1800 | elbo: 8252509.305 | train_rmse: 2.5969 | val_rmse: 18.4857 | val_ll: -1151.8041
+[1:02:01.616718] epoch: 1850 | elbo: 8099210.375000002 | train_rmse: 2.5208 | val_rmse: 17.5841 | val_ll: -1070.6112
+[1:03:41.829148] epoch: 1900 | elbo: 7948012.635 | train_rmse: 2.3891 | val_rmse: 16.7751 | val_ll: -1035.6538
+[1:05:22.233172] epoch: 1950 | elbo: 7789207.684999998 | train_rmse: 2.305 | val_rmse: 16.0153 | val_ll: -943.0464
+[1:07:02.037915] epoch: 2000 | elbo: 7625798.945 | train_rmse: 2.2508 | val_rmse: 15.3064 | val_ll: -898.4476
+[1:08:45.170515] epoch: 2050 | elbo: 7464433.1499999985 | train_rmse: 2.156 | val_rmse: 14.6209 | val_ll: -807.1301
+[1:10:26.539261] epoch: 2100 | elbo: 7305876.0 | train_rmse: 2.1349 | val_rmse: 14.0725 | val_ll: -729.7406
+[1:12:10.463478] epoch: 2150 | elbo: 7146567.505000001 | train_rmse: 2.1462 | val_rmse: 13.3778 | val_ll: -690.9585
+[1:13:50.524307] epoch: 2200 | elbo: 6981610.209999999 | train_rmse: 2.0015 | val_rmse: 12.8406 | val_ll: -673.5253
+[1:15:31.431472] epoch: 2250 | elbo: 6814301.074999998 | train_rmse: 1.978 | val_rmse: 12.3373 | val_ll: -599.1666
+[1:17:10.842721] epoch: 2300 | elbo: 6643928.1450000005 | train_rmse: 1.9884 | val_rmse: 11.9065 | val_ll: -567.5595
+[1:18:50.794553] epoch: 2350 | elbo: 6479736.305000002 | train_rmse: 1.9038 | val_rmse: 11.3259 | val_ll: -510.2917
+[1:20:30.705088] epoch: 2400 | elbo: 6308094.435 | train_rmse: 1.8682 | val_rmse: 10.9227 | val_ll: -471.3687
+[1:22:12.757141] epoch: 2450 | elbo: 6136609.220000001 | train_rmse: 1.8113 | val_rmse: 10.4161 | val_ll: -437.2933
+[1:23:52.545454] epoch: 2500 | elbo: 5964442.65 | train_rmse: 1.7745 | val_rmse: 10.03 | val_ll: -407.4606
+[1:25:34.434340] epoch: 2550 | elbo: 5794692.23 | train_rmse: 1.7404 | val_rmse: 9.5744 | val_ll: -381.0929
+[1:27:14.632806] epoch: 2600 | elbo: 5622780.1049999995 | train_rmse: 1.7908 | val_rmse: 9.2289 | val_ll: -340.9177
+[1:28:55.546398] epoch: 2650 | elbo: 5450106.475000001 | train_rmse: 1.6531 | val_rmse: 8.8299 | val_ll: -316.0011
+[1:30:37.693928] epoch: 2700 | elbo: 5278038.87 | train_rmse: 1.628 | val_rmse: 8.4288 | val_ll: -299.5862
+[1:32:21.242560] epoch: 2750 | elbo: 5107826.15 | train_rmse: 1.5573 | val_rmse: 8.0766 | val_ll: -268.5122
+[1:34:03.978868] epoch: 2800 | elbo: 4936408.88 | train_rmse: 1.577 | val_rmse: 7.7057 | val_ll: -243.2836
+[1:35:45.724030] epoch: 2850 | elbo: 4769980.195 | train_rmse: 1.5282 | val_rmse: 7.3986 | val_ll: -230.6176
+[1:37:27.588572] epoch: 2900 | elbo: 4603114.975 | train_rmse: 1.5364 | val_rmse: 7.1008 | val_ll: -212.2747
+[1:39:09.639199] epoch: 2950 | elbo: 4436999.755000001 | train_rmse: 1.545 | val_rmse: 6.7855 | val_ll: -181.5738
+[1:40:52.538598] epoch: 3000 | elbo: 4273653.16 | train_rmse: 1.4141 | val_rmse: 6.5246 | val_ll: -175.76
+[1:42:34.870399] epoch: 3050 | elbo: 4112271.534999999 | train_rmse: 1.4281 | val_rmse: 6.2259 | val_ll: -155.6712
+[1:44:18.845400] epoch: 3100 | elbo: 3954332.2425000006 | train_rmse: 1.3745 | val_rmse: 5.9746 | val_ll: -142.957
+[1:45:59.801280] epoch: 3150 | elbo: 3796135.2399999998 | train_rmse: 1.3747 | val_rmse: 5.7372 | val_ll: -133.6031
+[1:47:40.390718] epoch: 3200 | elbo: 3644089.9425000004 | train_rmse: 1.3222 | val_rmse: 5.4668 | val_ll: -119.6332
+[1:49:22.751393] epoch: 3250 | elbo: 3493938.3200000003 | train_rmse: 1.3027 | val_rmse: 5.2692 | val_ll: -116.675
+[1:51:04.607633] epoch: 3300 | elbo: 3349959.6925 | train_rmse: 1.2744 | val_rmse: 5.0222 | val_ll: -106.2764
+[1:52:47.598602] epoch: 3350 | elbo: 3206405.9 | train_rmse: 1.3128 | val_rmse: 4.8508 | val_ll: -96.1927
+[1:54:29.015173] epoch: 3400 | elbo: 3068968.4074999997 | train_rmse: 1.2258 | val_rmse: 4.6378 | val_ll: -92.9296
+[1:56:08.700275] epoch: 3450 | elbo: 2934810.225 | train_rmse: 1.2426 | val_rmse: 4.5075 | val_ll: -84.4733
+[1:57:49.887324] epoch: 3500 | elbo: 2804054.86 | train_rmse: 1.1445 | val_rmse: 4.2912 | val_ll: -76.4568
+[1:59:29.981468] epoch: 3550 | elbo: 2678724.3674999992 | train_rmse: 1.179 | val_rmse: 4.1298 | val_ll: -75.1077
+[2:01:10.371957] epoch: 3600 | elbo: 2557654.9924999997 | train_rmse: 1.1966 | val_rmse: 3.9587 | val_ll: -64.7688
+[2:02:49.380075] epoch: 3650 | elbo: 2441558.2350000003 | train_rmse: 1.1251 | val_rmse: 3.7986 | val_ll: -64.5794
+[2:04:28.820616] epoch: 3700 | elbo: 2330443.3499999996 | train_rmse: 1.1303 | val_rmse: 3.7156 | val_ll: -60.0598
+[2:06:09.651623] epoch: 3750 | elbo: 2223606.0475 | train_rmse: 1.1169 | val_rmse: 3.6295 | val_ll: -58.4592
+[2:07:50.658904] epoch: 3800 | elbo: 2121021.4449999994 | train_rmse: 1.0714 | val_rmse: 3.4648 | val_ll: -53.112
+[2:09:33.377502] epoch: 3850 | elbo: 2022817.7399999998 | train_rmse: 1.0212 | val_rmse: 3.3425 | val_ll: -51.0644
+[2:11:14.187758] epoch: 3900 | elbo: 1932451.0737499997 | train_rmse: 1.1102 | val_rmse: 3.3066 | val_ll: -46.4302
+[2:12:55.887775] epoch: 3950 | elbo: 1842146.36 | train_rmse: 1.0523 | val_rmse: 3.2229 | val_ll: -45.3248
+[2:14:36.286459] epoch: 4000 | elbo: 1758558.0637500002 | train_rmse: 1.008 | val_rmse: 3.1692 | val_ll: -44.4022
+[2:16:17.062821] epoch: 4050 | elbo: 1678622.4612500002 | train_rmse: 1.0734 | val_rmse: 3.0911 | val_ll: -44.0097
+[2:17:57.571153] epoch: 4100 | elbo: 1602670.4925000004 | train_rmse: 1.0336 | val_rmse: 3.0452 | val_ll: -42.3681
+[2:19:37.245806] epoch: 4150 | elbo: 1532337.3350000002 | train_rmse: 1.0169 | val_rmse: 2.9321 | val_ll: -38.6847
+[2:21:17.986286] epoch: 4200 | elbo: 1463751.4200000002 | train_rmse: 0.9591 | val_rmse: 2.8986 | val_ll: -38.3399
+[2:22:58.248798] epoch: 4250 | elbo: 1402670.085 | train_rmse: 0.9778 | val_rmse: 2.8399 | val_ll: -36.7656
+[2:24:39.557240] epoch: 4300 | elbo: 1339714.0712499998 | train_rmse: 0.9716 | val_rmse: 2.8586 | val_ll: -38.1206
+[2:26:21.032693] epoch: 4350 | elbo: 1283758.5725 | train_rmse: 0.987 | val_rmse: 2.7961 | val_ll: -37.1716
+[2:28:00.724897] epoch: 4400 | elbo: 1230739.4025 | train_rmse: 0.9701 | val_rmse: 2.7251 | val_ll: -34.1569
+[2:29:40.776398] epoch: 4450 | elbo: 1180698.9625 | train_rmse: 0.9278 | val_rmse: 2.6905 | val_ll: -32.2154
+[2:31:21.099803] epoch: 4500 | elbo: 1132280.1087500001 | train_rmse: 0.96 | val_rmse: 2.6612 | val_ll: -32.2573
+[2:33:01.945411] epoch: 4550 | elbo: 1088938.87125 | train_rmse: 0.9272 | val_rmse: 2.6478 | val_ll: -31.6147
+[2:34:41.959508] epoch: 4600 | elbo: 1046179.371875 | train_rmse: 0.9669 | val_rmse: 2.5928 | val_ll: -30.2754
+[2:36:21.834511] epoch: 4650 | elbo: 1009005.038125 | train_rmse: 0.9425 | val_rmse: 2.566 | val_ll: -30.2868
+[2:38:01.986875] epoch: 4700 | elbo: 969182.6050000001 | train_rmse: 0.9828 | val_rmse: 2.5965 | val_ll: -29.2929
+[2:39:42.391352] epoch: 4750 | elbo: 935120.5393749999 | train_rmse: 0.8784 | val_rmse: 2.5207 | val_ll: -30.4914
+[2:41:23.268054] epoch: 4800 | elbo: 902518.296875 | train_rmse: 0.963 | val_rmse: 2.5314 | val_ll: -29.8237
+[2:43:05.666833] epoch: 4850 | elbo: 870816.3481249999 | train_rmse: 0.9731 | val_rmse: 2.5076 | val_ll: -29.1458
+[2:44:48.142949] epoch: 4900 | elbo: 843458.5468750002 | train_rmse: 0.8583 | val_rmse: 2.4753 | val_ll: -29.2925
+[2:46:29.189083] epoch: 4950 | elbo: 815400.4212499999 | train_rmse: 0.9038 | val_rmse: 2.4269 | val_ll: -28.5021
+[2:48:10.899137] epoch: 5000 | elbo: 791213.4575 | train_rmse: 0.8296 | val_rmse: 2.4291 | val_ll: -28.4009
+[2:49:52.969772] epoch: 5050 | elbo: 764972.9131249998 | train_rmse: 0.9709 | val_rmse: 2.4106 | val_ll: -27.0909
+[2:51:34.591364] epoch: 5100 | elbo: 742563.5081249999 | train_rmse: 0.8278 | val_rmse: 2.4011 | val_ll: -28.0218
+[2:53:18.797360] epoch: 5150 | elbo: 724106.085625 | train_rmse: 0.814 | val_rmse: 2.3957 | val_ll: -27.5715
+[2:55:01.894876] epoch: 5200 | elbo: 699320.935625 | train_rmse: 0.8849 | val_rmse: 2.3627 | val_ll: -26.8993
+[2:56:44.952759] epoch: 5250 | elbo: 681554.589375 | train_rmse: 0.806 | val_rmse: 2.3457 | val_ll: -27.0303
+[2:58:26.579493] epoch: 5300 | elbo: 664421.29125 | train_rmse: 0.8378 | val_rmse: 2.3095 | val_ll: -26.4136
+[3:00:07.630631] epoch: 5350 | elbo: 645191.9349999999 | train_rmse: 0.7687 | val_rmse: 2.3307 | val_ll: -26.1793
+[3:01:49.495536] epoch: 5400 | elbo: 628850.61 | train_rmse: 0.7977 | val_rmse: 2.3256 | val_ll: -25.2046
+[3:03:31.242973] epoch: 5450 | elbo: 613895.5931249999 | train_rmse: 0.7933 | val_rmse: 2.3231 | val_ll: -27.3049
+[3:05:12.281875] epoch: 5500 | elbo: 597048.1443749999 | train_rmse: 0.7126 | val_rmse: 2.2826 | val_ll: -25.5026
+[3:06:53.078475] epoch: 5550 | elbo: 582356.994375 | train_rmse: 0.8285 | val_rmse: 2.278 | val_ll: -25.866
+[3:08:34.231637] epoch: 5600 | elbo: 573530.189375 | train_rmse: 0.7956 | val_rmse: 2.2492 | val_ll: -25.9114
+[3:10:14.548192] epoch: 5650 | elbo: 558882.911875 | train_rmse: 0.7002 | val_rmse: 2.2259 | val_ll: -25.6683
+[3:11:54.587652] epoch: 5700 | elbo: 545314.11125 | train_rmse: 0.7634 | val_rmse: 2.2498 | val_ll: -25.2584
+[3:13:37.246327] epoch: 5750 | elbo: 534418.0424999999 | train_rmse: 0.6834 | val_rmse: 2.2194 | val_ll: -24.3817
+[3:15:19.107045] epoch: 5800 | elbo: 523350.61187500006 | train_rmse: 0.7952 | val_rmse: 2.181 | val_ll: -24.396
+[3:17:01.977293] epoch: 5850 | elbo: 513612.3946875 | train_rmse: 0.6592 | val_rmse: 2.1964 | val_ll: -23.2587
+[3:18:44.078941] epoch: 5900 | elbo: 502721.9934375001 | train_rmse: 0.7301 | val_rmse: 2.2081 | val_ll: -23.9816
+[3:20:26.346939] epoch: 5950 | elbo: 493545.58812500007 | train_rmse: 0.67 | val_rmse: 2.1735 | val_ll: -24.3764
+[3:22:10.078706] epoch: 6000 | elbo: 483156.33125 | train_rmse: 0.7973 | val_rmse: 2.1835 | val_ll: -23.9846
+[3:23:52.818732] epoch: 6050 | elbo: 475938.9731249999 | train_rmse: 0.6786 | val_rmse: 2.1906 | val_ll: -24.0411
+[3:25:35.075775] epoch: 6100 | elbo: 466358.1340624999 | train_rmse: 0.7717 | val_rmse: 2.1556 | val_ll: -23.3704
+[3:27:17.320667] epoch: 6150 | elbo: 458012.87875000003 | train_rmse: 0.6841 | val_rmse: 2.1557 | val_ll: -22.1978
+[3:29:00.260384] epoch: 6200 | elbo: 451434.56625000003 | train_rmse: 0.6701 | val_rmse: 2.1839 | val_ll: -23.9631
+[3:30:41.540841] epoch: 6250 | elbo: 445919.38843749993 | train_rmse: 0.7157 | val_rmse: 2.1346 | val_ll: -23.279
+[3:32:21.088343] epoch: 6300 | elbo: 436352.35406249994 | train_rmse: 0.7888 | val_rmse: 2.1142 | val_ll: -22.4889
+[3:34:01.841991] epoch: 6350 | elbo: 430300.5703125 | train_rmse: 0.6656 | val_rmse: 2.1556 | val_ll: -23.5119
+[3:35:42.690627] epoch: 6400 | elbo: 423603.0584375 | train_rmse: 0.6742 | val_rmse: 2.0959 | val_ll: -21.9418
+[3:37:25.267992] epoch: 6450 | elbo: 417026.615625 | train_rmse: 0.6137 | val_rmse: 2.1076 | val_ll: -22.1376
+[3:39:07.430240] epoch: 6500 | elbo: 413116.49562500004 | train_rmse: 0.6629 | val_rmse: 2.1072 | val_ll: -22.7544
+[3:40:47.530411] epoch: 6550 | elbo: 407463.56812499993 | train_rmse: 0.6895 | val_rmse: 2.0883 | val_ll: -22.1619
+[3:42:28.033904] epoch: 6600 | elbo: 400492.30593750003 | train_rmse: 0.8619 | val_rmse: 2.097 | val_ll: -21.9251
+[3:44:08.625751] epoch: 6650 | elbo: 397079.1556249999 | train_rmse: 0.67 | val_rmse: 2.0902 | val_ll: -21.6888
+[3:45:51.268735] epoch: 6700 | elbo: 392080.2831250001 | train_rmse: 0.6033 | val_rmse: 2.0584 | val_ll: -21.5753
+[3:47:33.610404] epoch: 6750 | elbo: 386793.7746875001 | train_rmse: 0.7643 | val_rmse: 2.0597 | val_ll: -21.4415
+[3:49:15.987888] epoch: 6800 | elbo: 382185.4984374999 | train_rmse: 0.6822 | val_rmse: 2.0496 | val_ll: -21.6633
+[3:50:58.520232] epoch: 6850 | elbo: 378890.7959375 | train_rmse: 0.7542 | val_rmse: 2.0486 | val_ll: -21.406
+[3:52:39.987118] epoch: 6900 | elbo: 375877.7221875 | train_rmse: 0.6334 | val_rmse: 2.0333 | val_ll: -20.9744
+[3:54:22.517932] epoch: 6950 | elbo: 369173.0240625 | train_rmse: 0.7554 | val_rmse: 2.0562 | val_ll: -20.0649
+[3:56:05.392915] epoch: 7000 | elbo: 367134.75312500005 | train_rmse: 0.6206 | val_rmse: 2.0437 | val_ll: -21.2139
+[3:57:47.859820] epoch: 7050 | elbo: 362076.31593750004 | train_rmse: 0.5752 | val_rmse: 2.0491 | val_ll: -21.7974
+[3:59:29.195158] epoch: 7100 | elbo: 359174.1859375 | train_rmse: 0.6523 | val_rmse: 2.0418 | val_ll: -20.3495
+[4:01:10.147213] epoch: 7150 | elbo: 354659.916875 | train_rmse: 0.5596 | val_rmse: 2.0109 | val_ll: -21.3938
+[4:02:52.213284] epoch: 7200 | elbo: 352211.1034375 | train_rmse: 0.6615 | val_rmse: 2.0196 | val_ll: -19.6942
+[4:04:34.639942] epoch: 7250 | elbo: 348662.900625 | train_rmse: 0.6588 | val_rmse: 2.0168 | val_ll: -19.9545
+[4:06:14.924019] epoch: 7300 | elbo: 345876.9465625001 | train_rmse: 0.647 | val_rmse: 2.03 | val_ll: -20.4198
+[4:07:53.751575] epoch: 7350 | elbo: 342357.73656249995 | train_rmse: 0.6576 | val_rmse: 2.0052 | val_ll: -20.092
+[4:09:34.027204] epoch: 7400 | elbo: 339909.18531250005 | train_rmse: 0.604 | val_rmse: 1.9867 | val_ll: -19.8109
+[4:11:14.920485] epoch: 7450 | elbo: 337547.929375 | train_rmse: 0.5568 | val_rmse: 1.99 | val_ll: -20.0748
+[4:12:54.853660] epoch: 7500 | elbo: 331987.8478124999 | train_rmse: 0.6201 | val_rmse: 1.9943 | val_ll: -19.6689
+[4:14:35.718020] epoch: 7550 | elbo: 332914.89093750005 | train_rmse: 0.604 | val_rmse: 1.9811 | val_ll: -20.2489
+[4:16:15.123213] epoch: 7600 | elbo: 326787.05437499995 | train_rmse: 0.582 | val_rmse: 2.0041 | val_ll: -19.7912
+[4:17:55.579844] epoch: 7650 | elbo: 324211.81656249997 | train_rmse: 0.5473 | val_rmse: 1.9656 | val_ll: -19.71
+[4:19:35.447628] epoch: 7700 | elbo: 321002.99624999997 | train_rmse: 0.5628 | val_rmse: 1.9577 | val_ll: -19.1318
+[4:21:15.124896] epoch: 7750 | elbo: 317378.65937499993 | train_rmse: 0.6122 | val_rmse: 1.9909 | val_ll: -20.0417
+[4:22:55.451826] epoch: 7800 | elbo: 318201.953125 | train_rmse: 0.6303 | val_rmse: 1.9629 | val_ll: -19.2579
+[4:24:37.627570] epoch: 7850 | elbo: 312301.5771875001 | train_rmse: 0.5687 | val_rmse: 1.9553 | val_ll: -18.9163
+[4:26:20.851893] epoch: 7900 | elbo: 311445.17874999996 | train_rmse: 0.5532 | val_rmse: 1.9631 | val_ll: -19.0961
+[4:28:04.231402] epoch: 7950 | elbo: 307482.025625 | train_rmse: 0.5622 | val_rmse: 1.9572 | val_ll: -18.5393
+[4:29:46.301655] epoch: 8000 | elbo: 304689.14718749997 | train_rmse: 0.5809 | val_rmse: 1.9533 | val_ll: -19.2776
+[4:31:27.662134] epoch: 8050 | elbo: 302483.02718750003 | train_rmse: 0.5904 | val_rmse: 1.9801 | val_ll: -18.9408
+[4:33:10.482907] epoch: 8100 | elbo: 300111.02 | train_rmse: 0.5608 | val_rmse: 1.9523 | val_ll: -19.8607
+[4:34:52.514369] epoch: 8150 | elbo: 297732.476875 | train_rmse: 0.8372 | val_rmse: 1.9393 | val_ll: -18.5898
+[4:36:34.993407] epoch: 8200 | elbo: 295887.3993749999 | train_rmse: 0.556 | val_rmse: 1.9433 | val_ll: -18.3196
+[4:38:17.156779] epoch: 8250 | elbo: 292751.09875 | train_rmse: 0.6151 | val_rmse: 1.9275 | val_ll: -18.6838
+[4:40:00.326807] epoch: 8300 | elbo: 290472.530625 | train_rmse: 0.9709 | val_rmse: 1.9268 | val_ll: -18.1351
+[4:41:42.499878] epoch: 8350 | elbo: 287146.1434375 | train_rmse: 0.5745 | val_rmse: 1.9103 | val_ll: -18.0412
+[4:43:26.254301] epoch: 8400 | elbo: 285485.60500000004 | train_rmse: 0.5128 | val_rmse: 1.9657 | val_ll: -17.931
+[4:45:09.407205] epoch: 8450 | elbo: 283747.09062499995 | train_rmse: 0.6262 | val_rmse: 1.9271 | val_ll: -18.1835
+[4:46:51.731346] epoch: 8500 | elbo: 279938.8140625 | train_rmse: 0.6336 | val_rmse: 1.9214 | val_ll: -18.2092
+[4:48:33.875580] epoch: 8550 | elbo: 276697.713125 | train_rmse: 0.5329 | val_rmse: 1.9151 | val_ll: -17.7209
+[4:50:15.095233] epoch: 8600 | elbo: 275584.01249999995 | train_rmse: 0.6269 | val_rmse: 1.9114 | val_ll: -17.4534
+[4:51:56.844668] epoch: 8650 | elbo: 274098.02656250005 | train_rmse: 0.5655 | val_rmse: 1.9059 | val_ll: -18.498
+[4:53:38.776148] epoch: 8700 | elbo: 277808.28031249996 | train_rmse: 0.5264 | val_rmse: 1.9044 | val_ll: -18.3246
+[4:55:20.651347] epoch: 8750 | elbo: 270470.0915625 | train_rmse: 0.5368 | val_rmse: 1.889 | val_ll: -17.4968
+[4:57:02.599662] epoch: 8800 | elbo: 269928.10750000004 | train_rmse: 0.7168 | val_rmse: 1.8952 | val_ll: -18.0331
+[4:58:44.345384] epoch: 8850 | elbo: 265442.01156250003 | train_rmse: 0.519 | val_rmse: 1.876 | val_ll: -18.0346
+[5:00:26.440794] epoch: 8900 | elbo: 264428.41921875003 | train_rmse: 0.5559 | val_rmse: 1.8832 | val_ll: -17.3616
+[5:02:08.434687] epoch: 8950 | elbo: 261122.58390625 | train_rmse: 0.5729 | val_rmse: 1.9432 | val_ll: -17.7126
+[5:03:49.845253] epoch: 9000 | elbo: 261398.42734375005 | train_rmse: 0.6904 | val_rmse: 1.8732 | val_ll: -17.5167
+[5:05:31.553612] epoch: 9050 | elbo: 258094.08937499992 | train_rmse: 0.5594 | val_rmse: 1.8853 | val_ll: -17.3423
+[5:07:12.850615] epoch: 9100 | elbo: 257473.588125 | train_rmse: 0.6286 | val_rmse: 1.8655 | val_ll: -17.6124
+[5:08:55.367791] epoch: 9150 | elbo: 255308.39484375 | train_rmse: 0.5477 | val_rmse: 1.8696 | val_ll: -17.775
+[5:10:37.065118] epoch: 9200 | elbo: 252920.71531250002 | train_rmse: 0.5046 | val_rmse: 1.8904 | val_ll: -17.7877
+[5:12:20.268359] epoch: 9250 | elbo: 250312.21453125 | train_rmse: 0.492 | val_rmse: 1.8577 | val_ll: -17.0495
+[5:14:03.148858] epoch: 9300 | elbo: 249852.0334375 | train_rmse: 0.5077 | val_rmse: 1.8558 | val_ll: -17.353
+[5:15:44.967877] epoch: 9350 | elbo: 245229.30406249998 | train_rmse: 0.5114 | val_rmse: 1.8505 | val_ll: -17.6988
+[5:17:26.393568] epoch: 9400 | elbo: 243852.23296875 | train_rmse: 0.7317 | val_rmse: 1.8725 | val_ll: -17.5824
+[5:19:08.497602] epoch: 9450 | elbo: 244327.86265624998 | train_rmse: 0.5603 | val_rmse: 1.8502 | val_ll: -17.4277
+[5:20:50.657279] epoch: 9500 | elbo: 242197.28015624997 | train_rmse: 0.5488 | val_rmse: 1.848 | val_ll: -17.1113
+[5:22:33.422233] epoch: 9550 | elbo: 240028.72750000004 | train_rmse: 0.7329 | val_rmse: 1.8487 | val_ll: -17.2101
+[5:24:17.049263] epoch: 9600 | elbo: 240546.82187500005 | train_rmse: 0.4917 | val_rmse: 1.8329 | val_ll: -17.2354
+[5:26:00.173888] epoch: 9650 | elbo: 239232.79109375 | train_rmse: 0.4673 | val_rmse: 1.8309 | val_ll: -17.1155
+[5:27:43.073151] epoch: 9700 | elbo: 239184.75703124996 | train_rmse: 0.5312 | val_rmse: 1.8633 | val_ll: -18.0972
+[5:29:24.671208] epoch: 9750 | elbo: 233027.20734375002 | train_rmse: 0.4771 | val_rmse: 1.839 | val_ll: -17.6544
+[5:31:04.906619] epoch: 9800 | elbo: 231748.221875 | train_rmse: 0.5046 | val_rmse: 1.9307 | val_ll: -18.1381
+[5:32:44.921716] epoch: 9850 | elbo: 233443.38890624995 | train_rmse: 0.5279 | val_rmse: 1.8467 | val_ll: -17.1306
+[5:34:25.646963] epoch: 9900 | elbo: 227453.9684375 | train_rmse: 0.5041 | val_rmse: 1.8325 | val_ll: -17.2315
+[5:36:06.190989] epoch: 9950 | elbo: 227929.64984375 | train_rmse: 0.5624 | val_rmse: 1.8412 | val_ll: -17.7089
+Training finished in 5:37:44.196908 seconds
+Saved SVI model to tests/dataset-tests/sin20-10k-s03/models/sin20-3x1024-s03/checkpoint_1.pt
+File Size is 16.19237232208252 MB
+data samples:  (1000, 1000)
+Sequential(
+  (0): Linear(in_features=20, out_features=1024, bias=True)
+  (1): ReLU()
+  (2): Sequential(
+    (0): Linear(in_features=1024, out_features=1024, bias=True)
+    (1): ReLU()
+  )
+  (3): Sequential(
+    (0): Linear(in_features=1024, out_features=1024, bias=True)
+    (1): ReLU()
+  )
+  (4): Linear(in_features=1024, out_features=1, bias=True)
+)
+Loaded SVI model from tests/dataset-tests/sin20-10k-s03/models/sin20-3x1024-s03/checkpoint_1.pt
+using device: cuda:7
+====== evaluating profile sin20-3x1024-s03 - 1 ======
+pred samples:  (1000, 1000)
+Evaluating train...
+Evaluating test...
+Evaluating in_domain...
+Evaluating out_domain...
+Eval done in 0:01:35.423685
+End time: 2023-06-23 19:56:56.293006
+Total time: 5:39:24.145479
