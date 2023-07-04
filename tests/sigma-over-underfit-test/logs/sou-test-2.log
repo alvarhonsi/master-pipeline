@@ -702,3 +702,7 @@ Using device: cuda:1
 [0:48:51.060433] epoch: 850 | elbo: 5355937.0175 | train_rmse: 3.1926 | val_rmse: 146.175 | val_ll: -1707.5624
 [0:51:45.045045] epoch: 900 | elbo: 5436100.47 | train_rmse: 2.8337 | val_rmse: 146.0952 | val_ll: -1890.3247
 [0:54:38.080827] epoch: 950 | elbo: 5982696.08 | train_rmse: 3.2019 | val_rmse: 145.984 | val_ll: -2103.2617
+[0:57:28.764525] epoch: 1000 | elbo: 5185793.4575000005 | train_rmse: 3.7704 | val_rmse: 145.7345 | val_ll: -2296.4929
+[1:00:20.654456] epoch: 1050 | elbo: 5129786.835 | train_rmse: 4.2959 | val_rmse: 145.8429 | val_ll: -2464.9822
+[1:03:12.494838] epoch: 1100 | elbo: 5303303.1875 | train_rmse: 2.4795 | val_rmse: 145.588 | val_ll: -2685.6248
+[1:06:06.728111] epoch: 1150 | elbo: 5055944.119999998 | train_rmse: 3.0238 | val_rmse: 145.5134 | val_ll: -2843.0315
