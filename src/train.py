@@ -59,7 +59,7 @@ def make_inference_model(config, dataset_config, device=None):
     print("Settings:")
     print("DEVICE:", DEVICE, "INFERENCE_TYPE:", INFERENCE_TYPE, "OBS_MODEL:", OBS_MODEL, "PRIOR_LOC:",
           PRIOR_LOC, "PRIOR_SCALE:", PRIOR_SCALE, "LIKELIHOOD_SCALE_LOC:", LIKELIHOOD_SCALE_LOC, "LIKELIHOOD_SCALE:", LIKELIHOOD_SCALE, "GUIDE_SCALE:", GUIDE_SCALE, "TRAIN_SIZE:", TRAIN_SIZE)
-    
+
     prior_dist = dist.Normal(torch.tensor(
         PRIOR_LOC, device=DEVICE), torch.tensor(PRIOR_SCALE, device=DEVICE))
     prior = tyxe.priors.IIDPrior(prior_dist)
@@ -79,7 +79,7 @@ def make_inference_model(config, dataset_config, device=None):
                            torch.tensor(LIKELIHOOD_SCALE, device=DEVICE))
         obs_model = tyxe.likelihoods.HomoskedasticGaussian(
             dataset_size=TRAIN_SIZE, scale=scale)
-        
+
         def init_fn(*args, **kwargs):
             return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
         likelihood_guide_builder = partial(
@@ -110,7 +110,7 @@ def make_inference_model(config, dataset_config, device=None):
             f"Inference type {INFERENCE_TYPE} not supported. Supported types: svi, mcmc")
 
 
-def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1, num_workers=4):
+def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1, rerun_start=1, num_workers=4):
 
     NAME = config["NAME"]
     DEVICE = device if device != None else config["DEVICE"]
@@ -177,14 +177,14 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
     x_t, y_t = next(iter(train_dataloader))
     print(x_t.shape, y_t.shape)
 
-    for run in range(1, reruns + 1):
+    for run in range(rerun_start, reruns + 1):
         # Create model
         bnn = make_inference_model(config, dataset_config, device=DEVICE)
 
-        dummy_data = (torch.zeros(1, X_DIM, device=DEVICE), torch.zeros(1, Y_DIM, device=DEVICE))
+        dummy_data = (torch.zeros(1, X_DIM, device=DEVICE),
+                      torch.zeros(1, Y_DIM, device=DEVICE))
         guide_tr = poutine.trace(bnn.guide).get_trace(*dummy_data)
         guide_tr.nodes.keys()
-
 
         params = pyro.get_param_store()
         print("Initial parameters:")

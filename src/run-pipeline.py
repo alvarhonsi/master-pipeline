@@ -93,6 +93,7 @@ if __name__ == "__main__":
         dataset_config = dataset_configs[config["DATASET"]]
 
         RERUNS = config.getint("RERUNS")
+        RERUN_START = config.getint("RERUN_START")
 
         # Train model
         if TRAIN:
@@ -103,7 +104,7 @@ if __name__ == "__main__":
                 os.mkdir(f"{BASE_DIR}/results")
 
             train.train(
-                config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print, reruns=RERUNS, num_workers=3)
+                config, dataset_config, f"{BASE_DIR}", device=args.device, print_train=args.print, reruns=RERUNS, rerun_start=RERUN_START, num_workers=3)
 
         # Evaluate model
         if EVAL:
