@@ -74,7 +74,8 @@ class _ReparameterizationMessenger(Messenger):
         # the samples from the distributions. However this still means that the self.deps dictionary will keep growing
         # if the distribution objects from the model/guide are kept around.
         self.deps = WeakValueDictionary()
-        self.original_fns = [getattr(F, name) for name in self.reparameterizable_functions]
+        self.original_fns = [getattr(F, name)
+                             for name in self.reparameterizable_functions]
         self._make_reparameterizable_functions_effectful()
         return super().__enter__()
 
@@ -86,7 +87,8 @@ class _ReparameterizationMessenger(Messenger):
 
     def _make_reparameterizable_functions_effectful(self):
         for name, fn in zip(self.reparameterizable_functions, self.original_fns):
-            effectful_fn = update_wrapper(effectful(fn, type="reparameterizable"), fn)
+            effectful_fn = update_wrapper(
+                effectful(fn, type="reparameterizable"), fn)
             setattr(F, name, effectful_fn)
 
     def _reset_reparameterizable_functions(self):
@@ -117,7 +119,8 @@ class _ReparameterizationMessenger(Messenger):
             w_fn = self.deps[id(w)]
             b_fn = self.deps[id(b)] if b is not None else None
             if torch.is_tensor(x) and _is_reparameterizable(w_fn) and _is_reparameterizable(b_fn):
-                msg["value"] = self._reparameterize(msg, x, w_fn, w, b_fn, b, *args, **kwargs)
+                msg["value"] = self._reparameterize(
+                    msg, x, w_fn, w, b_fn, b, *args, **kwargs)
                 msg["done"] = True
 
     def _reparameterize(self, msg, x, w_loc, w_var, b_loc, b_var, *args, **kwargs):
@@ -159,21 +162,27 @@ class FlipoutMessenger(_ReparameterizationMessenger):
         loc = fn(x, w_loc, None, *args, **kwargs)
 
         # x might be one dimensional for a 1-d input with a single datapoint to F.linear, F.conv always has a batch dim
-        batch_shape = x.shape[:-self.FUNCTION_RANKS[fn.__name__]] if x.ndim > 1 else tuple()
+        batch_shape = x.shape[:-self.FUNCTION_RANKS[fn.__name__]
+                              ] if x.ndim > 1 else tuple()
         # w might be 1-d for F.linear for a 0-d output
         output_shape = (w_loc.shape[0],) if w_loc.ndim > 1 else tuple()
-        input_shape = (w_loc.shape[1],) if w_loc.ndim > 1 else (w_loc.shape[0],)
+        input_shape = (w_loc.shape[1],) if w_loc.ndim > 1 else (
+            w_loc.shape[0],)
 
         if not hasattr(w, "sign_input"):
-            w.sign_input = _pad_right_like(_rand_signs(batch_shape + input_shape, device=loc.device), x)
-            w.sign_output = _pad_right_like(_rand_signs(batch_shape + output_shape, device=loc.device), x)
+            w.sign_input = _pad_right_like(_rand_signs(
+                batch_shape + input_shape, device=loc.device), x)
+            w.sign_output = _pad_right_like(_rand_signs(
+                batch_shape + output_shape, device=loc.device), x)
 
         w_perturbation = w - w_loc
-        perturbation = fn(x * w.sign_input, w_perturbation, None, *args, **kwargs) * w.sign_output
+        perturbation = fn(x * w.sign_input, w_perturbation,
+                          None, *args, **kwargs) * w.sign_output
 
         output = loc + perturbation
         if b is not None:
             b_loc, b_var = _get_loc_var(b_fn)
-            bias = _pad_right_like(dist.Normal(b_loc, b_var.sqrt()).rsample(batch_shape), output)
+            bias = _pad_right_like(dist.Normal(
+                b_loc, b_var.sqrt()).rsample(batch_shape), output)
             output += bias
         return output

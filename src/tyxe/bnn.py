@@ -287,10 +287,6 @@ class VariationalBNN(_SupervisedBNN):
             *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
         predictions2 = self.predict(
             *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
-        
-        print(predictions[0][0])
-        print(predictions2[0])
-        print(predictions2[0].mean())
 
         mse = self.likelihood.error(predictions, y, reduction=reduction)
         ll = self.likelihood.log_likelihood(
