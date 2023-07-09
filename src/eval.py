@@ -94,10 +94,6 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
     NUM_DIST_SAMPLES = config.getint("NUM_DIST_SAMPLES")
     EVAL_BATCH_SIZE = config.getint("EVAL_BATCH_SIZE")
 
-    # Check if GPU is available
-    if DEVICE[:4] == "cuda" and not torch.cuda.is_available():
-        raise ValueError("GPU not available")
-
     # Reproducibility
     pyro.set_rng_seed(SEED)
     torch.manual_seed(SEED)
@@ -187,12 +183,14 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
     print("data samples: ", data_in_domain_samples.shape)
 
     for run in range(1, reruns + 1):
+        #####
         # Load model
-        if bnn == None:
-            bnn = train.make_inference_model(
-                config, dataset_config, device=DEVICE)
-            bnn = train.load_bnn(bnn, config,
-                                 load_path=f"{DIR}/models/{NAME}/checkpoint_{run}.pt", device=DEVICE)
+        bnn = train.make_inference_model(
+            config, dataset_config, device=DEVICE)
+        bnn = train.load_bnn(bnn, config,
+                             load_path=f"{DIR}/models/{NAME}/checkpoint_{run}.pt", device=DEVICE)
+
+        #####
 
         # Ready results directory
         if not os.path.exists(f"{DIR}/results/{NAME}"):

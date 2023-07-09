@@ -13,6 +13,7 @@ import pyro.nn as pynn
 import pyro.poutine as poutine
 from pyro.infer import SVI, Trace_ELBO, TraceMeanField_ELBO, MCMC
 from pyro.nn import PyroModule, PyroSample, PyroParam
+from pyro.infer.reparam.strategies import AutoReparam
 import pyro.distributions as dist
 import pyro.infer.autoguide.initialization as ag_init
 
@@ -21,15 +22,39 @@ from functools import partial
 from . import util
 
 
-def lr_linear(x, w_loc, w_scale, b_loc, b_scale):
-    _w_mu = torch.matmul(x, w_loc.t())
-    _w_var = torch.matmul(x.pow(2), w_scale.t().pow(2))
-    _w_std = torch.sqrt(1e-06 + F.softplus(_w_var))
-    _w_eps = torch.randn_like(_w_std)
-    _w_out = _w_mu + _w_std * _w_eps
-    _b_out = b_loc + b_scale * torch.randn_like(b_loc)
+def _as_tuple(x):
+    if isinstance(x, (list, tuple)):
+        return x
+    return x,
 
-    return _w_out + _b_out
+
+class LR_Linear(dist.Distribution):
+    def __init__(self, x, w_loc, w_scale, b_loc, b_scale):
+        self.x = x
+        self.w_loc = w_loc
+        self.w_scale = w_scale
+        self.b_loc = b_loc
+        self.b_scale = b_scale
+
+    def sample(self):
+        _w_mu = torch.matmul(self.x, self.w_loc.t())
+        _w_var = torch.matmul(self.x.pow(2), self.w_scale.t().pow(2))
+        _w_std = torch.sqrt(1e-06 + F.softplus(_w_var))
+
+        w = dist.Normal(_w_mu, _w_std).rsample()
+        b = dist.Normal(self.b_loc, self.b_scale).rsample()
+
+        return w + b
+
+    def log_prob(self, value):
+        _w_mu = torch.matmul(self.x, self.w_loc.t())
+        _w_var = torch.matmul(self.x.pow(2), self.w_scale.t().pow(2))
+        _w_std = torch.sqrt(1e-06 + F.softplus(_w_var))
+
+        w = dist.Normal(_w_mu, _w_std).log_prob(value)
+        b = dist.Normal(self.b_loc, self.b_scale).log_prob(value)
+
+        return w + b
 
 
 class NormalPrior():
@@ -59,17 +84,19 @@ class LRLayer(pynn.PyroModule):
             (out_features,), prior.scale, device=self.device, dtype=torch.float)
 
     def forward(self, x):
-        out = pyro.sample("act", partial(
-            lr_linear, x, self.loc_w, self.scale_w, self.loc_b, self.scale_b))
+        lr_lin = LR_Linear(x, self.loc_w, self.scale_w,
+                           self.loc_b, self.scale_b)
+        out = pyro.sample("act", lr_lin)
         return out
 
 
 class BayesianLayer(pynn.PyroModule):
-    def __init__(self, in_features, out_features, prior, device="cpu", name=""):
+    def __init__(self, in_features, out_features, prior, layer_num, device="cpu", name=""):
         super().__init__(name)
         self.device = device
         self.linear = PyroModule[nn.Linear](in_features, out_features)
         self.name = name
+        self.layer_num = layer_num
 
         self.loc_w = torch.full_like(
             self.linear.weight, prior.loc, device=self.device)
@@ -81,12 +108,16 @@ class BayesianLayer(pynn.PyroModule):
             self.linear.bias, prior.scale, device=self.device)
 
         self.linear.weight = PyroSample(dist.Normal(
-            self.loc_w, self.scale_w).to_event(2).rsample)
+            self.loc_w, self.scale_w).to_event(2))
         self.linear.bias = PyroSample(dist.Normal(
-            self.loc_b, self.scale_b).to_event(1).rsample)
+            self.loc_b, self.scale_b).to_event(1))
 
+    @pynn.pyro_method
     def _forward_lr(self, x):
-        return lr_linear(x, self.loc_w, self.scale_w, self.loc_b, self.scale_b)
+        lr_lin = LR_Linear(x, self.loc_w, self.scale_w,
+                           self.loc_b, self.scale_b)
+        out = pyro.sample(f"act{self.layer_num}", lr_lin)
+        return out
 
     def forward(self, x):
         return self.linear(x)
@@ -103,25 +134,24 @@ class BayesianNN(PyroModule):
 
         if hidden_features == []:
             self._modules["fc0"] = BayesianLayer(
-                in_features, out_features, self.prior, device=self.device)
+                in_features, out_features, self.prior, layer_num=0, device=self.device)
         else:
             self._modules["fc0"] = BayesianLayer(
-                in_features, hidden_features[0], self.prior, device=self.device)
+                in_features, hidden_features[0], self.prior, layer_num=0, device=self.device)
             self._modules["act0"] = nn.ReLU()
             for i in range(len(hidden_features)-1):
                 self._modules["fc"+str(i+1)] = BayesianLayer(hidden_features[i],
-                                                             hidden_features[i+1], self.prior, device=self.device)
+                                                             hidden_features[i+1], self.prior, layer_num=i+1, device=self.device)
                 self._modules["act"+str(i+1)] = nn.ReLU()
             self._modules["fc"+str(len(hidden_features))] = BayesianLayer(
-                hidden_features[-1], out_features, self.prior, device=self.device)
+                hidden_features[-1], out_features, self.prior, layer_num=len(hidden_features), device=self.device)
 
     def _forward_lr(self, x):
         out = x
         for name, module in self._modules.items():
             if "fc" in name:
                 num = int(name[2:])
-                out = pyro.sample(
-                    "activation"+str(num), partial(module._forward_lr, out))
+                out = module._forward_lr(out)
             elif "act" in name:
                 out = module(out)
 
@@ -275,12 +305,39 @@ class SVI_BNN():
         self.likelihood = likelihood
         self.likelihood_guide = likelihood_guide
 
+    @poutine.reparam(config=AutoReparam())
     def _model(self, x, obs=None):
-        out = self.model(x)
-        self.likelihood(out, obs)
+        out = self.model(*_as_tuple(x))
         return out
 
-    def fit(self, data_loader, optim_builder, loss_fn, num_epochs, callback=None, num_particles=1, device=None, lr=False):
+    @poutine.reparam(config=AutoReparam())
+    def _guide(self, x, obs=None):
+        sites = self.guide(*_as_tuple(x))
+        return sites
+
+    def fit(self, data_loader, optim, num_epochs, callback=None, num_particles=1, device=None):
+        old_training_state = self.model.training
+        self.model.train(True)
+
+        loss = TraceMeanField_ELBO(num_particles)
+        svi = SVI(self._model, self._guide, optim, loss=loss)
+
+        for i in range(num_epochs):
+            elbo = 0.
+            num_batch = 1
+            for num_batch, (input_data, observation_data) in enumerate(iter(data_loader), 1):
+                input_data, observation_data = input_data.to(
+                    self.device), observation_data.to(self.device)
+                elbo += svi.step(input_data, observation_data)
+
+            # the callback can stop training by returning True
+            if callback is not None and callback(self, i, elbo / num_batch):
+                break
+
+        self.model.train(old_training_state)
+        return svi
+
+    def _fit(self, data_loader, optim_builder, loss_fn, num_epochs, callback=None, num_particles=1, device=None, lr=False):
         old_training_state = self.model.training
         self.model.train(True)
 
