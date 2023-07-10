@@ -28,16 +28,20 @@ def multidim_sinusoidal_combination(xs, noise=0) -> np.array:
 def multidim_sinusoidal_combination_easy(xs, noise=0) -> np.array:
     res = 0
     def filter(i): return 0 if i % 10 == 0 or i+1 % 10 == 0 else 1
+
     if xs.shape[1] < 2:
-        return 5*np.sin(2 * xs[:, 0])*xs[:, 0] + noise
+        return 2*np.sin(2 * xs[:, 0])*xs[:, 0] + noise
     for i in range(xs.shape[1] - 1):
-        res += filter(i)*5*np.sin(2 * xs[:, i])*xs[:, i+1]
+        xi = xs[:, i]
+        xj = xs[:, i+1]
+        res += filter(i)*2*np.sin(2 * xi)*xj
     return res + noise
 
 
 def multidim_exponential_combination_old(xs, noise=0) -> np.array:
     res = 0
     def filter(i): return 0 if i % 10 == 0 or i+1 % 10 == 0 else 1
+
     if xs.shape[1] < 2:
         xi = xs[:, 0]
         return 10 * np.exp((-(xi)**2)) * xi + noise
