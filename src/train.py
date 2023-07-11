@@ -178,6 +178,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
     print(x_t.shape, y_t.shape)
 
     for run in range(rerun_start, reruns + 1):
+        pyro.clear_param_store()
         # Create model
         bnn = make_inference_model(config, dataset_config, device=DEVICE)
 
@@ -194,8 +195,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
         # RUN TRAINING
         print('Using device: {}'.format(DEVICE))
         print(f'===== Training profile {NAME} - {run} =====')
-
-        pyro.clear_param_store()
 
         start = time.time()
 
