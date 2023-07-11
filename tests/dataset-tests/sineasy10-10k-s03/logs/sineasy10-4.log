@@ -1,0 +1,156 @@
+Start time: 2023-07-10 22:39:49.749597
+torch.Size([1024, 10]) torch.Size([1024, 1])
+Sequential(
+  (0): Linear(in_features=10, out_features=1024, bias=True)
+  (1): ReLU()
+  (2): Sequential(
+    (0): Linear(in_features=1024, out_features=1024, bias=True)
+    (1): ReLU()
+  )
+  (3): Sequential(
+    (0): Linear(in_features=1024, out_features=1024, bias=True)
+    (1): ReLU()
+  )
+  (4): Linear(in_features=1024, out_features=1, bias=True)
+)
+Settings:
+DEVICE: cuda:7 INFERENCE_TYPE: svi OBS_MODEL: homoskedastic_gamma PRIOR_LOC: 0.0 PRIOR_SCALE: 1.0 LIKELIHOOD_SCALE_LOC: 2.0 LIKELIHOOD_SCALE: 1.0 GUIDE_SCALE: 0.01 TRAIN_SIZE: 10000
+Initial parameters:
+net_guide.net.0.weight.loc torch.Size([1024, 10]) Parameter containing:
+tensor([[-0.2089,  0.1508,  0.1643,  ...,  0.2689,  0.2351, -0.3329],
+        [ 0.2061,  0.0734, -0.9134,  ...,  0.2025,  0.1104, -0.0875],
+        [-0.0934,  0.5361, -0.2912,  ...,  0.1764,  0.0960, -0.3162],
+        ...,
+        [ 0.0451,  0.0931,  0.0445,  ..., -0.0960, -0.2719,  0.3048],
+        [-0.3908,  0.1906, -0.1231,  ..., -0.1292,  0.0310,  0.1810],
+        [-0.0436, -0.3058, -0.1012,  ..., -0.1576,  0.2240, -0.3060]],
+       device='cuda:7', requires_grad=True)
+net_guide.net.0.weight.scale torch.Size([1024, 10]) tensor([[0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        ...,
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100]],
+       device='cuda:7', grad_fn=<AddBackward0>)
+net_guide.net.0.bias.loc torch.Size([1024]) Parameter containing:
+tensor([-0.5753, -0.3101,  0.2168,  ..., -0.2042,  0.0234,  0.0770],
+       device='cuda:7', requires_grad=True)
+net_guide.net.0.bias.scale torch.Size([1024]) tensor([0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100], device='cuda:7',
+       grad_fn=<AddBackward0>)
+net_guide.net.2.0.weight.loc torch.Size([1024, 1024]) Parameter containing:
+tensor([[ 0.0352, -0.0762,  0.1614,  ...,  0.1166, -0.3852,  0.3676],
+        [-0.1264,  0.2264,  0.1796,  ..., -0.5443, -0.3937,  0.0275],
+        [-0.7284,  0.3423,  0.0622,  ...,  0.3707,  0.4784,  0.1133],
+        ...,
+        [ 0.3014, -0.5653,  0.4463,  ...,  0.2374,  0.3848,  0.1976],
+        [ 0.1413, -0.3396, -0.2743,  ..., -0.4204,  0.2095,  0.0190],
+        [-0.1254,  0.0109,  0.6786,  ..., -0.0577, -0.0040, -0.2138]],
+       device='cuda:7', requires_grad=True)
+net_guide.net.2.0.weight.scale torch.Size([1024, 1024]) tensor([[0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        ...,
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100]],
+       device='cuda:7', grad_fn=<AddBackward0>)
+net_guide.net.2.0.bias.loc torch.Size([1024]) Parameter containing:
+tensor([-0.1085, -0.0696,  0.4176,  ..., -0.3476,  0.6824,  0.4097],
+       device='cuda:7', requires_grad=True)
+net_guide.net.2.0.bias.scale torch.Size([1024]) tensor([0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100], device='cuda:7',
+       grad_fn=<AddBackward0>)
+net_guide.net.3.0.weight.loc torch.Size([1024, 1024]) Parameter containing:
+tensor([[ 0.2941, -0.2311,  0.2470,  ...,  0.1197, -0.5038, -0.3242],
+        [ 0.3758,  0.1970, -0.3776,  ..., -0.2569, -0.5728, -0.2872],
+        [-0.0497, -0.1804, -0.2681,  ...,  0.4026, -0.1131,  0.2799],
+        ...,
+        [ 0.2761, -0.1192, -0.4168,  ..., -0.6176,  0.2410,  0.1452],
+        [-0.2655, -0.4898, -0.0059,  ..., -0.3315,  0.3965,  0.2428],
+        [-0.3038, -0.4560,  0.0440,  ..., -0.1564,  0.1564,  0.0968]],
+       device='cuda:7', requires_grad=True)
+net_guide.net.3.0.weight.scale torch.Size([1024, 1024]) tensor([[0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        ...,
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100],
+        [0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100]],
+       device='cuda:7', grad_fn=<AddBackward0>)
+net_guide.net.3.0.bias.loc torch.Size([1024]) Parameter containing:
+tensor([-0.2846,  0.3795, -0.3625,  ..., -0.3964,  0.1820,  0.3978],
+       device='cuda:7', requires_grad=True)
+net_guide.net.3.0.bias.scale torch.Size([1024]) tensor([0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100], device='cuda:7',
+       grad_fn=<AddBackward0>)
+net_guide.net.4.weight.loc torch.Size([1, 1024]) Parameter containing:
+tensor([[-0.4354,  0.1229,  0.3068,  ...,  0.0374,  0.2633,  0.3091]],
+       device='cuda:7', requires_grad=True)
+net_guide.net.4.weight.scale torch.Size([1, 1024]) tensor([[0.0100, 0.0100, 0.0100,  ..., 0.0100, 0.0100, 0.0100]],
+       device='cuda:7', grad_fn=<AddBackward0>)
+net_guide.net.4.bias.loc torch.Size([1]) Parameter containing:
+tensor([0.1311], device='cuda:7', requires_grad=True)
+net_guide.net.4.bias.scale torch.Size([1]) tensor([0.0100], device='cuda:7', grad_fn=<AddBackward0>)
+likelihood_guide.likelihood._scale.loc torch.Size([]) Parameter containing:
+tensor(0.2947, device='cuda:7', requires_grad=True)
+likelihood_guide.likelihood._scale.scale torch.Size([]) tensor(0.0100, device='cuda:7', grad_fn=<AddBackward0>)
+Using device: cuda:7
+===== Training profile sineasy10-3x1024-sl - 1 =====
+[0:00:35.918959] epoch: 0 | elbo: 282076473.44 | train_rmse: 258.1631 | val_rmse: 260.7178 | val_ll: -46.5163
+[0:13:27.895154] epoch: 50 | elbo: 16740460.309999999 | train_rmse: 46.7336 | val_rmse: 59.2938 | val_ll: -6.819
+[0:26:07.240092] epoch: 100 | elbo: 13090558.29 | train_rmse: 31.7973 | val_rmse: 50.5462 | val_ll: -6.2171
+[0:38:33.860500] epoch: 150 | elbo: 11557701.520000001 | train_rmse: 23.1044 | val_rmse: 46.7987 | val_ll: -6.0563
+[0:51:10.250490] epoch: 200 | elbo: 10744693.59 | train_rmse: 17.2387 | val_rmse: 44.5479 | val_ll: -5.9659
+[1:03:22.581106] epoch: 250 | elbo: 10222853.459999999 | train_rmse: 12.8511 | val_rmse: 42.9372 | val_ll: -5.9436
+[1:15:32.860859] epoch: 300 | elbo: 9892741.209999999 | train_rmse: 9.6427 | val_rmse: 41.836 | val_ll: -5.9318
+[1:27:53.141145] epoch: 350 | elbo: 9639908.28 | train_rmse: 7.3349 | val_rmse: 40.6882 | val_ll: -5.9372
+[1:40:07.542886] epoch: 400 | elbo: 9441292.75 | train_rmse: 5.7497 | val_rmse: 39.6626 | val_ll: -5.9569
+[1:52:42.391567] epoch: 450 | elbo: 9270266.3 | train_rmse: 4.7538 | val_rmse: 38.7175 | val_ll: -5.9754
+[2:04:55.562069] epoch: 500 | elbo: 9114289.839999998 | train_rmse: 4.2116 | val_rmse: 37.7596 | val_ll: -6.0349
+[2:16:54.890134] epoch: 550 | elbo: 8961925.260000002 | train_rmse: 3.6461 | val_rmse: 36.7613 | val_ll: -6.002
+[2:28:48.888318] epoch: 600 | elbo: 8826031.05 | train_rmse: 3.3705 | val_rmse: 35.5603 | val_ll: -5.9906
+[2:40:52.238823] epoch: 650 | elbo: 8682291.09 | train_rmse: 3.1943 | val_rmse: 34.4434 | val_ll: -5.9873
+[2:52:40.002409] epoch: 700 | elbo: 8539914.319999998 | train_rmse: 3.1476 | val_rmse: 33.128 | val_ll: -5.8998
+[3:04:55.559760] epoch: 750 | elbo: 8411653.584999999 | train_rmse: 3.0582 | val_rmse: 31.8216 | val_ll: -5.9421
+[3:17:10.902647] epoch: 800 | elbo: 8277418.88 | train_rmse: 3.5713 | val_rmse: 30.5836 | val_ll: -5.8099
+[3:29:29.100351] epoch: 850 | elbo: 8140405.2700000005 | train_rmse: 2.9827 | val_rmse: 29.1446 | val_ll: -5.7085
+[3:41:28.623202] epoch: 900 | elbo: 8012506.57 | train_rmse: 2.716 | val_rmse: 27.8263 | val_ll: -5.6081
+[3:53:31.308356] epoch: 950 | elbo: 7880889.029999999 | train_rmse: 3.0439 | val_rmse: 26.5351 | val_ll: -5.5396
+[4:05:47.692709] epoch: 1000 | elbo: 7749263.695000002 | train_rmse: 2.6809 | val_rmse: 25.0694 | val_ll: -5.4612
+[4:18:10.355477] epoch: 1050 | elbo: 7621336.7 | train_rmse: 2.6046 | val_rmse: 23.7546 | val_ll: -5.2984
+[4:30:28.870474] epoch: 1100 | elbo: 7493653.26 | train_rmse: 2.5246 | val_rmse: 22.415 | val_ll: -5.1996
+[4:42:58.754325] epoch: 1150 | elbo: 7365134.844999999 | train_rmse: 2.4909 | val_rmse: 21.0427 | val_ll: -5.0637
+[4:54:44.859422] epoch: 1200 | elbo: 7239185.385 | train_rmse: 2.4484 | val_rmse: 19.6596 | val_ll: -4.8813
+[5:06:25.035858] epoch: 1250 | elbo: 7114927.480000001 | train_rmse: 2.3873 | val_rmse: 18.1956 | val_ll: -4.7405
+[5:20:39.912320] epoch: 1300 | elbo: 6989887.0200000005 | train_rmse: 2.4153 | val_rmse: 16.8177 | val_ll: -4.6156
+[5:33:18.050627] epoch: 1350 | elbo: 6866988.245 | train_rmse: 2.2149 | val_rmse: 15.5059 | val_ll: -4.4569
+[5:46:23.428835] epoch: 1400 | elbo: 6744844.894999999 | train_rmse: 2.1989 | val_rmse: 14.23 | val_ll: -4.3222
+[5:58:57.828396] epoch: 1450 | elbo: 6625228.915 | train_rmse: 2.0892 | val_rmse: 12.9417 | val_ll: -4.1699
+[6:13:07.772215] epoch: 1500 | elbo: 6507692.160000001 | train_rmse: 2.0771 | val_rmse: 11.7581 | val_ll: -4.0386
+[6:27:09.897447] epoch: 1550 | elbo: 6390981.17 | train_rmse: 2.001 | val_rmse: 10.578 | val_ll: -3.8924
+[6:41:02.506392] epoch: 1600 | elbo: 6275772.835000001 | train_rmse: 2.0 | val_rmse: 9.4919 | val_ll: -3.7427
+[6:55:23.319537] epoch: 1650 | elbo: 6161573.640000001 | train_rmse: 1.8951 | val_rmse: 8.3902 | val_ll: -3.606
+[7:09:37.511931] epoch: 1700 | elbo: 6048520.35 | train_rmse: 1.8238 | val_rmse: 7.4032 | val_ll: -3.4554
+[7:23:35.034341] epoch: 1750 | elbo: 5937008.345000001 | train_rmse: 1.8166 | val_rmse: 6.5845 | val_ll: -3.3181
+[7:37:59.173489] epoch: 1800 | elbo: 5825824.93 | train_rmse: 1.7558 | val_rmse: 5.8625 | val_ll: -3.1911
+[7:52:04.556450] epoch: 1850 | elbo: 5715496.23 | train_rmse: 1.7194 | val_rmse: 5.2436 | val_ll: -3.0647
+[8:06:12.288448] epoch: 1900 | elbo: 5605752.3 | train_rmse: 1.6935 | val_rmse: 4.7328 | val_ll: -2.9574
+[8:20:54.574956] epoch: 1950 | elbo: 5496233.714999999 | train_rmse: 1.6681 | val_rmse: 4.3193 | val_ll: -2.8682
+[8:35:10.870506] epoch: 2000 | elbo: 5387229.540000001 | train_rmse: 1.6539 | val_rmse: 4.0158 | val_ll: -2.797
+[8:49:35.536733] epoch: 2050 | elbo: 5278365.3149999995 | train_rmse: 1.6445 | val_rmse: 3.8137 | val_ll: -2.7506
+[9:03:43.058531] epoch: 2100 | elbo: 5169514.625000001 | train_rmse: 1.6333 | val_rmse: 3.6684 | val_ll: -2.7123
+[9:18:03.553014] epoch: 2150 | elbo: 5060615.625 | train_rmse: 1.6367 | val_rmse: 3.5575 | val_ll: -2.682
+[9:32:11.164058] epoch: 2200 | elbo: 4951630.215000001 | train_rmse: 1.6239 | val_rmse: 3.4644 | val_ll: -2.6583
+[9:46:54.474443] epoch: 2250 | elbo: 4842491.819999998 | train_rmse: 1.622 | val_rmse: 3.3906 | val_ll: -2.6424
+[10:00:52.673928] epoch: 2300 | elbo: 4733219.114999999 | train_rmse: 1.603 | val_rmse: 3.3134 | val_ll: -2.6232
+[10:15:47.807644] epoch: 2350 | elbo: 4623723.424999999 | train_rmse: 1.5873 | val_rmse: 3.2607 | val_ll: -2.6079
+[10:30:59.308591] epoch: 2400 | elbo: 4514208.369999999 | train_rmse: 1.5906 | val_rmse: 3.2052 | val_ll: -2.5917
+[10:45:21.937322] epoch: 2450 | elbo: 4404652.865 | train_rmse: 1.5776 | val_rmse: 3.1524 | val_ll: -2.568
+[11:00:06.029494] epoch: 2500 | elbo: 4295190.649999999 | train_rmse: 1.5598 | val_rmse: 3.0942 | val_ll: -2.5501
+[11:14:24.536358] epoch: 2550 | elbo: 4185922.6849999996 | train_rmse: 1.5542 | val_rmse: 3.0409 | val_ll: -2.5331
+[11:28:22.044893] epoch: 2600 | elbo: 4076930.8325000005 | train_rmse: 1.5567 | val_rmse: 3.0006 | val_ll: -2.5114
+[11:42:37.840531] epoch: 2650 | elbo: 3968328.47 | train_rmse: 1.5501 | val_rmse: 2.9532 | val_ll: -2.4947
+[11:56:21.450047] epoch: 2700 | elbo: 3860121.4174999995 | train_rmse: 1.5384 | val_rmse: 2.9159 | val_ll: -2.4759
+[12:10:52.754090] epoch: 2750 | elbo: 3752508.2175 | train_rmse: 1.5331 | val_rmse: 2.8746 | val_ll: -2.4578
+[12:25:03.629566] epoch: 2800 | elbo: 3645382.53 | train_rmse: 1.5346 | val_rmse: 2.8348 | val_ll: -2.4474
+[12:39:30.455945] epoch: 2850 | elbo: 3538798.1724999994 | train_rmse: 1.5342 | val_rmse: 2.7954 | val_ll: -2.4386
+[12:53:03.952091] epoch: 2900 | elbo: 3432698.95 | train_rmse: 1.5405 | val_rmse: 2.749 | val_ll: -2.4195
