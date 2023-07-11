@@ -1,4 +1,4 @@
 dir = tests/dataset-tests/sineasy10-10k-s03
 name = sineasy10
 devices = cuda:4, cuda:5, cuda:6, cuda:7
-profiles = sineasy10-3x512-s03, sineasy10-3x1024-s03, sineasy10-3x512-sl, sineasy10-3x1024-sl
+profiles = sineasy10-3x1024-s03 sineasy10-3x1024-sl, sineasy10-4x1024-s03 sineasy10-4x1024-sl, sineasy10-4x512-s03 sineasy10-4x512-sl, sineasy10-3x512-s03 sineasy10-3x512-sl
