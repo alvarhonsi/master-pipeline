@@ -1,0 +1,7 @@
+Start time: 2023-07-13 17:44:01.643185
+Traceback (most recent call last):
+  File "/Home/siv31/tak011/master-pipeline/src/run-pipeline.py", line 93, in <module>
+    dataset_config = dataset_configs[config["DATASET"]]
+  File "/Home/siv31/tak011/.conda/envs/master/lib/python3.9/configparser.py", line 963, in __getitem__
+    raise KeyError(key)
+KeyError: 'sineasy10-10k-s05'

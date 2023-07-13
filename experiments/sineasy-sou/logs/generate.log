@@ -1,0 +1,17 @@
+ERROR conda.cli.main_run:execute(34): Subprocess for 'conda run ['python', 'src/run-pipeline.py', '-dir', 'experiments/sineasy-sou', '--generate']' command failed.  (See above for error)
+Traceback (most recent call last):
+  File "/Home/siv31/tak011/master-pipeline/src/run-pipeline.py", line 93, in <module>
+    dataset_config = dataset_configs[config["DATASET"]]
+  File "/Home/siv31/tak011/.conda/envs/master/lib/python3.9/configparser.py", line 963, in __getitem__
+    raise KeyError(key)
+KeyError: 'sineasy10-10k-s05'
+
+Start time: 2023-07-13 17:43:38.812527
+====== Generating profile sineasy-10x-10k-s05 ======
+Train: (-3, 3)
+Y-space: -27.658722690133633 - 25.432520470099313
+In Domain: (-3, 3)
+Y-space: -28.171852902326474 - 31.81563693742525
+Out Domain: (-6, 6)
+Y-space: -55.93465356753569 - 56.03578363370296
+
