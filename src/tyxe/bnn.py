@@ -129,8 +129,9 @@ class _SupervisedBNN(GuidedBNN):
         super().__init__(net, prior, net_guide_builder, name=name)
         self.likelihood = likelihood
 
-    def model(self, x, obs=None):
-        predictions = self(*_as_tuple(x))
+    def model(self, x, obs=None, KL_weight=1.0):
+        with poutine.scale(scale=KL_weight):
+            predictions = self(*_as_tuple(x))
         self.likelihood(predictions, obs)
         return predictions
 
@@ -184,12 +185,13 @@ class VariationalBNN(_SupervisedBNN):
             self.likelihood_guide = _empty_guide
             self.guided_likelihood = False
 
-    def guide(self, x, obs=None):
-        result = self.net_guide(*_as_tuple(x)) or {}
+    def guide(self, x, obs=None, KL_weight=1.0):
+        with poutine.scale(scale=KL_weight):
+            result = self.net_guide(*_as_tuple(x)) or {}
         result.update(self.likelihood_guide(*_as_tuple(x), obs) or {})
         return result
 
-    def fit(self, data_loader, optim, num_epochs, callback=None, num_particles=1, closed_form_kl=True, device=None):
+    def fit(self, data_loader, optim, num_epochs, callback=None, num_particles=1, closed_form_kl=True, KL_annealing=False, device=None):
         """Optimizes the variational parameters on data from data_loader using optim for num_epochs.
 
         :param Iterable data_loader: iterable over batches of data, e.g. a torch.utils.data.DataLoader. Assumes that
@@ -215,12 +217,15 @@ class VariationalBNN(_SupervisedBNN):
 
         for i in range(num_epochs):
             elbo = 0.
-            num_batch = 1
-            for num_batch, (input_data, observation_data) in enumerate(iter(data_loader), 1):
+            M = len(data_loader)
+            N = 0
+            for N, (input_data, observation_data) in enumerate(iter(data_loader), 0):
+                kl_scale = (2**(M - N)) / (2**(M) - 1)
                 elbo += svi.step(tuple(_to(input_data, device)),
-                                 tuple(_to(observation_data, device))[0])
+                                 tuple(_to(observation_data, device))[0], KL_weight=kl_scale if KL_annealing else 1.0)
 
             # the callback can stop training by returning True
+            num_batch = N + 1
             if callback is not None and callback(self, i, elbo / num_batch):
                 break
 
@@ -244,9 +249,17 @@ class VariationalBNN(_SupervisedBNN):
         if guide_tr is None:
             guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
 
+        if likelihood_guide_tr is None:
+            likelihood_guide_tr = poutine.trace(
+                self.likelihood_guide).get_trace(*args, **kwargs)
+
         pred = poutine.replay(self.net, trace=guide_tr)(*args, **kwargs)
         scale = poutine.replay(self.likelihood.get_scale,
-                               trace=guide_tr)()
+                               trace=likelihood_guide_tr)()
+        
+        print(guide_tr.nodes["likelihood_guide.likelihood._scale.loc"]["value"])
+        print(guide_tr.nodes["likelihood_guide.likelihood._scale.scale"]["value"])
+        print(guide_tr.nodes["likelihood._scale"]["value"])
         return pred, scale
 
     def predict(self, *input_data, num_predictions=1, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
@@ -264,9 +277,11 @@ class VariationalBNN(_SupervisedBNN):
                     *input_data, guide_tr=trace, likelihood_guide_tr=likelihood_trace)
                 preds.append(pred)
                 scales.append(scale)
+
         predictions = torch.stack(preds)
-        scales = torch.stack(scales)
-        return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions
+        pred_scales = torch.stack(scales) if aggregate else None
+
+        return self.likelihood.aggregate_predictions((predictions, pred_scales)) if aggregate else predictions
 
     def sample_predictive(self, *input_data, num_predictions=1, guide_traces=None):
         if guide_traces is None:

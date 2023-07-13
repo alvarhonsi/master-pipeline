@@ -259,7 +259,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
                     {"lr": LR, "betas": (0.95, 0.999), "lrd": lrd})
             with tyxe.poutine.local_reparameterization():
                 bnn.fit(train_dataloader, optim, num_epochs=EPOCHS,
-                        callback=callback, device=DEVICE, num_particles=SVI_PARTICLES)
+                        callback=callback, device=DEVICE, num_particles=SVI_PARTICLES, KL_annealing=True)
         elif INFERENCE_TYPE == "mcmc":
             ### MCMC ###
             train_stats = {
