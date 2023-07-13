@@ -249,17 +249,9 @@ class VariationalBNN(_SupervisedBNN):
         if guide_tr is None:
             guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
 
-        if likelihood_guide_tr is None:
-            likelihood_guide_tr = poutine.trace(
-                self.likelihood_guide).get_trace(*args, **kwargs)
-
         pred = poutine.replay(self.net, trace=guide_tr)(*args, **kwargs)
         scale = poutine.replay(self.likelihood.get_scale,
-                               trace=likelihood_guide_tr)()
-        
-        print(guide_tr.nodes["likelihood_guide.likelihood._scale.loc"]["value"])
-        print(guide_tr.nodes["likelihood_guide.likelihood._scale.scale"]["value"])
-        print(guide_tr.nodes["likelihood._scale"]["value"])
+                               trace=guide_tr)()
         return pred, scale
 
     def predict(self, *input_data, num_predictions=1, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
