@@ -257,6 +257,11 @@ class HomoskedasticGaussian(Gaussian):
         :param torch.Tensor predictions: tensor of predictions.
         :param torch.Tensor obs: optional known values for the samples."""
         predictive_distribution = self.predictive_distribution(predictions)
+
+        with pyro.plate(self.data_name+"_plate", predictions.shape[0]):
+            return pyro.sample(self.data_name, predictive_distribution, obs=obs)
+
+        """
         if predictive_distribution.batch_shape:
             dataset_size = self.dataset_size if self.dataset_size is not None else len(
                 predictions)
@@ -266,6 +271,7 @@ class HomoskedasticGaussian(Gaussian):
             dataset_size = self.dataset_size if self.dataset_size is not None else 1
             with pyro.poutine.scale(scale=dataset_size):
                 return pyro.sample(self.data_name, predictive_distribution, obs=obs)
+        """
 
     @property
     def scale(self):
