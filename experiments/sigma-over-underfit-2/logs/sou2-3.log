@@ -1,4 +1,4 @@
-Start time: 2023-07-13 17:30:18.199161
+Start time: 2023-07-14 16:39:13.918450
 torch.Size([512, 10]) torch.Size([512, 1])
 Sequential(
   (0): Linear(in_features=10, out_features=512, bias=True)
@@ -14,7 +14,7 @@ Sequential(
   (4): Linear(in_features=512, out_features=1, bias=True)
 )
 Settings:
-DEVICE: cuda:2 INFERENCE_TYPE: svi OBS_MODEL: homoskedastic PRIOR_LOC: 0.0 PRIOR_SCALE: 1.0 LIKELIHOOD_SCALE_LOC: 1.0 LIKELIHOOD_SCALE: 3.0 GUIDE_SCALE: 0.01 TRAIN_SIZE: 10000
+DEVICE: cuda:2 INFERENCE_TYPE: svi OBS_MODEL: homoskedastic PRIOR_LOC: 0.0 PRIOR_SCALE: 1.0 LIKELIHOOD_SCALE_LOC: 1.0 LIKELIHOOD_SCALE: 3.0 GUIDE_SCALE: 0.01 TRAIN_SIZE: 20000
 Initial parameters:
 net_guide.net.0.weight.loc torch.Size([512, 10]) Parameter containing:
 tensor([[-0.1835,  0.1500, -0.3897,  ...,  0.3757, -0.0117,  0.2174],
@@ -720,11 +720,9 @@ tensor([-0.0549], device='cuda:2', requires_grad=True)
 net_guide.net.4.bias.scale torch.Size([1]) tensor([0.0100], device='cuda:2', grad_fn=<AddBackward0>)
 Using device: cuda:2
 ===== Training profile tensin-3x512-s3 - 1 =====
-[0:00:01.804630] epoch: 0 | elbo: 5415905.905 | train_rmse: 70.802 | val_rmse: 71.8226 | val_ll: -22.1587
-[0:01:42.714467] epoch: 50 | elbo: 393172.6295312499 | train_rmse: 13.6795 | val_rmse: 18.8583 | val_ll: -5.2287
-[0:03:24.955533] epoch: 100 | elbo: 318055.09820312494 | train_rmse: 8.6836 | val_rmse: 15.5986 | val_ll: -4.7467
-[0:05:06.688840] epoch: 150 | elbo: 288460.6624609375 | train_rmse: 6.0537 | val_rmse: 14.1157 | val_ll: -4.6405
-[0:06:48.048298] epoch: 200 | elbo: 272558.76910156256 | train_rmse: 4.2988 | val_rmse: 13.1526 | val_ll: -4.5508
-[0:08:28.850254] epoch: 250 | elbo: 262959.0595312499 | train_rmse: 3.0419 | val_rmse: 12.3951 | val_ll: -4.5017
-[0:10:09.540956] epoch: 300 | elbo: 256187.09148437498 | train_rmse: 2.2104 | val_rmse: 11.7648 | val_ll: -4.4925
-[0:11:49.811967] epoch: 350 | elbo: 251244.92261718755 | train_rmse: 1.8062 | val_rmse: 11.1346 | val_ll: -4.4314
+[0:00:03.456696] epoch: 0 | elbo: 303580.967746582 | train_rmse: 59.6976 | val_rmse: 59.4652 | val_ll: -16.6312
+[0:02:59.992954] epoch: 50 | elbo: 115191.25813690189 | train_rmse: 10.5329 | val_rmse: 14.0889 | val_ll: -4.4397
+[0:05:55.361402] epoch: 100 | elbo: 111355.96139404309 | train_rmse: 6.4036 | val_rmse: 10.9999 | val_ll: -4.0336
+[0:08:52.738950] epoch: 150 | elbo: 109000.65070884707 | train_rmse: 4.372 | val_rmse: 9.37 | val_ll: -3.7851
+[0:11:50.861189] epoch: 200 | elbo: 107157.6486520768 | train_rmse: 3.0336 | val_rmse: 8.0716 | val_ll: -3.5671
+[0:14:56.043338] epoch: 250 | elbo: 105463.00317184448 | train_rmse: 2.2918 | val_rmse: 7.0971 | val_ll: -3.3997
