@@ -1,4 +1,4 @@
-dir = tests/dataset-tests/tensin-10k-s03
-name = tensin
+dir = tests/dataset-tests/tensin-20k-s03
+name = tensin2
 devices = cuda:4, cuda:5, cuda:6, cuda:7
 profiles =  tensin-3x64-s03, tensin-3x128-s03, tensin-3x256-s03, tensin-3x512-s03
