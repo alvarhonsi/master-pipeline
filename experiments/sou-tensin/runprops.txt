@@ -1,0 +1,4 @@
+dir = experiments/sou-tensin
+name = sou-tensin
+devices = cuda:0, cuda:1, cuda:2, cuda:3
+profiles =  tensin-3x256-s003, tensin-3x256-s03, tensin-3x256-s3, tensin-3x256-sl
