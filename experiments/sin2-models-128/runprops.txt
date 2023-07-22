@@ -1,4 +1,0 @@
-dir = experiments/sin2-models-128
-name = sin2-models-128
-devices = cuda:4, cuda:5
-profiles = 1layer-128-s01 2layer-128-s01 3layer-128-s01, 1layer-128-s1 2layer-128-s1 3layer-128-s1

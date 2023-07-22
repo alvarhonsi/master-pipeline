@@ -1,4 +1,0 @@
-dir = experiments/over-underfit-test/model-128
-name = model-128
-devices = cuda:1, cuda:2, cuda:3
-profiles = sin1-1x128-s002 sin1-3x128-s002 sin1-5x128-s002, sin2-1x128-s002 sin2-3x128-s002 sin2-5x128-s002, pol-1x128-s002 pol-3x128-s002 pol-5x128-s002

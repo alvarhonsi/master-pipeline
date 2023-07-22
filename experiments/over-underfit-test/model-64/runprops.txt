@@ -1,4 +1,0 @@
-dir = experiments/over-underfit-test/model-64
-name = model-64
-devices = cuda:4, cuda:5, cuda:6
-profiles = sin1-1x64-s002 sin1-3x64-s002 sin1-5x64-s002, sin2-1x64-s002 sin2-3x64-s002 sin2-5x64-s002, pol-1x64-s002 pol-3x64-s002 pol-5x64-s002

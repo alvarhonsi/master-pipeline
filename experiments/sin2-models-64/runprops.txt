@@ -1,4 +1,0 @@
-dir = experiments/sin2-models-64
-name = sin2-models-64
-devices = cuda:0, cuda:1, cuda:2, cuda:3, cuda:4, cuda:5, cuda:6
-profiles = 0layer-64-s05 7layer-64-sl, 0layer-64-sl 7layer-64-s05, 1layer-64-sl 1layer-64-s05, 2layer-64-s05 4layer-64-sl, 2layer-64-sl 4layer-64-s05, 10layer-64-s05, 10layer-64-sl

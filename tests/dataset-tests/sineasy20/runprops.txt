@@ -1,4 +1,0 @@
-dir = tests/dataset-tests/sineasy20
-name = sineasy20
-devices = cuda:6, cuda:7
-profiles = sineasy20-3x64-s05, sineasy20-3x512-s05
