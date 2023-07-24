@@ -1,0 +1,4 @@
+dir = experiments/sou-sineasy10
+name = sou-sineasy10
+devices = cuda:0, cuda:1, cuda:2, cuda:3
+profiles =  sineasy10-3x64-s005, sineasy10-3x64-s05, sineasy10-3x64-s5, sineasy10-3x64-sl
