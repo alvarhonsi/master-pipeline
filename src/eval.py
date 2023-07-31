@@ -6,20 +6,12 @@ import pyro
 from torch.utils.data import TensorDataset, DataLoader
 import torch
 import numpy as np
-import pandas as pd
 import train
 import random
-from modules.loss import loss_types
-from modules.guides import guide_types
-from modules.priors import prior_types
-from modules.context import set_default_tensor_type
 from modules.distributions import PredictivePosterior, DataDistribution, NormalPosterior
 from modules.metrics import difference_mean, difference_std, KL_divergance_normal
 from modules.plots import plot_comparison, plot_comparison_grid
-from modules.inference import MCMCInferenceModel, SVIInferenceModel
-from modules.models import model_types
 from modules.datageneration import load_data, data_functions
-from modules.config import read_config
 from pipeline_util import draw_data_samples, save_bnn, load_bnn
 
 

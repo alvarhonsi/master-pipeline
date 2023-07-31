@@ -28,112 +28,6 @@ def _as_tuple(x):
     return x,
 
 
-class NormalPrior():
-    def __init__(self, loc, scale):
-        self.loc = loc
-        self.scale = scale
-        self.dist = dist.Normal(loc, scale)
-
-    def sample(self, shape):
-        return self.dist.sample(shape)
-
-
-class BayesianLayer(pynn.PyroModule):
-    def __init__(self, in_features, out_features, prior, layer_num, device="cpu", name=""):
-        super().__init__(name)
-        self.device = device
-        self.linear = PyroModule[nn.Linear](in_features, out_features)
-        self.name = name
-        self.layer_num = layer_num
-
-        self.loc_w = torch.full_like(
-            self.linear.weight, prior.loc, device=self.device)
-        self.scale_w = torch.full_like(
-            self.linear.weight, prior.scale, device=self.device)
-        self.loc_b = torch.full_like(
-            self.linear.bias, prior.loc, device=self.device)
-        self.scale_b = torch.full_like(
-            self.linear.bias, prior.scale, device=self.device)
-
-        self.linear.weight = PyroSample(dist.Normal(
-            self.loc_w, self.scale_w).to_event(2))
-        self.linear.bias = PyroSample(dist.Normal(
-            self.loc_b, self.scale_b).to_event(1))
-
-    def forward(self, x):
-        return self.linear(x)
-
-
-class BayesianNN(PyroModule):
-    def __init__(self, in_features, out_features, prior, hidden_features=[], device="cpu", name=""):
-        super().__init__(name)
-        self.device = device
-        self.prior = prior
-        self.in_features = in_features
-        self.out_features = out_features
-        self.hidden_features = hidden_features
-
-        if hidden_features == []:
-            self._modules["fc0"] = BayesianLayer(
-                in_features, out_features, self.prior, layer_num=0, device=self.device)
-        else:
-            self._modules["fc0"] = BayesianLayer(
-                in_features, hidden_features[0], self.prior, layer_num=0, device=self.device)
-            self._modules["act0"] = nn.ReLU()
-            for i in range(len(hidden_features)-1):
-                self._modules["fc"+str(i+1)] = BayesianLayer(hidden_features[i],
-                                                             hidden_features[i+1], self.prior, layer_num=i+1, device=self.device)
-                self._modules["act"+str(i+1)] = nn.ReLU()
-            self._modules["fc"+str(len(hidden_features))] = BayesianLayer(
-                hidden_features[-1], out_features, self.prior, layer_num=len(hidden_features), device=self.device)
-
-    def forward(self, x):
-        out = x
-        for name, module in self._modules.items():
-            if "fc" in name:
-                out = module(out)
-            elif "act" in name:
-                out = module(out)
-
-        return out
-
-
-class GaussianLikelihood(PyroModule):
-    def __init__(self, scale, dataset_size, device="cpu", data_name="obs", name=""):
-        super().__init__(name)
-        self.device = device
-        self.data_name = data_name
-
-        if isinstance(scale, (dist.Distribution)):
-            scale = PyroSample(prior=scale)
-        elif not isinstance(scale, (torch.Tensor)):
-            scale = torch.tensor(scale, device=self.device)
-            pass
-        self._scale = scale
-        self.dataset_size = dataset_size
-
-    def forward(self, preds, obs=None):
-        pred_dist = dist.Normal(preds, self._scale).to_event(1)
-
-        dataset_size = self.dataset_size if self.dataset_size is not None else len(
-            preds)
-        with pyro.plate(self.data_name+"_plate", subsample=preds, size=dataset_size):
-            return pyro.sample(self.data_name, pred_dist, obs=obs)
-
-    @pynn.pyro_method
-    def aggregate_predictions(self, predictions, dim=0):
-        """Aggregates multiple predictions for the same data by averaging them. Predictive variance is the variance
-         of the predictions plus the known variance term."""
-        if isinstance(predictions, tuple):
-            loc, lik_scale = predictions[0].mean(dim), predictions[1].mean(dim)
-            scale = predictions[0].var(dim).add(lik_scale ** 2).sqrt()
-            return loc, scale
-        else:
-            loc = predictions.mean(dim)
-            scale = predictions.var(dim).add(self._scale ** 2).sqrt()
-            return loc, scale
-
-
 class MCMC_BNN(PyroModule):
     def __init__(self, model, likelihood, kernel_builder, device="cpu"):
         super().__init__()
@@ -143,6 +37,7 @@ class MCMC_BNN(PyroModule):
         self.kernel = kernel_builder(self._model)
         self._mcmc = None
 
+    @pynn.pyro_method
     def _model(self, x, obs=None):
         out = self.model(*_as_tuple(x))
         self.likelihood(out, obs=obs)
@@ -176,6 +71,7 @@ class MCMC_BNN(PyroModule):
         preds = []
         scales = []
         weight_samples = self._mcmc.get_samples(num_samples=num_predictions)
+        print(weight_samples["likelihood._scale"])
         with torch.no_grad():
             for i in range(num_predictions):
                 weights = {name: sample[i]
@@ -184,7 +80,8 @@ class MCMC_BNN(PyroModule):
                     self._model, weights)(*input_data))
                 # sample scale from distribution
                 scales.append(poutine.condition(
-                    lambda: self.likelihood._scale, weights)())
+                    self.likelihood.get_scale, weights)())
         predictions = torch.stack(preds)
         scales = torch.stack(scales)
+        print(scales)
         return self.likelihood.aggregate_predictions((predictions, scales)) if aggregate else predictions

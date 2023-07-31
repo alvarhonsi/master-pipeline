@@ -1,25 +1,13 @@
-from modules.models import get_net
-from modules.inference import MCMCInferenceModel, SVIInferenceModel
+from modules.bnn_model import get_net
 from modules.datageneration import load_data, data_functions
-from modules.config import read_config
-from modules.context import set_default_tensor_type
-from modules.plots import plot_comparison_grid
-from modules.distributions import DataDistribution
-from modules.priors import prior_types
-from modules.optimizers import optimizer_types
-from modules.guides import guide_types
-from modules.loss import loss_types
-from modules.baseline_nn import BaselineNN
-from pipeline_util import draw_data_samples, save_bnn, load_bnn
+from pipeline_util import save_bnn
 from functools import partial
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 import pyro
-from pyro.nn import PyroModule, PyroSample, PyroParam
-from pyro.infer.autoguide import AutoDiagonalNormal
-from pyro.infer import SVI, MCMC, NUTS, HMC, Trace_ELBO, Predictive, TraceMeanField_ELBO
+from pyro.nn import PyroParam
 import pyro.infer.autoguide.initialization as ag_init
 import pyro.distributions as dist
 import pyro.poutine as poutine
@@ -28,8 +16,6 @@ import time
 import json
 import tyxe
 import pickle
-import dill
-import sys
 import os
 import random
 
@@ -101,9 +87,6 @@ def make_inference_model(config, dataset_config, device=None):
     elif INFERENCE_TYPE == "mcmc":
         kernel_builder = partial(pyro.infer.mcmc.NUTS, jit_compile=True)
         bnn = tyxe.bnn.MCMC_BNN(net, prior, obs_model, kernel_builder)
-        return bnn
-    elif INFERENCE_TYPE == "nn":
-        bnn = BaselineNN(net, device=DEVICE)
         return bnn
     else:
         raise ValueError(
@@ -273,52 +256,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
 
             with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
                 pickle.dump(bnn._mcmc.diagnostics(), f)
-
-        elif INFERENCE_TYPE == "nn":
-            ### BASELINE ###
-            train_stats = {
-                "time": 0,
-                "loss": [],
-                "val_rmse": [],
-                "train_rmse": [],
-            }
-
-            def callback(bnn, i, e):
-                time_elapsed = time.time() - start
-                train_stats["loss"].append(e)
-
-                if i % 50 == 0:
-                    val_mse = 0
-                    batch_num = 0
-                    for num_batch, (input_data, observation_data) in enumerate(iter(val_dataloader), 1):
-                        input_data, observation_data = input_data.to(
-                            DEVICE), observation_data.to(DEVICE)
-                        val_err = bnn.evaluate(
-                            input_data, observation_data, num_predictions=100, reduction="mean")
-                        val_mse += val_err
-                        batch_num = num_batch
-                    val_rmse = (val_mse / batch_num).sqrt()
-
-                    train_mse = 0
-                    batch_num = 0
-                    for num_batch, (input_data, observation_data) in enumerate(iter(train_subset_dataloader), 1):
-                        input_data, observation_data = input_data.to(
-                            DEVICE), observation_data.to(DEVICE)
-                        train_err = bnn.evaluate(
-                            input_data, observation_data, num_predictions=100, reduction="mean")
-                        train_mse += train_err
-                        batch_num = num_batch
-                    train_rmse = (train_mse / batch_num).sqrt()
-
-                    train_stats["val_rmse"].append(val_rmse.item())
-                    train_stats["train_rmse"].append(train_rmse.item())
-
-                    print("[{}] epoch: {} | loss: {} | train rmse: {} | val rmse: {}".format(timedelta(
-                        seconds=time_elapsed), i, e, train_rmse.item(), val_rmse.item()))
-
-            optim = torch.optim.Adam(bnn.net.parameters(), lr=LR)
-            bnn.fit(train_dataloader, optim, num_epochs=EPOCHS,
-                    callback=callback, device=DEVICE)
 
         ### Cleanup ###
 
