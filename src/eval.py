@@ -179,7 +179,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
         # Load model
         bnn = train.make_inference_model(
             config, dataset_config, device=DEVICE)
-        bnn = train.load_bnn(bnn, config,
+        bnn = load_bnn(bnn, config,
                              load_path=f"{DIR}/models/{NAME}/checkpoint_{run}.pt", device=DEVICE)
 
         #####
