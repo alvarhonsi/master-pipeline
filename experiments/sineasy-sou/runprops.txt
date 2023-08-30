@@ -1,4 +1,0 @@
-dir = experiments/sineasy-sou
-name = sineasy-sou
-devices = cuda:4, cuda:5, cuda:6, cuda:7
-profiles =  sineasy10-3x128-s005, sineasy10-3x128-s05, sineasy10-3x128-s5, sineasy10-3x128-sl
