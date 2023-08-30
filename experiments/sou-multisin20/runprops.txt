@@ -1,0 +1,4 @@
+dir = experiments/sou-multisin20
+name = multisin20
+devices = cuda:0, cuda:1, cuda:2, cuda:3
+profiles =  multisin20-3x512-s005, multisin20-3x512-s05, multisin20-3x512-s5, multisin20-3x512-sl
