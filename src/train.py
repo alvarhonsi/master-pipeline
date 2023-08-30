@@ -40,7 +40,6 @@ def make_inference_model(config, dataset_config, device=None):
 
     net = get_net(X_DIM, Y_DIM, HIDDEN_FEATURES,
                   activation=nn.ReLU().to(DEVICE))
-    print(net)
 
     print("Settings:")
     print("DEVICE:", DEVICE, "INFERENCE_TYPE:", INFERENCE_TYPE, "OBS_MODEL:", OBS_MODEL, "PRIOR_LOC:",
@@ -171,9 +170,9 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
         guide_tr.nodes.keys()
 
         params = pyro.get_param_store()
-        print("Initial parameters:")
-        for name, value in params.items():
-            print(name, pyro.param(name).shape, value)
+        #print("Initial parameters:")
+        #for name, value in params.items():
+            #print(name, pyro.param(name).shape, value)
 
         # RUN TRAINING
         print('Using device: {}'.format(DEVICE))
