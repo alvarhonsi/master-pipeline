@@ -1,6 +1,3 @@
-import eval
-import train
-import generate
 import datetime
 import time
 from modules.config import read_config
@@ -38,6 +35,8 @@ if __name__ == "__main__":
 
     if args.device == "cpu":
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+        os.environ['CUDA_VISIBLE_DEVICES'] = ""
 
     start = time.time()
     print(f"Start time: {datetime.datetime.now()}")
@@ -76,6 +75,10 @@ if __name__ == "__main__":
     dataset_profiles = args.data_profiles if args.data_profiles != "DEFAULT" else [
         p for p in dataset_configs if p != "DEFAULT"]
 
+
+    import eval
+    import train
+    import generate
     # Generate datasets
     for p in dataset_profiles:
         config = dataset_configs[p]

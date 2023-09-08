@@ -130,6 +130,8 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
     np.random.seed(SEED)
     random.seed(SEED)
 
+    print("Cuda Devices:", [torch.cuda.device(i) for i in range(torch.cuda.device_count())])
+
     # Load data
     (x_train, y_train), (x_val, y_val), _, _ = load_data(
         f"{DIR}/datasets/{DATASET}")

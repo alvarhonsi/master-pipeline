@@ -1,0 +1,4 @@
+dir = experiments/sou-mcmc-multisin10
+name = sou-mcmc-multisin10
+devices = cpu, cpu
+profiles =  multisin10-3x64-s05, multisin10-3x64-sl
