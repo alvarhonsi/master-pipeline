@@ -253,7 +253,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
                         pickle.dump(kernel.diagnostics(), f)
 
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
-                    warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, mp_context=mp_context, device=DEVICE)
+                    warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, mp_context=mp_context, hook_fn=hook_fn, device=DEVICE)
 
             # Move mcmc to cpu before diagnostics to avoid memory issues
 
