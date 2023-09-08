@@ -1,0 +1,98 @@
+[W 10:52:49.305 NotebookApp] Config option `cull_idle_timeout` not recognized by `NotebookApp`.
+[W 2023-09-08 10:52:49.647 LabApp] 'port' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2023-09-08 10:52:49.647 LabApp] 'port' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2023-09-08 10:52:49.647 LabApp] 'password' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2023-09-08 10:52:49.647 LabApp] 'shutdown_no_activity_timeout' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 10:52:49.647 NotebookApp] Error loading server extension jupyterlab
+    Traceback (most recent call last):
+      File "/usr/local/lib/python3.6/site-packages/notebook/notebookapp.py", line 2030, in init_server_extensions
+        func(self)
+      File "/usr/local/lib/python3.6/site-packages/jupyterlab/serverextension.py", line 13, in load_jupyter_server_extension
+        extension.update_config(serverapp.config)
+      File "/usr/local/lib/python3.6/site-packages/nbclassic/shim.py", line 145, in update_config
+        config)
+      File "/usr/local/lib/python3.6/site-packages/nbclassic/shim.py", line 235, in shim_config_from_notebook_to_jupyter_server
+        raise TraitError("Trait, {}, not found.".format(trait_name))
+    traitlets.traitlets.TraitError: Trait, cull_idle_timeout, not found.
+[I 10:52:49.711 NotebookApp] Serving notebooks from local directory: /Home/siv31/tak011/master-pipeline
+[I 10:52:49.711 NotebookApp] Jupyter Notebook 6.4.6 is running at:
+[I 10:52:49.711 NotebookApp] http://localhost:1313/
+[I 10:52:49.711 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[I 10:53:16.650 NotebookApp] 302 GET / (::1) 0.870000ms
+[W 10:53:27.622 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20230908105249 (::1) 9.310000ms referer=http://localhost:1313/notebooks/thesis-plots/bnn-vs-nn.ipynb
+[I 10:53:27.624 NotebookApp] Kernel started: c4c850a2-0f03-4cbb-92fb-00a18b115d43, name: master
+[I 10:53:36.762 NotebookApp] Starting buffering for c4c850a2-0f03-4cbb-92fb-00a18b115d43:2127e5ced31d4149ad7bb4561f684e09
+[W 10:53:45.713 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20230908105249 (::1) 1.780000ms referer=http://localhost:1313/notebooks/thesis-plots/bnn-vs-nn.ipynb
+[I 10:53:59.375 NotebookApp] Saving file at /thesis-plots/bnn-vs-nn.ipynb
+[I 10:54:06.191 NotebookApp] Saving file at /thesis-plots/bnn-vs-nn.ipynb
+[I 10:54:13.761 NotebookApp] Starting buffering for c4c850a2-0f03-4cbb-92fb-00a18b115d43:509f29de17b14c75a733138cd7887e0b
+[I 10:54:14.286 NotebookApp] Kernel restarted: c4c850a2-0f03-4cbb-92fb-00a18b115d43
+[I 10:54:14.434 NotebookApp] Restoring connection for c4c850a2-0f03-4cbb-92fb-00a18b115d43:509f29de17b14c75a733138cd7887e0b
+[I 10:54:15.701 NotebookApp] Replaying 3 buffered messages
+[I 10:54:51.165 NotebookApp] Starting buffering for c4c850a2-0f03-4cbb-92fb-00a18b115d43:509f29de17b14c75a733138cd7887e0b
+[I 11:03:57.531 NotebookApp] 302 GET / (::1) 0.490000ms
+[W 11:12:54.377 NotebookApp] Notebook test_notebooks/sanity_check_mcmc.ipynb is not trusted
+[I 11:12:54.855 NotebookApp] Kernel started: 42d0a3a3-172b-495d-90ec-ba86bf866dfb, name: python3
+[W 11:12:54.891 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20230908105249 (::1) 3.200000ms referer=http://localhost:1313/notebooks/test_notebooks/sanity_check_mcmc.ipynb
+[I 11:13:05.101 NotebookApp] Starting buffering for 42d0a3a3-172b-495d-90ec-ba86bf866dfb:131db0a0b66f41b8b29fb82861b6dc35
+[I 11:13:05.102 NotebookApp] Kernel shutdown: 42d0a3a3-172b-495d-90ec-ba86bf866dfb
+[I 11:13:05.543 NotebookApp] Kernel started: b43fb662-f310-451b-9ec4-7e3ff3ccb6c3, name: master
+[W 11:13:11.060 NotebookApp] Notebook test_notebooks/mcmc_bnn_test.ipynb is not trusted
+[I 11:13:11.345 NotebookApp] Kernel started: a3c37bad-f37a-4afb-ae3b-08c0657575b3, name: python3
+[W 11:13:11.370 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20230908105249 (::1) 2.320000ms referer=http://localhost:1313/notebooks/test_notebooks/mcmc_bnn_test.ipynb
+[I 11:13:23.744 NotebookApp] Starting buffering for a3c37bad-f37a-4afb-ae3b-08c0657575b3:13d87a9e6dfc41c987b7dc97f9c245d1
+[I 11:13:23.749 NotebookApp] Kernel shutdown: a3c37bad-f37a-4afb-ae3b-08c0657575b3
+[I 11:13:24.174 NotebookApp] Kernel started: 177f00ab-43cf-4f95-87de-d715f232f437, name: master
+terminate called after throwing an instance of 'terminate called after throwing an instance of 'terminate called after throwing an instance of 'c10::CUDAErrorc10::CUDAErrorc10::CUDAError'
+'
+terminate called after throwing an instance of 'terminate called recursively
+terminate called after throwing an instance of 'terminate called recursively
+c10::CUDAErrorterminate called recursively
+terminate called recursively
+terminate called recursively
+'
+c10::CUDAError'
+terminate called recursively
+terminate called recursively
+terminate called recursively
+terminate called recursively
+terminate called recursively
+  what():  CUDA error: initialization error
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Exception raised from getDevice at /home/conda/feedstock_root/build_artifacts/pytorch-recipe_1658255846143/work/c10/cuda/impl/CUDAGuardImpl.h:39 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x68 (0x7f9726b09f28 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x10d59 (0x7f9726b54d59 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libc10_cuda.so)
+frame #2: <unknown function> + 0x3369f78 (0x7f9759e7ff78 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: torch::autograd::Engine::thread_init(int, std::shared_ptr<torch::autograd::ReadyQueue> const&, bool) + 0x3b (0x7f9759e8159b in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: torch::autograd::python::PythonEngine::thread_init(int, std::shared_ptr<torch::autograd::ReadyQueue> const&, bool) + 0x6f (0x7f975de9c86f in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libtorch_python.so)
+frame #5: <unknown function> + 0xcda93 (0x7f9bf84bda93 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/zmq/backend/cython/../../../../.././libstdc++.so.6)
+frame #6: <unknown function> + 0x81ca (0x7f9c065dd1ca in /lib64/libpthread.so.0)
+frame #7: clone + 0x43 (0x7f9c058b7e73 in /lib64/libc.so.6)
+terminate called recursively
+
+terminate called recursively
+terminate called recursively
+terminate called recursively
+terminate called recursively
+  what():  terminate called after throwing an instance of 'c10::CUDAError'
+  what():  CUDA error: initialization error
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Exception raised from getDevice at /home/conda/feedstock_root/build_artifacts/pytorch-recipe_1658255846143/work/c10/cuda/impl/CUDAGuardImpl.h:39 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x68 (0x7f9726b09f28 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x10d59 (0x7f9726b54d59 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libc10_cuda.so)
+frame #2: <unknown function> + 0x3369f78 (0x7f9759e7ff78 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: torch::autograd::Engine::thread_init(int, std::shared_ptr<torch::autograd::ReadyQueue> const&, bool) + 0x3b (0x7f9759e8159b in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: torch::autograd::python::PythonEngine::thread_init(int, std::shared_ptr<torch::autograd::ReadyQueue> const&, bool) + 0x6f (0x7f975de9c86f in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/torch/lib/libtorch_python.so)
+frame #5: <unknown function> + 0xcda93 (0x7f9bf84bda93 in /Home/siv31/tak011/.conda/envs/master/lib/python3.9/site-packages/zmq/backend/cython/../../../../.././libstdc++.so.6)
+frame #6: <unknown function> + 0x81ca (0x7f9c065dd1ca in /lib64/libpthread.so.0)
+frame #7: clone + 0x43 (0x7f9c058b7e73 in /lib64/libc.so.6)
+
+[I 11:14:33.119 NotebookApp] Kernel interrupted: 177f00ab-43cf-4f95-87de-d715f232f437
+[I 11:14:55.167 NotebookApp] Saving file at /test_notebooks/sanity_check_mcmc.ipynb
+[W 11:14:55.168 NotebookApp] Notebook test_notebooks/sanity_check_mcmc.ipynb is not trusted
+[I 11:15:11.768 NotebookApp] Saving file at /test_notebooks/mcmc_bnn_test.ipynb
+[W 11:15:11.769 NotebookApp] Notebook test_notebooks/mcmc_bnn_test.ipynb is not trusted
+[I 11:16:55.146 NotebookApp] Saving file at /test_notebooks/sanity_check_mcmc.ipynb
+[W 11:16:55.152 NotebookApp] Notebook test_notebooks/sanity_check_mcmc.ipynb is not trusted
