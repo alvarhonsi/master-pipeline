@@ -1,0 +1,50 @@
+{
+    "train": {
+        "error": {
+            "rmse": 489.50469970703125,
+            "loglikelihood": -16.44510269165039,
+            "mae": 387.0859375
+        },
+        "predictive_eval": {
+            "kl_div_to_data": 579610.75,
+            "mean_diff_to_data": 386.24517822265625,
+            "std_diff_to_data": 185.11537170410156
+        }
+    },
+    "test": {
+        "error": {
+            "rmse": 980.2142333984375,
+            "loglikelihood": -16.93643569946289,
+            "mae": 712.7840576171875
+        },
+        "predictive_eval": {
+            "kl_div_to_data": 2378648.5,
+            "mean_diff_to_data": 720.28759765625,
+            "std_diff_to_data": 334.0406799316406
+        }
+    },
+    "in_domain": {
+        "error": {
+            "rmse": 482.5625305175781,
+            "loglikelihood": -16.289926528930664,
+            "mae": 383.7867431640625
+        },
+        "predictive_eval": {
+            "kl_div_to_data": 547642.375,
+            "mean_diff_to_data": 373.0695495605469,
+            "std_diff_to_data": 169.17430114746094
+        }
+    },
+    "out_domain": {
+        "error": {
+            "rmse": 1295.2164306640625,
+            "loglikelihood": -17.59502410888672,
+            "mae": 1038.377685546875
+        },
+        "predictive_eval": {
+            "kl_div_to_data": 4148417.25,
+            "mean_diff_to_data": 1051.64697265625,
+            "std_diff_to_data": 465.2283020019531
+        }
+    }
+}
