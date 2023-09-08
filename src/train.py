@@ -164,16 +164,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
         # Create model
         bnn = make_inference_model(config, dataset_config, device=DEVICE)
 
-        dummy_data = (torch.zeros(1, X_DIM, device=DEVICE),
-                      torch.zeros(1, Y_DIM, device=DEVICE))
-        guide_tr = poutine.trace(bnn.guide).get_trace(*dummy_data)
-        guide_tr.nodes.keys()
-
-        params = pyro.get_param_store()
-        #print("Initial parameters:")
-        #for name, value in params.items():
-            #print(name, pyro.param(name).shape, value)
-
         # RUN TRAINING
         print('Using device: {}'.format(DEVICE))
         print(f'===== Training profile {NAME} - {run} =====')
