@@ -240,25 +240,10 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
                 "time": 0,
             }
 
-            def hook_fn(kernel, samples, stage, i):
-                print(kernel)
-                print(samples)
-                print(stage)
-                print(i)
-                if i % 10 == 0:
-                    if SAVE_MODEL:
-                        save_bnn(bnn, config, f"{DIR}/models/{NAME}/checkpoint_{run}_{i}samples.pt")
-
-                    with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}_{i}samples.pkl", "wb") as f:
-                        pickle.dump(kernel.diagnostics(), f)
-
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
-                    warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, mp_context=mp_context, hook_fn=hook_fn, device=DEVICE)
+                    warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, mp_context=mp_context, device=DEVICE)
 
             # Move mcmc to cpu before diagnostics to avoid memory issues
-
-            with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
-                pickle.dump(bnn._mcmc.diagnostics(), f)
 
         ### Cleanup ###
 
@@ -280,3 +265,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
 
         with open(f"{DIR}/results/{NAME}/train_stats_{run}.json", "w") as f:
             json.dump(train_stats, f, indent=4)
+
+        if INFERENCE_TYPE == "mcmc" and SAVE_MODEL:
+                with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
+                    pickle.dump(bnn._mcmc.diagnostics(), f)
