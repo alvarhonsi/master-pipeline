@@ -43,7 +43,7 @@ class MCMC_BNN(PyroModule):
         self.likelihood(out, obs=obs)
         return out
 
-    def fit(self, data_loader, num_samples, num_warmup, num_chains, batch_data=False, device=None):
+    def fit(self, data_loader, num_samples, num_warmup, num_chains, batch_data=False, mp_context=None, device=None):
         if batch_data:
             input_data, observation_data = data_loader
         else:
@@ -58,7 +58,7 @@ class MCMC_BNN(PyroModule):
             observation_data = torch.cat(observation_data_list)
 
         self._mcmc = MCMC(self.kernel, num_samples=num_samples,
-                          warmup_steps=num_warmup, num_chains=num_chains)
+                          warmup_steps=num_warmup, num_chains=num_chains, mp_context=mp_context)
         self._mcmc.run(input_data, observation_data)
 
         return self._mcmc
