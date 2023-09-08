@@ -240,6 +240,18 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
                 "time": 0,
             }
 
+            def hook_fn(kernel, samples, stage, i):
+                print(kernel)
+                print(samples)
+                print(stage)
+                print(i)
+                if i % 10 == 0:
+                    if SAVE_MODEL:
+                        save_bnn(bnn, config, f"{DIR}/models/{NAME}/checkpoint_{run}_{i}samples.pt")
+
+                    with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}_{i}samples.pkl", "wb") as f:
+                        pickle.dump(kernel.diagnostics(), f)
+
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
                     warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, mp_context=mp_context, device=DEVICE)
 
