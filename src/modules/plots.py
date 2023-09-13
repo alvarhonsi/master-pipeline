@@ -1,6 +1,7 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 from .metrics import KL_divergance_normal, difference_mean, difference_std
+import numpy as np
 
 
 def lineplot(data, x_label=None, y_label=None, figsize=(10, 5), ax=None, save_path=None):
@@ -147,7 +148,7 @@ def plot_comparison_grid(posterior_samples, data_samples, x_samples=None, title=
 # post_samples: array of samples from different posteriors
 
 
-def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10, 10), kl_div=False, plot_mean=False):
+def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="y", y_label="Density", title=None, save_path=None, ax=None, figsize=(10, 10), kl_div=False, plot_mean=False, xlim=None, ylim=None):
 
     data_std = data_sample.std()
 
@@ -173,10 +174,13 @@ def plot_comparisons(post_samples, data_sample, labels, x_sample=None, x_label="
         else:
             ax.axvline(post_sample.mean(), color="green",
                        label=labels[i], alpha=0.4)
-
     ax.legend()
     ax.set_ylabel(y_label)
     ax.set_xlabel(x_label)
+    if xlim:
+        ax.set_xlim(xlim)
+    if ylim:
+        ax.set_ylim(ylim)
 
     if title:
         ax.set_title(title, wrap=True)

@@ -292,8 +292,6 @@ class VariationalBNN(_SupervisedBNN):
     def get_error_metrics(self, input_data, y, num_predictions=1, aggregate=True, reduction="mean"):
         predictions = self.predict(
             *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
-        predictions2 = self.predict(
-            *_as_tuple(input_data), num_predictions=num_predictions, aggregate=aggregate)
 
         mse = self.likelihood.error(predictions, y, reduction=reduction)
         ll = self.likelihood.log_likelihood(
@@ -302,6 +300,14 @@ class VariationalBNN(_SupervisedBNN):
             predictions, y, reduction=reduction)
 
         return mse, ll, mae
+    
+    def get_weight_distributions(self, *input_data, num_samples=100):
+        guide_traces = [None] * num_samples
+        with torch.autograd.no_grad():
+            for i in range(num_samples):
+                guide_traces[i] = poutine.trace(self.guide, param_only=True).get_trace(*input_data)
+        return guide_traces
+
 
     def get_likelihood_scale(self, *input_data, num_predictions=1):
         scales = []

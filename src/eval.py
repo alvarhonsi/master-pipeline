@@ -18,6 +18,32 @@ from pipeline_util import draw_data_samples, save_bnn, load_bnn
 def sample_predictive_posterior(bnn, x_sample, num_samples=100):
     return bnn.sample_predictive(x_sample, num_predictions=num_samples).squeeze(-1).cpu().detach().numpy()
 
+def get_pred_dists(bnn, dataloader, num_predictions=1000, device="cpu"):
+    results = {}
+    # Evaluate error
+    mean_all, std_all = None, None
+    batch_num = 0
+    for num_batch, (input_data, observation_data) in enumerate(iter(dataloader), 1):
+        input_data, observation_data = input_data.to(
+            device), observation_data.to(device)
+        mean, std = bnn.predict(input_data, num_predictions=num_predictions)
+        mean = mean.cpu().detach().numpy()
+        std = std.cpu().detach().numpy()
+        
+        if batch_num == 0:
+            mean_all = mean
+            std_all = std
+        else:
+            mean_all = np.vstack((mean_all, mean))
+            std_all = np.vstack((std_all, std))
+
+        batch_num+=1
+
+    results["mean"] = mean_all.tolist()
+    results["std"] = std_all.tolist()
+
+    return results
+
 
 def evaluate_error(bnn, dataloader, num_predictions=100, device="cpu"):
     results = {}
@@ -246,6 +272,27 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
 
         with open(f"{DIR}/results/{NAME}/results_{run}.json", "w") as f:
             json.dump(results, f, indent=4)
+
+
+        uncertainties = {}
+        cases = ["train", "in_domain", "out_domain"]
+        dataloaders = [train_dataloader,
+                       test_in_domain_dataloader, test_out_domain_dataloader]
+        pred_samples = [pred_train_samples,
+                        pred_in_domain_samples, pred_out_domain_samples]
+        data_samples = [data_train_samples,
+                        data_in_domain_samples, data_out_domain_samples]
+        eval_cases = zip(cases, dataloaders, pred_samples, data_samples)
+        for case, dataloader, pred_sample, data_sample in eval_cases:
+            uncertainties[case] = {}
+            print(f"Evaluating Uncertainty in {case}...")
+            pred_dist = get_pred_dists(
+                bnn, dataloader, num_predictions=1000, device=DEVICE)
+            uncertainties[case]["pred_dist"] = pred_dist
+
+        with open(f"{DIR}/results/{NAME}/uncertainties_{run}.json", "w") as f:
+            json.dump(uncertainties, f, indent=4)
+        
 
         # Get time and format to HH:MM:SS
         elapsed_time = str(datetime.timedelta(seconds=time.time() - start))
