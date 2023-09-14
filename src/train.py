@@ -16,6 +16,7 @@ import time
 import json
 import tyxe
 import pickle
+import dill
 import os
 import random
 
@@ -240,8 +241,16 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
                 "time": 0,
             }
 
+            def hook_fn(kernel, samples, stage, i):
+                if stage == "warmup":
+                    return
+                if i % 5 == 0:
+                    print("saving sample ", i)
+                    torch.save({"samples": kernel._mcmc._samples},
+                   f"{DIR}/models/{NAME}/checkpoint_{run}_{i}.pt", pickle_module=dill)
+
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
-                    warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, mp_context=mp_context, device=DEVICE)
+                    warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, hook_fn=hook_fn, mp_context=mp_context, device=DEVICE)
 
             # Move mcmc to cpu before diagnostics to avoid memory issues
 
