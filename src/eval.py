@@ -39,8 +39,8 @@ def get_pred_dists(bnn, dataloader, num_predictions=1000, device="cpu"):
 
         batch_num+=1
 
-    results["mean"] = mean_all.tolist()
-    results["std"] = std_all.tolist()
+    results["mean"] = mean_all.reshape(-1).tolist()
+    results["std"] = std_all.reshape(-1).tolist()
 
     return results
 
@@ -292,7 +292,14 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
 
         with open(f"{DIR}/results/{NAME}/uncertainties_{run}.json", "w") as f:
             json.dump(uncertainties, f, indent=4)
-        
+
+        print("Saving weight distributions...")
+        weight_dist = bnn.get_weight_distributions()
+        weight_dist = {k: v.reshape(-1).cpu().tolist() for k, v in weight_dist.items()}
+
+        with open(f"{DIR}/results/{NAME}/weight_dist_{run}.json", "w") as f:
+            json.dump(weight_dist, f, indent=4)
+
 
         # Get time and format to HH:MM:SS
         elapsed_time = str(datetime.timedelta(seconds=time.time() - start))

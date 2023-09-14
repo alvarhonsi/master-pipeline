@@ -301,12 +301,17 @@ class VariationalBNN(_SupervisedBNN):
 
         return mse, ll, mae
     
-    def get_weight_distributions(self, *input_data, num_samples=100):
-        guide_traces = [None] * num_samples
+    def get_weight_distributions(self):
+        dummy_input = torch.randn(1, 1)
+        guide_tr = None
         with torch.autograd.no_grad():
-            for i in range(num_samples):
-                guide_traces[i] = poutine.trace(self.guide, param_only=True).get_trace(*input_data)
-        return guide_traces
+            guide_tr = poutine.trace(self.guide, param_only=True).get_trace(*dummy_input)
+
+        weight_distributions = {}
+        for name, node in guide_tr.nodes.items():
+            weight_distributions[name] = node["value"]
+
+        return weight_distributions
 
 
     def get_likelihood_scale(self, *input_data, num_predictions=1):
@@ -433,6 +438,20 @@ class MCMC_BNN(_BNN):
             predictions, y, reduction=reduction)
 
         return mse, ll, mae
+    
+    def get_weight_distributions(self, num_samples=1000):
+        weight_samples = self._mcmc.get_samples(num_samples=num_samples)
+
+
+        weight_distributions = {}
+        for name, sample in weight_samples.items():
+            weight_distributions[f"{name}.loc"] = sample.mean(dim=0)
+            weight_distributions[f"{name}.scale"] = sample.std(dim=0)
+
+        
+        #weights = {name: sample[i] for name, sample in weight_samples.items()}
+
+        return weight_distributions
 
     def get_likelihood_scale(self, *input_data, num_predictions=1):
         scales = []
