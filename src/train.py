@@ -1,6 +1,6 @@
 from modules.bnn_model import get_net
 from modules.datageneration import load_data, data_functions
-from pipeline_util import save_bnn
+from pipeline_util import save_bnn, load_bnn
 from functools import partial
 import numpy as np
 import torch
@@ -12,6 +12,7 @@ import pyro.infer.autoguide.initialization as ag_init
 import pyro.distributions as dist
 import pyro.poutine as poutine
 from datetime import timedelta
+from pyro.infer.mcmc.util import diagnostics
 import time
 import json
 import tyxe
@@ -19,6 +20,17 @@ import pickle
 import dill
 import os
 import random
+
+from pyro.ops import stats
+
+def get_diagnostics_mcmc(bnn):
+    diagnostics = {}
+    for site, support in bnn._mcmc._samples.items():
+        #support = support.unsqueeze(0)
+        site_stats = {}
+        site_stats["n_eff"] = stats.effective_sample_size(support)
+        diagnostics[site] = site_stats
+    return diagnostics
 
 
 def make_inference_model(config, dataset_config, device=None):
@@ -242,12 +254,13 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
             }
 
             def hook_fn(kernel, samples, stage, i):
+                print(bnn._mcmc._samples)
                 if stage == "warmup":
                     return
                 if i % 5 == 0:
-                    print("saving sample ", i)
-                    torch.save({"samples": kernel._mcmc._samples},
-                   f"{DIR}/models/{NAME}/checkpoint_{run}_{i}.pt", pickle_module=dill)
+                    print(samples)
+                    #torch.save({"samples": kernel._mcmc._samples},
+                   #f"{DIR}/models/{NAME}/checkpoint_{run}_{i}.pt", pickle_module=dill)
 
             bnn.fit(train_dataloader, num_samples=MCMC_NUM_SAMPLES,
                     warmup_steps=MCMC_NUM_WARMUP, num_chains=MCMC_NUM_CHAINS, hook_fn=hook_fn, mp_context=mp_context, device=DEVICE)
@@ -275,6 +288,12 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
         with open(f"{DIR}/results/{NAME}/train_stats_{run}.json", "w") as f:
             json.dump(train_stats, f, indent=4)
 
-        if INFERENCE_TYPE == "mcmc" and SAVE_MODEL:
-                with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
-                    pickle.dump(bnn._mcmc.diagnostics(), f)
+        if INFERENCE_TYPE == "mcmc" and SAVE_MODEL:   
+            bnn = make_inference_model(config, dataset_config)
+            bnn = load_bnn(bnn, config, f"{DIR}/models/{NAME}/checkpoint_1.pt", device="cpu")
+
+            diag = get_diagnostics_mcmc(bnn)
+            print(diag)
+
+            with open(f"{DIR}/results/{NAME}/mcmc_diagnostics_{run}.pkl", "wb") as f:
+                pickle.dump(diag, f)
