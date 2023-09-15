@@ -289,7 +289,7 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
             json.dump(train_stats, f, indent=4)
 
         if INFERENCE_TYPE == "mcmc" and SAVE_MODEL:   
-            bnn = make_inference_model(config, dataset_config)
+            bnn = make_inference_model(config, dataset_config, device="cpu")
             bnn = load_bnn(bnn, config, f"{DIR}/models/{NAME}/checkpoint_1.pt", device="cpu")
 
             diag = get_diagnostics_mcmc(bnn)
