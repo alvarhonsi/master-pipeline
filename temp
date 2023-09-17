@@ -1,0 +1,16 @@
+
+
+python src/run-pipeline.py -dir experiments/misspec-tensin --eval -p tensin-3x256-s03 tensin-linear-sl tensin-3x256-sl tensin-linear-s03 --device cuda:7
+
+
+
+tensin-3x256-s03 tensin-linear-sl tensin-3x256-sl tensin-linear-s03
+tensin-2x128-s03  tensin-1x64-sl tensin-2x128-sl tensin-1x64-s03
+
+
+
+
+
+python src/run-pipeline.py -dir experiments/misspec-multisin10 --eval -p multisin10-3x64-s05 multisin10-linear-s05 multisin10-2x32-s05 multisin10-1x16-s05 --device cuda:5
+
+multisin10-3x64-s05 multisin10-linear-s05, multisin10-2x32-s05 multisin10-1x16-s05, multisin10-3x64-sl multisin10-linear-sl, multisin10-2x32-sl multisin10-1x16-sl

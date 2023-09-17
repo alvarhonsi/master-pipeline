@@ -290,6 +290,8 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
                 bnn, dataloader, num_predictions=1000, device=DEVICE)
             uncertainties[case]["pred_dist"] = pred_dist
             uncertainties[case]["mean_predictive_scale"] = np.mean(pred_dist["std"])
+            uncertainties[case]["min_predictive_scale"] = np.min(pred_dist["std"])
+            uncertainties[case]["max_predictive_scale"] = np.max(pred_dist["std"])
 
         with open(f"{DIR}/results/{NAME}/predictive_uncertainties_{run}.json", "w") as f:
             json.dump(uncertainties, f, indent=4)
@@ -305,6 +307,8 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             if "scale" in name:
                 weight_scale_list.extend(data)
         weight_data["mean_weight_scale"] = np.mean(weight_scale_list)
+        weight_data["min_weight_scale"] = np.min(weight_scale_list)
+        weight_data["max_weight_scale"] = np.max(weight_scale_list)
         print("mean weight scale: ", weight_data["mean_weight_scale"])
 
 
