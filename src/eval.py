@@ -289,16 +289,28 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             pred_dist = get_pred_dists(
                 bnn, dataloader, num_predictions=1000, device=DEVICE)
             uncertainties[case]["pred_dist"] = pred_dist
+            uncertainties[case]["mean_predictive_scale"] = np.mean(pred_dist["std"])
 
-        with open(f"{DIR}/results/{NAME}/uncertainties_{run}.json", "w") as f:
+        with open(f"{DIR}/results/{NAME}/predictive_uncertainties_{run}.json", "w") as f:
             json.dump(uncertainties, f, indent=4)
 
         print("Saving weight distributions...")
+        weight_data = {}
         weight_dist = bnn.get_weight_distributions()
-        weight_dist = {k: v.reshape(-1).cpu().tolist() for k, v in weight_dist.items()}
+        weight_data["sites"] = {k: v.reshape(-1).cpu().tolist() for k, v in weight_dist.items()}
+        
+        #get mean weight scale
+        weight_scale_list = []
+        for name, data in weight_data["sites"].items():
+            if "scale" in name:
+                weight_scale_list.extend(data)
+        weight_data["mean_weight_scale"] = np.mean(weight_scale_list)
+        print("mean weight scale: ", weight_data["mean_weight_scale"])
 
-        with open(f"{DIR}/results/{NAME}/weight_dist_{run}.json", "w") as f:
-            json.dump(weight_dist, f, indent=4)
+
+
+        with open(f"{DIR}/results/{NAME}/weight_data_{run}.json", "w") as f:
+            json.dump(weight_data, f, indent=4)
 
 
         # Get time and format to HH:MM:SS
