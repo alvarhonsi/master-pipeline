@@ -20006,7 +20006,9 @@
                 0.37031152844429016
             ]
         },
-        "mean_predictive_scale": 0.4559095820426941
+        "mean_predictive_scale": 0.4559095820426941,
+        "min_predictive_scale": 0.31412428617477417,
+        "max_predictive_scale": 1.302059292793274
     },
     "in_domain": {
         "pred_dist": {
@@ -30015,7 +30017,9 @@
                 0.654562771320343
             ]
         },
-        "mean_predictive_scale": 0.4576098591506481
+        "mean_predictive_scale": 0.4576098591506481,
+        "min_predictive_scale": 0.31617477536201477,
+        "max_predictive_scale": 1.1880922317504883
     },
     "out_domain": {
         "pred_dist": {
@@ -40024,6 +40028,8 @@
                 4.967255592346191
             ]
         },
-        "mean_predictive_scale": 4.7042670892715455
+        "mean_predictive_scale": 4.7042670892715455,
+        "min_predictive_scale": 2.3742706775665283,
+        "max_predictive_scale": 8.779595375061035
     }
 }
