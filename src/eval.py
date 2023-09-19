@@ -304,7 +304,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
         #get mean weight scale
         weight_scale_list = []
         for name, data in weight_data["sites"].items():
-            if "scale" in name:
+            if "scale" in name and "likelihood" not in name:
                 weight_scale_list.extend(data)
         weight_data["mean_weight_scale"] = np.mean(weight_scale_list)
         weight_data["min_weight_scale"] = np.min(weight_scale_list)
