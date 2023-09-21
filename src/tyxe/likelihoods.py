@@ -299,8 +299,14 @@ class HomoskedasticGaussian(Gaussian):
         """Aggregates multiple predictions for the same data by averaging them. Predictive variance is the variance
          of the predictions plus the known variance term."""
         if isinstance(predictions, tuple):
+            print("loc",  predictions[0].shape)
+            print("std",  predictions[1].shape)
             loc, lik_scale = predictions[0].mean(dim), predictions[1].mean(dim)
+            print("loc", loc.shape)
+            print("std", lik_scale)
+            print("pred var", predictions[0].var(dim))
             scale = predictions[0].var(dim).add(lik_scale ** 2).sqrt()
+            print("std", scale)
             return loc, scale
         else:
             loc = predictions.mean(dim)

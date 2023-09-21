@@ -249,14 +249,17 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             20, 20), kl_div=True, title="Posterior samples - Out of Domain", plot_mean=True, save_path=f"{DIR}/results/{NAME}/sanity-checks/test_out_domain_sanity_{run}.png")
 
         # Evaluate
-
         results = {}
-        cases = ["train", "test", "in_domain", "out_domain"]
-        dataloaders = [train_dataloader, test_dataloader,
+        uncertainties = {}
+        weight_data = {}
+
+        
+        cases = ["train", "in_domain", "out_domain"]
+        dataloaders = [train_dataloader,
                        test_in_domain_dataloader, test_out_domain_dataloader]
-        pred_samples = [pred_train_samples, pred_test_samples,
+        pred_samples = [pred_train_samples, 
                         pred_in_domain_samples, pred_out_domain_samples]
-        data_samples = [data_train_samples, data_test_samples,
+        data_samples = [data_train_samples, 
                         data_in_domain_samples, data_out_domain_samples]
         eval_cases = zip(cases, dataloaders, pred_samples, data_samples)
         for case, dataloader, pred_sample, data_sample in eval_cases:
@@ -270,20 +273,6 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
                 pred_sample, data_sample)
             results[case]["predictive_eval"] = eval_posterior
 
-        with open(f"{DIR}/results/{NAME}/results_{run}.json", "w") as f:
-            json.dump(results, f, indent=4)
-
-
-        uncertainties = {}
-        cases = ["train", "in_domain", "out_domain"]
-        dataloaders = [train_dataloader,
-                       test_in_domain_dataloader, test_out_domain_dataloader]
-        pred_samples = [pred_train_samples,
-                        pred_in_domain_samples, pred_out_domain_samples]
-        data_samples = [data_train_samples,
-                        data_in_domain_samples, data_out_domain_samples]
-        eval_cases = zip(cases, dataloaders, pred_samples, data_samples)
-        for case, dataloader, pred_sample, data_sample in eval_cases:
             uncertainties[case] = {}
             print(f"Evaluating Uncertainty in {case}...")
             pred_dist = get_pred_dists(
@@ -293,11 +282,14 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             uncertainties[case]["min_predictive_scale"] = np.min(pred_dist["std"])
             uncertainties[case]["max_predictive_scale"] = np.max(pred_dist["std"])
 
+
+        with open(f"{DIR}/results/{NAME}/results_{run}.json", "w") as f:
+            json.dump(results, f, indent=4)
+
         with open(f"{DIR}/results/{NAME}/predictive_uncertainties_{run}.json", "w") as f:
             json.dump(uncertainties, f, indent=4)
 
         print("Saving weight distributions...")
-        weight_data = {}
         weight_dist = bnn.get_weight_distributions()
         weight_data["sites"] = {k: v.reshape(-1).cpu().tolist() for k, v in weight_dist.items()}
         
@@ -311,6 +303,13 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
         weight_data["max_weight_scale"] = np.max(weight_scale_list)
         print("mean weight scale: ", weight_data["mean_weight_scale"])
 
+        # Sample likelihood scale
+        dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
+                       torch.zeros(1, Y_DIM).to(DEVICE))
+        lik_scale = bnn.get_likelihood_scale(
+            dummy_input, num_predictions=100)
+        weight_data["likelihood_scale"] = {
+            "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
 
 
         with open(f"{DIR}/results/{NAME}/weight_data_{run}.json", "w") as f:

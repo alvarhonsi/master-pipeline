@@ -258,20 +258,17 @@ class VariationalBNN(_SupervisedBNN):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
 
-        if likelihood_guide_traces is None:
-            likelihood_guide_traces = [None] * num_predictions
-
         preds = []
         scales = []
         with torch.autograd.no_grad():
-            for trace, likelihood_trace in zip(guide_traces, likelihood_guide_traces):
-                pred, scale = self.guided_forward(
-                    *input_data, guide_tr=trace, likelihood_guide_tr=likelihood_trace)
+            for trace in guide_traces:
+                pred, scale = self.guided_forward(*input_data, guide_tr=trace)
                 preds.append(pred)
                 scales.append(scale)
 
         predictions = torch.stack(preds)
         pred_scales = torch.stack(scales) if aggregate else None
+        print(pred_scales)
 
         return self.likelihood.aggregate_predictions((predictions, pred_scales)) if aggregate else predictions
 
@@ -300,7 +297,8 @@ class VariationalBNN(_SupervisedBNN):
             predictions, y, reduction=reduction)
 
         return mse, ll, mae
-    
+
+    @pynn.pyro_method
     def get_weight_distributions(self):
         dummy_input = torch.randn(1, 1)
         guide_tr = None
@@ -313,7 +311,7 @@ class VariationalBNN(_SupervisedBNN):
 
         return weight_distributions
 
-
+    @pynn.pyro_method
     def get_likelihood_scale(self, *input_data, num_predictions=1):
         scales = []
 
@@ -321,11 +319,10 @@ class VariationalBNN(_SupervisedBNN):
         with torch.autograd.no_grad():
             for trace in guide_traces:
                 guide_tr = poutine.trace(self.guide).get_trace(*input_data)
-
-                scales.append(poutine.replay(
-                    lambda: self.likelihood.scale, trace=guide_tr)())
+                scales.append(guide_tr.nodes["likelihood._scale"]["value"])
 
         scales = torch.stack(scales)
+        print(scales)
 
         mean_likelihood_scale = scales.mean(dim=0)
         std_likelihood_scale = scales.std(dim=0)
