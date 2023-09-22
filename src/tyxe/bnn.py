@@ -254,7 +254,7 @@ class VariationalBNN(_SupervisedBNN):
                                trace=guide_tr)()
         return pred, scale
 
-    def predict(self, *input_data, num_predictions=1, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
+    def predict(self, *input_data, num_predictions=1000, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
 
@@ -268,7 +268,6 @@ class VariationalBNN(_SupervisedBNN):
 
         predictions = torch.stack(preds)
         pred_scales = torch.stack(scales) if aggregate else None
-        print(pred_scales)
 
         return self.likelihood.aggregate_predictions((predictions, pred_scales)) if aggregate else predictions
 
