@@ -302,10 +302,26 @@ class HomoskedasticGaussian(Gaussian):
             print("loc",  predictions[0].shape)
             print("std",  predictions[1].shape)
             loc, lik_scale = predictions[0].mean(dim), predictions[1].mean(dim)
-            print("loc", loc.shape)
-            print("std", lik_scale)
             print("pred var", predictions[0].var(dim))
-            scale = predictions[0].var(dim).add(lik_scale ** 2).sqrt()
+            print("sigma var", predictions[1].var(dim))
+            scale = predictions[0].var(dim).add(lik_scale ** 2).add(predictions[1].var(dim)).sqrt()
+            print("std", scale)
+            return loc, scale
+        else:
+            loc = predictions.mean(dim)
+            scale = predictions.var(dim).add(self.scale ** 2).sqrt()
+            return loc, scale
+        
+    def aggregate_predictions_new(self, predictions, dim=0):
+        """Aggregates multiple predictions for the same data by averaging them. Predictive variance is the variance
+         of the predictions plus the known variance term."""
+        if isinstance(predictions, tuple):
+            print("loc",  predictions[0].shape)
+            print("std",  predictions[1].shape)
+            loc, lik_scale = predictions[0].mean(dim), predictions[1].mean(dim)
+            print("pred var", predictions[0].var(dim))
+            print("sigma var", predictions[1].var(dim))
+            scale = predictions[0].var(dim).add(lik_scale ** 2).add(predictions[1].var(dim)).sqrt()
             print("std", scale)
             return loc, scale
         else:

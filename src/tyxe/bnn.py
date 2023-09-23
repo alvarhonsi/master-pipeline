@@ -245,15 +245,23 @@ class VariationalBNN(_SupervisedBNN):
                                trace=likelihood_guide_tr)()
         return pred, scale '''
 
-    def guided_forward(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
+    # def guided_forward(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
+    #     if guide_tr is None:
+    #         guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
+
+    #     pred = poutine.replay(self.net, trace=guide_tr)(*args, **kwargs)
+    #     scale = poutine.replay(self.likelihood.get_scale,
+    #                            trace=guide_tr)()
+    #     return pred, scale
+    
+    def guided_forward2(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
         if guide_tr is None:
             guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
 
         pred = poutine.replay(self.net, trace=guide_tr)(*args, **kwargs)
-        scale = poutine.replay(self.likelihood.get_scale,
-                               trace=guide_tr)()
-        return pred, scale
-
+        pred = poutine.replay(self.likelihood, trace=guide_tr)(pred)
+        return pred
+    
     def predict(self, *input_data, num_predictions=1000, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
@@ -262,14 +270,36 @@ class VariationalBNN(_SupervisedBNN):
         scales = []
         with torch.autograd.no_grad():
             for trace in guide_traces:
-                pred, scale = self.guided_forward(*input_data, guide_tr=trace)
+                pred = self.guided_forward2(*input_data, guide_tr=trace)
                 preds.append(pred)
-                scales.append(scale)
 
         predictions = torch.stack(preds)
-        pred_scales = torch.stack(scales) if aggregate else None
+        print("preds", predictions.shape)
+        mean = predictions.mean(dim=0)
+        print("mean", mean.shape)
+        std = predictions.std(dim=0)
+        print("std", std.shape)
 
-        return self.likelihood.aggregate_predictions((predictions, pred_scales)) if aggregate else predictions
+        return mean, std
+
+        #return self.likelihood.aggregate_predictions((predictions, pred_scales)) if aggregate else predictions
+
+    # def predict(self, *input_data, num_predictions=1000, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
+    #     if guide_traces is None:
+    #         guide_traces = [None] * num_predictions
+
+    #     preds = []
+    #     scales = []
+    #     with torch.autograd.no_grad():
+    #         for trace in guide_traces:
+    #             pred, scale = self.guided_forward(*input_data, guide_tr=trace)
+    #             preds.append(pred)
+    #             scales.append(scale)
+
+    #     predictions = torch.stack(preds)
+    #     pred_scales = torch.stack(scales) if aggregate else None
+
+    #     return self.likelihood.aggregate_predictions((predictions, pred_scales)) if aggregate else predictions
 
     def sample_predictive(self, *input_data, num_predictions=1, guide_traces=None):
         if guide_traces is None:

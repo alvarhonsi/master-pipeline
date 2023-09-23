@@ -276,7 +276,8 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             uncertainties[case] = {}
             print(f"Evaluating Uncertainty in {case}...")
             pred_dist = get_pred_dists(
-                bnn, dataloader, num_predictions=1000, device=DEVICE)
+                bnn, dataloader, num_predictions=100000, device=DEVICE)
+            print(pred_dist)
             uncertainties[case]["pred_dist"] = pred_dist
             uncertainties[case]["mean_predictive_scale"] = np.mean(pred_dist["std"])
             uncertainties[case]["min_predictive_scale"] = np.min(pred_dist["std"])
@@ -307,7 +308,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
         dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
                        torch.zeros(1, Y_DIM).to(DEVICE))
         lik_scale = bnn.get_likelihood_scale(
-            dummy_input, num_predictions=100)
+            dummy_input, num_predictions=100000)
         weight_data["likelihood_scale"] = {
             "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
 
