@@ -274,11 +274,8 @@ class VariationalBNN(_SupervisedBNN):
                 preds.append(pred)
 
         predictions = torch.stack(preds)
-        print("preds", predictions.shape)
         mean = predictions.mean(dim=0)
-        print("mean", mean.shape)
         std = predictions.std(dim=0)
-        print("std", std.shape)
 
         return mean, std
 

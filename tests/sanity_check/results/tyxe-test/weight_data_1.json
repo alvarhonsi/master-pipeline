@@ -1,29 +1,29 @@
 {
     "sites": {
         "net_guide.net.0.weight.loc": [
-            0.02157970331609249
+            0.15244989097118378
         ],
         "net_guide.net.0.weight.scale": [
-            0.00784649234265089
+            0.0010060567874461412
         ],
         "net_guide.net.0.bias.loc": [
-            0.018327366560697556
+            -0.442423015832901
         ],
         "net_guide.net.0.bias.scale": [
-            0.04258633404970169
+            0.001006071688607335
         ],
         "likelihood_guide.likelihood._scale.loc": [
-            0.02548377402126789
+            1.1150614023208618
         ],
         "likelihood_guide.likelihood._scale.scale": [
-            0.06228259950876236
+            0.09954368323087692
         ]
     },
-    "mean_weight_scale": 0.02521641319617629,
-    "min_weight_scale": 0.00784649234265089,
-    "max_weight_scale": 0.04258633404970169,
+    "mean_weight_scale": 0.0010060642380267382,
+    "min_weight_scale": 0.0010060567874461412,
+    "max_weight_scale": 0.001006071688607335,
     "likelihood_scale": {
-        "mean": 1.0277036428451538,
-        "std": 0.06408119946718216
+        "mean": 3.090432643890381,
+        "std": 0.3025163412094116
     }
 }
