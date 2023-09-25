@@ -1,4 +1,0 @@
-dir = experiments/misspec-tensin
-name = misspec-tensin
-devices = cuda:4, cuda:5, cuda:6, cuda:7
-profiles =  tensin-3x256-s03 tensin-linear-sl, tensin-3x256-sl tensin-linear-s03, tensin-2x128-s03  tensin-1x64-sl, tensin-2x128-sl tensin-1x64-s03

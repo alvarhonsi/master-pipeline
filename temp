@@ -1,6 +1,7 @@
 
 
-python src/run-pipeline.py -dir experiments/misspec-tensin --eval -p tensin-3x256-s03 tensin-linear-sl tensin-3x256-sl tensin-linear-s03 --device cuda:7
+python src/run-pipeline.py -dir experiments/misspec-tensin --eval -p tensin-3x256-s03 tensin-linear-sl tensin-3x256-sl tensin-linear-s03 --device cuda:4
+python src/run-pipeline.py -dir experiments/misspec-tensin --eval -p tensin-2x128-s03  tensin-1x64-sl tensin-2x128-sl tensin-1x64-s03 --device cuda:3
 
 
 
@@ -9,21 +10,28 @@ tensin-2x128-s03  tensin-1x64-sl tensin-2x128-sl tensin-1x64-s03
 
 
 
+python src/run-pipeline.py -dir experiments/misspec-multisin10 --eval -p multisin10-3x64-s05 multisin10-linear-s05 multisin10-2x32-s05 multisin10-1x16-s05  --device cuda:4
+python src/run-pipeline.py -dir experiments/misspec-multisin10 --eval -p multisin10-3x64-sl multisin10-linear-sl multisin10-2x32-sl multisin10-1x16-sl --device cuda:3
 
 
-python src/run-pipeline.py -dir experiments/misspec-multisin10 --eval -p multisin10-3x64-sl multisin10-linear-sl multisin10-2x32-sl multisin10-1x16-sl --device cuda:5
+multisin10-3x64-s05 multisin10-linear-s05 multisin10-2x32-s05 multisin10-1x16-s05 
+multisin10-3x64-sl multisin10-linear-sl multisin10-2x32-sl multisin10-1x16-sl
 
-multisin10-3x64-s05 multisin10-linear-s05, multisin10-2x32-s05 multisin10-1x16-s05, multisin10-3x64-sl multisin10-linear-sl, multisin10-2x32-sl multisin10-1x16-sl
+python src/run-pipeline.py -dir experiments/misspec-multisin20 --eval -p multisin20-3x512-s05 multisin20-linear-s05 multisin20-2x256-s05 multisin20-1x128-s05  --device cuda:2
+python src/run-pipeline.py -dir experiments/misspec-multisin20 --eval -p multisin20-3x512-sl multisin20-linear-sl multisin20-2x256-sl multisin20-1x128-sl --device cuda:1
+
+
+multisin20-3x512-s05 multisin20-linear-s05 multisin20-2x256-s05 multisin20-1x128-s05
+multisin20-3x512-sl multisin20-linear-sl multisin20-2x256-sl multisin20-1x128-sl
+
+
+
 
 
 
 python src/run-pipeline.py -dir experiments/sou-sin10 --eval -p sin10-3x256-s003 sin10-3x256-s03 sin10-3x256-s3 sin10-3x256-sl --device cuda:7
 
 sin10-3x256-s003, sin10-3x256-s03, sin10-3x256-s3, sin10-3x256-sl
-
-
-
-
 
 
 python src/run-pipeline.py -dir experiments/sou-multisin10 --eval -p multisin10-3x64-s005 multisin10-3x64-s05 multisin10-3x64-s5 multisin10-3x64-sl --device cuda:6

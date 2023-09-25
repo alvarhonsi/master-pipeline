@@ -1,0 +1,4 @@
+dir = experiments/misspec-sin10
+name = misspec-sin10
+devices = cuda:4, cuda:5, cuda:6, cuda:7
+profiles =  sin10-3x256-s03 sin10-linear-sl, sin10-3x256-sl sin10-linear-s03, sin10-2x128-s03  sin10-1x64-sl, sin10-2x128-sl sin10-1x64-s03
