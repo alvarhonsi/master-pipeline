@@ -203,6 +203,8 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
     for run in range(1, reruns + 1):
         #####
         # Load model
+        pyro.clear_param_store()
+
         bnn = train.make_inference_model(
             config, dataset_config, device=DEVICE)
         bnn = load_bnn(bnn, config,
@@ -266,7 +268,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             results[case] = {}
             print(f"Evaluating {case}...")
             error = evaluate_error(
-                bnn, dataloader, num_predictions=1000, device=DEVICE)
+                bnn, dataloader, num_predictions=10, device=DEVICE)
             results[case]["error"] = error
 
             eval_posterior = evaluate_posterior(
@@ -302,13 +304,12 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
         weight_data["mean_weight_scale"] = np.mean(weight_scale_list)
         weight_data["min_weight_scale"] = np.min(weight_scale_list)
         weight_data["max_weight_scale"] = np.max(weight_scale_list)
-        print("mean weight scale: ", weight_data["mean_weight_scale"])
 
         # Sample likelihood scale
         dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
                        torch.zeros(1, Y_DIM).to(DEVICE))
         lik_scale = bnn.get_likelihood_scale(
-            dummy_input, num_predictions=1000)
+            dummy_input, num_predictions=10000)
         weight_data["likelihood_scale"] = {
             "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
 

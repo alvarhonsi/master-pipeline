@@ -254,6 +254,7 @@ class VariationalBNN(_SupervisedBNN):
     #                            trace=guide_tr)()
     #     return pred, scale
     
+    @pynn.pyro_method
     def guided_forward2(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
         if guide_tr is None:
             guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
@@ -262,6 +263,7 @@ class VariationalBNN(_SupervisedBNN):
         pred = poutine.replay(self.likelihood, trace=guide_tr)(pred)
         return pred
     
+    @pynn.pyro_method
     def predict(self, *input_data, num_predictions=1000, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
@@ -344,9 +346,12 @@ class VariationalBNN(_SupervisedBNN):
         guide_traces = [None] * num_predictions
         with torch.autograd.no_grad():
             for trace in guide_traces:
-                if self.likelihood_guide is not None:
+                if self.guided_likelihood:
                     guide_tr = poutine.trace(self.likelihood_guide).get_trace(*input_data)
+                    print("trace value", guide_tr.nodes["likelihood._scale"]["value"])
                     scales.append(guide_tr.nodes["likelihood._scale"]["value"])
+                else:
+                    scales.append(self.likelihood._scale)
 
         print(scales)
         scales = torch.stack(scales)

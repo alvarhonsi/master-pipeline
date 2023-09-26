@@ -1,0 +1,29 @@
+{
+    "sites": {
+        "net_guide.net.0.weight.loc": [
+            -0.1920005828142166
+        ],
+        "net_guide.net.0.weight.scale": [
+            0.0009979201713576913
+        ],
+        "net_guide.net.0.bias.loc": [
+            0.18422727286815643
+        ],
+        "net_guide.net.0.bias.scale": [
+            0.0010058572515845299
+        ],
+        "likelihood_guide.likelihood._scale.loc": [
+            -1.6513296365737915
+        ],
+        "likelihood_guide.likelihood._scale.scale": [
+            0.09986633062362671
+        ]
+    },
+    "mean_weight_scale": 0.0010018887114711106,
+    "min_weight_scale": 0.0009979201713576913,
+    "max_weight_scale": 0.0010058572515845299,
+    "likelihood_scale": {
+        "mean": 0.1901492476463318,
+        "std": 0.022259078919887543
+    }
+}

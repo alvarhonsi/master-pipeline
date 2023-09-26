@@ -272,15 +272,6 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
 
         ### Cleanup ###
 
-        # Sample likelihood scale
-        dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
-                       torch.zeros(1, Y_DIM).to(DEVICE))
-        print("hi")
-        lik_scale = bnn.get_likelihood_scale(
-            dummy_input, num_predictions=100)
-        train_stats["likelihood"] = {
-            "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
-
         train_stats["time"] = time.time() - start
         print(
             f"Training finished in {timedelta(seconds=train_stats['time'])} seconds")
