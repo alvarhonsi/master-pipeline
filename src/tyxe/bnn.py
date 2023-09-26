@@ -348,12 +348,12 @@ class VariationalBNN(_SupervisedBNN):
             for trace in guide_traces:
                 if self.guided_likelihood:
                     guide_tr = poutine.trace(self.likelihood_guide).get_trace(*input_data)
-                    print("trace value", guide_tr.nodes["likelihood._scale"]["value"])
+                    #print("trace value", guide_tr.nodes["likelihood._scale"]["value"])
                     scales.append(guide_tr.nodes["likelihood._scale"]["value"])
                 else:
                     scales.append(self.likelihood._scale)
 
-        print(scales)
+        #print(scales)
         scales = torch.stack(scales)
 
         mean_likelihood_scale = scales.mean(dim=0)
