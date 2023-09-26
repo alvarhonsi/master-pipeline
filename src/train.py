@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 import pyro
-from pyro.nn import PyroParam
+from pyro.nn import PyroParam, pyro_method
 import pyro.infer.autoguide.initialization as ag_init
 import pyro.distributions as dist
 import pyro.poutine as poutine
@@ -20,6 +20,8 @@ import pickle
 import dill
 import os
 import random
+
+
 
 from pyro.ops import stats
 
@@ -273,8 +275,9 @@ def train(config, dataset_config, DIR, device=None, print_train=False, reruns=1,
         # Sample likelihood scale
         dummy_input = (torch.zeros(1, X_DIM).to(DEVICE),
                        torch.zeros(1, Y_DIM).to(DEVICE))
+        print("hi")
         lik_scale = bnn.get_likelihood_scale(
-            dummy_input, num_predictions=50)
+            dummy_input, num_predictions=100)
         train_stats["likelihood"] = {
             "mean": lik_scale[0].item(), "std": lik_scale[1].item()}
 

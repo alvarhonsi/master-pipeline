@@ -283,10 +283,8 @@ class HomoskedasticGaussian(Gaussian):
 
     @pyro_method
     def get_scale(self):
-        if self._scale is None:
-            return self.precision ** -0.5
-        else:
-            return self._scale
+        ret = self._scale
+        return ret
 
     @property
     def precision(self):

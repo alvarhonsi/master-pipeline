@@ -344,11 +344,12 @@ class VariationalBNN(_SupervisedBNN):
         guide_traces = [None] * num_predictions
         with torch.autograd.no_grad():
             for trace in guide_traces:
-                guide_tr = poutine.trace(self.guide).get_trace(*input_data)
-                scales.append(guide_tr.nodes["likelihood._scale"]["value"])
+                if self.likelihood_guide is not None:
+                    guide_tr = poutine.trace(self.likelihood_guide).get_trace(*input_data)
+                    scales.append(guide_tr.nodes["likelihood._scale"]["value"])
 
-        scales = torch.stack(scales)
         print(scales)
+        scales = torch.stack(scales)
 
         mean_likelihood_scale = scales.mean(dim=0)
         std_likelihood_scale = scales.std(dim=0)
