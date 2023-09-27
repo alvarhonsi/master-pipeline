@@ -1,7 +1,7 @@
 
 
-python src/run-pipeline.py -dir experiments/misspec-sin10 --eval -p sin10-3x256-s03 sin10-linear-sl sin10-3x256-sl sin10-linear-s03 --device cuda:4
-python src/run-pipeline.py -dir experiments/misspec-sin10 --eval -p sin10-2x128-s03  sin10-1x64-sl sin10-2x128-sl sin10-1x64-s03 --device cuda:3
+python src/run-pipeline.py -dir experiments/misspec-sin10 --eval -p sin10-3x256-s03 sin10-linear-sl sin10-3x256-sl sin10-linear-s03 --device cuda:0
+python src/run-pipeline.py -dir experiments/misspec-sin10 --eval -p sin10-2x128-s03  sin10-1x64-sl sin10-2x128-sl sin10-1x64-s03 --device cuda:1
 
 
 
