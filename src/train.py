@@ -81,10 +81,9 @@ def make_inference_model(config, dataset_config, device=None):
             dataset_size=TRAIN_SIZE, scale=scale)
 
         def init_fn(*args, **kwargs):
-            return ag_init.init_to_value().to(DEVICE)
-            #return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
+            return ag_init.init_to_median(*args, **kwargs).to(DEVICE)
         likelihood_guide_builder = partial(
-            tyxe.guides.AutoNormal, init_loc_fn=ag_init.init_to_uniform(radius=6.0), init_scale=0.1)#GUIDE_SCALE)
+            tyxe.guides.AutoNormal, init_loc_fn=init_fn, init_scale=0.1)#GUIDE_SCALE)    #init_loc_fn=ag_init.init_to_uniform(radius=6.0) test   init_loc_fn=init_fn
     else:
         raise ValueError(
             f"Observation model {OBS_MODEL} not supported. Supported models: homoskedastic, homoskedastic_param, homoskedastic_gamma")

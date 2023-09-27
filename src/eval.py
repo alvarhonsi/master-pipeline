@@ -268,7 +268,7 @@ def eval(config, dataset_config, DIR, bnn=None, device=None, reruns=1):
             results[case] = {}
             print(f"Evaluating {case}...")
             error = evaluate_error(
-                bnn, dataloader, num_predictions=10, device=DEVICE)
+                bnn, dataloader, num_predictions=10000, device=DEVICE)
             results[case]["error"] = error
 
             eval_posterior = evaluate_posterior(
