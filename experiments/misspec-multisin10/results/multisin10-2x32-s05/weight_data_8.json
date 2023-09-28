@@ -2909,5 +2909,9 @@
     },
     "mean_weight_scale": 0.05392654613209766,
     "min_weight_scale": 0.0013573667965829372,
-    "max_weight_scale": 0.9960846304893494
+    "max_weight_scale": 0.9960846304893494,
+    "likelihood_scale": {
+        "mean": 0.5,
+        "std": 0.0
+    }
 }
