@@ -40,4 +40,4 @@ multisin10-3x64-s005 multisin10-3x64-s05 multisin10-3x64-s5 multisin10-3x64-sl
 
 
 python src/run-pipeline.py -dir experiments/sou-multisin20 --eval -p multisin20-3x512-s005 multisin20-3x512-s05 multisin20-3x512-s5 multisin20-3x512-sl --device cuda:0
-multisin20-3x512-s005 multisin20-3x512-s05 multisin20-3x512-s5 multisin20-3x512-sl™
+multisin20-3x512-s005 multisin20-3x512-s05 multisin20-3x512-s5 multisin20-3x512-sl

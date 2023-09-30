@@ -242,7 +242,7 @@ class VariationalBNN(_SupervisedBNN):
     #                            trace=guide_tr)()
     #     return pred, scale
 
-    def guided_forward(self, *args, guide_tr=None, likelihood_guide_tr=None, **kwargs):
+    def guided_forward(self, *args, guide_tr=None, **kwargs):
         if guide_tr is None:
             guide_tr = poutine.trace(self.guide).get_trace(*args, **kwargs)
 
@@ -252,12 +252,11 @@ class VariationalBNN(_SupervisedBNN):
         return pred
     
 
-    def predict(self, *input_data, num_predictions=1000, aggregate=True, guide_traces=None, likelihood_guide_traces=None):
+    def predict(self, *input_data, num_predictions=1000, guide_traces=None):
         if guide_traces is None:
             guide_traces = [None] * num_predictions
 
         preds = []
-        scales = []
         with torch.autograd.no_grad():
             for trace in guide_traces:
                 pred = self.guided_forward(*input_data, guide_tr=trace)
