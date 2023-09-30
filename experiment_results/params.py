@@ -30,4 +30,16 @@ params = {
         "reruns" : 10,
         "models_title" : "Sin10",
     },
+    "sou-msin10" : {
+        "dir" : "../experiments/sou-multisin10/",
+        "profiles" : ["multisin10-3x64-s005", "multisin10-3x64-s05", "multisin10-3x64-s5", "multisin10-3x64-sl"],
+        "reruns" : 10,
+        "models_title" : "Multisin10",
+    },
+    "sou-msin20" : {
+        "dir" : "../experiments/sou-multisin20/",
+        "profiles" : ["multisin20-3x512-s005", "multisin20-3x512-s05", "multisin20-3x512-s5", "multisin20-3x512-sl"],
+        "reruns" : 5,
+        "models_title" : "Multisin20",
+    },
 }
