@@ -1,4 +1,0 @@
-dir = tests/sin_model_tests/512/
-name = sin-512
-devices = cuda:2, cuda:3, cuda:4, cuda:5, cuda:6, cuda:7
-profiles =  1layer-512-s03, 2layer-512-s03, 3layer-512-s03, 4layer-512-s03, 5layer-512-s03, 6layer-512-s03

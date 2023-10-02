@@ -1,4 +1,0 @@
-dir = experiments/underfit/1layer-models
-name = 1layer-models
-devices = cuda:0, cuda:7
-profiles = sin1-1x8-s002 sin2-1x8-s002 pol-1x8-s002 sin1-1x16-s002 sin2-1x16-s002 pol-1x16-s002 sin1-1x512-s002 sin2-1x512-s002 pol-1x512-s002, sin1-1x32-s002 sin2-1x32-s002 pol-1x32-s002 sin1-1x64-s002 sin2-1x64-s002 pol-1x64-s002 sin1-1x128-s002 sin2-1x128-s002 pol-1x128-s002

@@ -1,4 +1,0 @@
-dir = tests/high_dim_models
-name = high_dim_models
-devices = cuda:0, cuda:1, cuda:2, cuda:3
-profiles = sin1-3x512-s003 sin2-3x512-s003, sin1-3x512-s03 sin2-3x512-s03, sin1-3x512-s3 sin2-3x512-s3, sin1-3x512-sl sin2-3x512-sl 

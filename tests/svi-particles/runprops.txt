@@ -1,4 +1,0 @@
-dir = experiments/svi-particles
-name = svi-particles
-devices = cuda:7
-profiles = 3layer-64-p1 3layer-64-p10
